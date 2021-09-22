@@ -1,0 +1,384 @@
+---
+title: Biometrical analysis 
+author:
+- name: Jochen Kruppa (jochen.kruppa@charite.de)
+  affiliation: Institute of Biometry and Clinical Epidemiology
+abstract: "This is the abstract text and should describe in some short
+  words what is happening in the following document."
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: united
+    number_sections: true
+    highlight: zenburn
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+editor_options: 
+  chunk_output_type: console
+---
+
+***
+
+```{r init_markdown, echo = FALSE, message=FALSE}
+source("init.R")
+pacman::p_load(slider)
+opts_chunk$set(fig.width=7, fig.height=7, fig.path='img/',
+               echo=FALSE, warning=FALSE, message=FALSE,
+               cache.path='cache/')
+## To use for fills, add
+## scale_fill_manual(values=cbbPalette)
+## To use for line and point colors, add
+## scale_colour_manual(values=cbbPalette)
+## kableExtra stuff:
+## http://haozhu233.github.io/kableExtra/awesome_table_in_html.html
+```
+
+# Section header
+
+## Subsection header
+
+Some text explaining the analysis we are doing
+
+https://davisvaughan.github.io/slider/
+
+```{r data preparation, results ='hide'}
+
+## data generation
+# data_tbl <- tibble(y_raw = c(1,1,1,1,2,3,4,5,6,7,8,9,9,9,9),
+#                    y = y_raw + rnorm(length(y_raw), 0, 0.1),
+#                    x = 1:length(y))
+data_tbl_raw2 <- read.csv("C:/Users/wiebachj/OneDrive - Charité - Universitätsmedizin Berlin/Kirwan/20210525_Raw Data.csv", header = T, check.names = F, blank.lines.skip = TRUE)
+
+
+
+data_tbl_work <- data_tbl_raw2 %>% 
+  slice(-c(1:6, 16:17, 27:28)) %>%
+  gather(key = "Metabolite", value = "Intensity", 3:ncol(data_tbl_raw2)) %>%
+  separate(Sample, c("Time", "Batch"), "_", remove = FALSE, extra = "merge") %>%
+  arrange(Metabolite, Batch) %>%
+  mutate(Intensity = as.numeric(Intensity)) %>% 
+  unite("ID",c(Batch, Metabolite), remove = FALSE)
+
+data_table_extract <- tibble(
+  Metabolite = unique(data_tbl_work$Metabolite),
+  MZ = unlist(data_tbl_raw2[4,-c(1:2)],use.names = F ),
+  RT = unlist(data_tbl_raw2[5,-c(1:2)],use.names = F)
+)
+
+data_tbl_work <- left_join(data_tbl_work, data_table_extract, by = "Metabolite")
+
+```
+
+Need input table called "data_tbl_work" with minimal following colnames:
+ID, MZ, RT, Concentration, Intensity
+
+```{r data chunk, results ='hide'}
+
+#generate result table template
+data_tbl_result <- data_tbl_work %>% group_by(ID) %>% select(ID, MZ, RT) %>% distinct()
+  
+  
+
+  
+# remove all metabolites with less than 5 points
+
+data_tbl_complete <- data_tbl %>% group_by(ID) %>% filter(sum(!is.na(Intensity)) > 5) 
+# 559 Signal  series were removed -> 221 groups are left
+
+## sliding window including points
+
+slider_func_lm <- function(tbl, x){
+  tbl_linear_Range <- list()
+  lm_sum <- lm(Intensity ~ Concentration, data = tbl[x : (x + 2),]) %>%
+    summary()
+  alpha.rad <- atan((data$Intensity[x + 2] - data$Intensity[x])/(data$Concentration[x + 2] - data$Concentration[x]))
+  alpha.deg <- 180*alpha.rad/pi
+  
+  tibble(
+    metabolite = tbl$ID[x],
+    seq = x,
+    slope = lm_sum$coefficient[2], 
+    adjr2 = lm_sum$adj.r.squared,
+    degree = alpha.deg
+  )
+}
+
+
+
+
+slider_func_group <- function(dat, metabolite, points, adjr2 = 0.9, degr = 10){
+  tbl_linear_Range <- list()
+  data <- dat %>% filter(ID == metabolite)
+  
+  tbl_lm <- slide(1:(nrow(data) - 2), ~slider_func_lm(tbl = data, x = .x)) %>% ldply
+  adjr2.compare <- (round(tbl_lm$adjr2,2) >= adjr2) & (tbl_lm$degree >= degr)
+  adjr2.compare.value <- which(adjr2.compare)
+  
+  if (any(adjr2.compare)) {
+    #j <- 1
+    i <- adjr2.compare.value[1]
+    count <- 1
+    for (j in i:length(adjr2.compare)) {
+      # if (i != j) { next()
+      # }else{
+        
+        
+        first_lin <- i
+        for (i in (first_lin : length(adjr2.compare))) {
+          if (adjr2.compare[i]) {
+            last_lin <- i
+            #if (i == length(adjr2.compare)) break()
+          }else{
+            last_lin <- i - 1
+            break()
+          }
+        }
+        
+        if (last_lin >= (first_lin + points - 3)) { 
+          sum.all <- lm(Intensity ~ Concentration, data = data[first_lin : (last_lin + 2),]) %>%
+            summary()
+          alpha.rad <- atan(
+            (data$Intensity[last_lin + 2] - data$Intensity[first_lin])/
+            (data$Concentration[last_lin + 2] - data$Concentration[first_lin]))
+          alpha.deg <- 180*alpha.rad/pi
+          #alpha = arctan((y3-y1)/(x3-x1))
+          tbl_linear_Range[[count]] <- tibble(
+            Metabolite = tbl_lm$metabolite[1],
+            linear_range = paste(first_lin, "-", last_lin + 2),
+            adjr2 = sum.all$adj.r.squared,
+            degree = alpha.deg,
+            start = first_lin,
+            end = last_lin + 2,
+            start_intensity = data$Intensity[first_lin],
+            end_intensity = data$Intensity[last_lin + 2]
+          )}
+        
+        
+        #print(j)
+        #print(last_lin)
+        if(((last_lin + 1) < length(adjr2.compare)) & any(adjr2.compare[(last_lin + 1) : length(adjr2.compare)])) {
+          i <- which(adjr2.compare[(last_lin + 1) : length(adjr2.compare)])[1] + last_lin 
+          count <- count + 1 
+          next()
+        }
+       
+    }#}
+     #return(tbl_linear_Range)
+  }else{
+    
+    tbl_linear_Range[[count]] <- tibble(
+      Metabolite = tbl_lm$metabolite[1],
+      linear_range = paste("no linear range"),
+      adjr2 = NA,
+      degree = NA,
+      start = NA,
+      end = NA
+    )  
+    
+  }
+  return(tbl_linear_Range)
+}
+#tbl_linear_Range %>% ldply()
+
+slope_x <- 1.2
+data_c <- tibble(
+  y_raw = c(1,1,1,1, c(1:7 * slope_x),9,9,9,9),
+  Intensity = y_raw + rnorm(length(y_raw), 0, 0.1),
+  Concentration = 1:length(Intensity),
+  ID = "metabolite1")
+
+
+
+
+# slope_x <- 0.5
+# data <- tibble(
+#   y_raw = c(1,1,1,1, c(1:7 * slope_x), rep(7 * slope_x + 0.5, 4)),
+#   Intensity = y_raw + rnorm(length(y_raw), 0, 0.1),
+#   Concentration = 1:length(Intensity),
+#   ID = "metabolite1"
+#   )
+#7,73,80,105,114,151)])
+data_c <- data_tbl_complete %>% filter(ID %in% unique(data_tbl_complete$ID)[c(7,73,80,105,114,151)])  
+ggplot(data_c, aes(Concentration, Intensity)) + geom_point() + geom_line() + facet_wrap(~ID, scales = "free_y") + theme_bw() #+ geom_smooth(method='lm')
+
+
+#data <- data_tbl_complete
+
+
+dataWithrange <- lapply(unique(data_c$ID),function(x) {slider_func_group(dat = data_c, metabolite = x, points = 5, adjr2 = 0.85, degr = 10)}) %>% unlist(., recursive = F) %>% ldply
+
+dataWithrange
+
+# ~2000 peaks
+start = Sys.time()
+
+dataWithrange.complete <- lapply(unique(data_tbl_complete$ID),function(x) {
+  slider_func_group(dat = data_tbl_complete, metabolite = x, points = 5, adjr2 = 0.85, degr = 10)}) %>%
+  unlist(., recursive = F) %>%
+  ldply
+
+end = Sys.time()
+end - start
+dataWithrange.complete
+
+
+
+
+
+
+
+
+
+
+
+ ###
+#slope in degree
+# Satz des Pythagoras:  tan(alpha) = Gegenkathete / Ankathete  -> alpha = arctan((y3-y1)/(x3-x1))
+
+##########
+
+ 
+ggplot(data, aes(Concentration, Intensity)) + geom_point() + geom_line() #+ geom_smooth(method='lm')
+
+slider_func_group <- function(dat, metabolite){
+  dat %>% filter(ID == metabolite) %>% 
+    
+    slide(., ~slider_func_lm(tbl = .x), .before = 1, .complete = TRUE) %>%
+    ldply %>% 
+    select(term, estimate) %>% 
+    mutate("ID" = metabolite) 
+}
+
+data_tbl_logSlope <- ldply(unique(data_tbl_complete$ID),function(x) {slider_func_group(data_tbl_complete, x)})
+
+
+
+
+
+
+# data_tbl_raw3 <- read.csv("C:/Users/wiebachj/OneDrive - Charité - Universitätsmedizin Berlin/Kirwan/20210525_Ratios_using_IS.csv", header = T, check.names = F, skip = 0)
+
+
+# data_tbl_raw <- read.csv("C:/Users/wiebachj/OneDrive - Charité - Universitätsmedizin Berlin/Kirwan/Dilutionseries_B1_pos.csv", header = T, check.names = F)
+# 
+# data_tbl_test <- data_tbl_raw %>% gather(key = "Metabolite", value = "Intensity", 3:ncol(data_tbl_raw)) %>%
+#   separate(Metabolite, c("Metabolite", "Rest"), "_") %>%
+#   arrange(Metabolite, Sample_ID)
+# 
+# 
+# data_tbl_test %>%
+# filter(between(as.numeric(data_tbl_test$Metabolite), as.numeric(data_tbl_raw2$BIN_000240_SECIMPos[4]) - 0.0005, as.numeric(data_tbl_raw2$BIN_000240_SECIMPos[4]) + 0.0005))
+
+
+#147.1127
+
+## look at the data
+#data_tbl %>% filter(Metabolite == "147.112692632533_52.1715469360352") %>%
+pdf("plots.pdf", , onefile = TRUE)  
+for (metabolite in unique(data_tbl$Metabolite)) {
+  progress_time() 
+  title <- as.character(metabolite)
+  data <- data_tbl %>% filter(Metabolite == metabolite) 
+  metplot <- ggplot(data, aes(x = `Concentration`, y = Intensity, group = ID, color = Batch)) + geom_point() + geom_line() + ggtitle(title)
+  print(metplot)
+ 
+
+}  
+dev.off()
+#-------------
+#Questions: 
+#1. How treating missing values? 
+#2. How many measuring points are necessary?
+#3. When is linear biological linear? What is with spikes or drops?
+#--------------
+
+## sliding window including points
+
+slider_func_lm <- function(tbl){
+  lm(log(Intensity) ~ log(Concentration), data = tbl) %>%
+    tidy %>%
+    magrittr::extract(2,) 
+}
+
+data <- data_tbl %>% filter(Metabolite == "BIN_000161_SECIMPos", ID == "pos_B7")  
+  
+ggplot(data, aes(Concentration, Intensity)) + geom_point() + geom_line()
+
+reg_slide_tbl <- slide(data, ~slider_func_lm(tbl = .x),
+                       .before = 1, .complete = TRUE) %>%
+  ldply
+
+
+
+# Moving average (Aligned right)
+# "The current element + 2 elements before"
+data_tbl %>% slide_dbl(.$y, ~mean(.x), .before = 2)
+#> [1] 1.0 1.5 2.0 3.0 4.0
+
+
+slide(data_tbl, ~lm(y ~ x, data = .x) %>% tidy,
+      .before = 1, .after = 1, .complete = TRUE) 
+
+
+slider_func_lm <- function(tbl){
+  lm(scale(Intensity) ~ scale(Concentration), data = tbl) %>%
+    tidy %>%
+    magrittr::extract(2,) 
+}
+
+reg_slide_tbl <- slide(data_tbl, ~slider_func_lm(tbl = .x),
+                       .before = 1, .after = 1, .complete = TRUE) %>%
+  ldply
+
+
+## how strong should be the slope?
+slope_x <- 1.2
+data_tbl <- tibble(y_raw = c(1,1,1,1,
+                             c(1:7 * slope_x),
+                             9,9,9,9),
+                   y = y_raw + rnorm(length(y_raw), 0, 0.1),
+                   x = 1:length(y))
+
+ggplot(data_tbl, aes(x, y)) + geom_point()
+
+
+reg_slide_tbl <- slide(data_tbl, ~slider_func_lm(tbl = .x),
+                       .before = 1, .after = 1, .complete = TRUE) %>%
+  ldply
+
+
+## other idea with the limits
+
+slope_x <- 1.2
+slope_y <- 1:9 * slope_x 
+bottom_y <- rep(min(slope_y), 3)
+top_y <- rep(max(slope_y), 3)
+
+data_tbl <- tibble(y_raw = c(bottom_y, slope_y, top_y),
+                   y = y_raw + rnorm(length(y_raw), 0, 0.1),
+                   x = 1:length(y))
+
+ggplot(data_tbl, aes(x, y)) + geom_point()
+
+reg_slide_tbl <- slide(data_tbl, ~slider_func_lm(tbl = .x),
+                       .before = 1, .after = 1, .complete = TRUE) %>%
+  ldply
+
+
+```
+
+***
+
+# Session Info 
+
+This is the session information. This might be interesting later on if
+the project should be reanimated after a while. In addition the
+information might be interesting if other are looking at this project.
+
+```{r, echo = FALSE, comment ='', results='markup'}
+sessionInfo()
+```
+
