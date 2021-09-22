@@ -50,7 +50,7 @@ https://davisvaughan.github.io/slider/
 # data_tbl <- tibble(y_raw = c(1,1,1,1,2,3,4,5,6,7,8,9,9,9,9),
 #                    y = y_raw + rnorm(length(y_raw), 0, 0.1),
 #                    x = 1:length(y))
-data_tbl_raw2 <- read.csv("C:/Users/wiebachj/OneDrive - Charité - Universitätsmedizin Berlin/Kirwan/20210525_Raw Data.csv", header = T, check.names = F, blank.lines.skip = TRUE)
+data_tbl_raw2 <- read.csv(file.path("..", "data/input/20210525_Raw Data.csv"), header = T, check.names = F, blank.lines.skip = TRUE)
 
 
 
@@ -75,17 +75,22 @@ data_tbl_work <- left_join(data_tbl_work, data_table_extract, by = "Metabolite")
 Need input table called "data_tbl_work" with minimal following colnames:
 ID, MZ, RT, Concentration, Intensity
 
-```{r data chunk, results ='hide'}
+```{r data wrangling, results ='hide'}
 
-#generate result table template
+#generate result table template with 3 columns ID, MZ, RT
 data_tbl_result <- data_tbl_work %>% group_by(ID) %>% select(ID, MZ, RT) %>% distinct()
-  
-  
 
-  
 # remove all metabolites with less than 5 points
 
-data_tbl_complete <- data_tbl %>% group_by(ID) %>% filter(sum(!is.na(Intensity)) > 5) 
+data_tbl_result <- data_tbl_work %>% 
+  group_by(ID) %>% 
+  summarise( "excluded" = !sum(!is.na(Intensity)) >= 5,
+    "nConcentration" = sum(!is.na(Intensity))) %>% 
+  mutate("Comment" = ifelse(excluded, "not enough measure points for linear regression", NA)) %>% 
+  left_join(., data_tbl_result, by = "ID") %>% 
+  select(ID, MZ, RT, everything())
+
+
 # 559 Signal  series were removed -> 221 groups are left
 
 ## sliding window including points
