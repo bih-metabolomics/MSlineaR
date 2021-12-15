@@ -1,7 +1,7 @@
 ---
 title: Biometrical analysis 
 author:
-- name: Jochen Kruppa (jochen.kruppa@charite.de)
+- name: Janine Wiebach (janine.wiebach@charite.de)
   affiliation: Institute of Biometry and Clinical Epidemiology
 abstract: "This is the abstract text and should describe in some short
   words what is happening in the following document."
@@ -24,6 +24,7 @@ editor_options:
 
 ```{r init_markdown, echo = FALSE, message=FALSE}
 source("init.R")
+library("ggpmisc")
 pacman::p_load(slider)
 opts_chunk$set(fig.width=7, fig.height=7, fig.path='img/',
                echo=FALSE, warning=FALSE, message=FALSE,
@@ -93,9 +94,13 @@ data_tbl_result <- data_tbl_work %>%
 
 
 
-## sliding window including points
+## functions
 
-slider_func_lm <- function(tbl, x){
+# function func_lm performs linear regression for 3 consecutive points, starting at point x
+  # input : data table with column names [Intensity, Concentration, ID]
+  # output: tibble with informations about ID, analyzed point x, n distance and degree, and adjusted R2
+func_lm <- function(tbl, x){
+  
   tbl_linear_Range <- list()
   lm_sum <- lm(Intensity ~ Concentration, data = tbl[x : (x + 2),]) %>%
     summary()
@@ -113,30 +118,32 @@ slider_func_lm <- function(tbl, x){
     adjr2 = lm_sum$adj.r.squared,
     degree = alpha.deg#,
     #indice = tbl$indice[x]
-    
-    
   )
 }
 
-func_findLinearRange <- function(tbl,metabolite. = metabolite, adjR2. = adjR2 , degr. = degr, points. = points){
+# function func_findLinearRange compares adjusted R2 and slope in degree to defined borders
+  # input : data table from func_lm with column names [metabolite, adjR2, degree]; values for adjusted R2 and degree; Number of points necessary to consider a linear range
+  # output: tibble with informations about ID, start of linear range, end of linear range, Comment
+func_findLinearRange <- function(tbl, adjR2 , degr, points){
   
-  #with(parent.frame(),{
-  adjr2.compare <- (round(tbl$adjr2,2) >= adjR2.) & (tbl$degree >= degr.)
+  adjr2.compare <- (round(tbl$adjr2,2) >= adjR2) & (tbl$degree >= degr)
   
-  if (!any(adjr2.compare)) {
+  if (!any(adjr2.compare)) { # adjusted R2 and /or slope are to small 
     tibble(
-      ID = metabolite.,
+      ID = unique(tbl$metabolite),
       start = NA,
       end = NA,
+      lengthRange = NA,
       Comment = "no linear range"
     )
     
-  }else{
+  }else{ # minimum of 3 consecutive points with sufficient adjusted R2 and slope
     
-    #
-    cons <- rle(adjr2.compare)
-    indic <- which(cons$values == TRUE & cons$lengths >= (points. - 2) )
-    if (length(indic) > 0 ){
+    
+    cons <- rle(adjr2.compare) # Compute the lengths of consecutive Trues and Falses
+    indic <- which(cons$values == TRUE & cons$lengths >= (points - 2) )
+    
+    if (length(indic) > 0 ){ # length of consecutive Trues are sufficent
       cons.lengths.cumsum = cumsum(cons$lengths)
       ends = cons.lengths.cumsum[indic] + 2
       newindex = ifelse(indic > 1, indic - 1, 0)
@@ -144,14 +151,21 @@ func_findLinearRange <- function(tbl,metabolite. = metabolite, adjR2. = adjR2 , 
       if (0 %in% newindex) starts = c(1,starts)
       
       tibble(
-        ID = metabolite.,
+        ID = unique(tbl$metabolite),
         start = starts,
         end = ends,
+        lengthRange = ends - starts + 1,
         Comment = ""
       )
-    } else {
+    } else { # length of consecutive Trues are to small
       
-      integer(0)
+      tibble(
+        ID = unique(tbl$metabolite),
+        start = NA,
+        end = NA,
+        lengthRange = NA,
+        Comment = "no linear range"
+      )
     }
     
     
@@ -159,22 +173,22 @@ func_findLinearRange <- function(tbl,metabolite. = metabolite, adjR2. = adjR2 , 
   #})
 }
 
+# function func_slider_LinearRange slides through data table of metabolites
+ # input: data table with column names [ID, Intensity, Concentration]; Number of points necessary to consider a linear range, boundaries for adjusted R2 value and slope in degree; cooks distance
+ # output: 
 
-
-slider_func_group <- function(dat, metabolite, points, adjR2 = 0.9, degr = 10, cooksdis = 4){
+func_slider_LinearRange <- function(dat, metabolite, points, adjR2 = 0.9, degr = 10, cooksdis = 4){
+  
   tbl_linear_Range <- list()
   linRange <- data.frame()
   data <- dat %>% filter(ID == metabolite)
   #data$indice <- 1: nrow(data) 
   
-  cooksd <- cooks.distance(lm(Intensity ~ Concentration, data))
-  outlier <- which(cooksd > 4*mean(cooksd))
+  tbl_lm <- slide(1:(nrow(data) - 2), ~func_lm(tbl = data, .x )) %>% ldply
+  linRange <- func_findLinearRange(tbl = tbl_lm, adjR2, degr, points )
   
-  
-  tbl_lm <- slide(1:(nrow(data) - 2), ~slider_func_lm(tbl = data, x = .x)) %>% ldply
-  linRange <- func_findLinearRange(metabolite. = metabolite, tbl = tbl_lm, adjR2. = adjR2, degr. = degr, points. = points )
-  if(length(linRange) > 0) {
-    sum.all <- lm(Intensity ~ Concentration, data = data[linRange$start : linRange$end,]) %>%
+  if (any(linRange$Comment == "")) { # found one linear range, calculate slope and R2 for the whole range
+    sum.all <- lm(Intensity ~ Concentration, data = data[linRange$start:linRange$end,]) %>%
       summary()
     alpha.rad <- atan(
       (data$Intensity[linRange$end] - data$Intensity[linRange$start])/
@@ -189,7 +203,11 @@ slider_func_group <- function(dat, metabolite, points, adjR2 = 0.9, degr = 10, c
     linRange$adjr2 <- sum.all$adj.r.squared
     linRange$degree <- alpha.deg
     linRange$Comment <- ""
-  } else {
+    linRange$OutlierOrNAPos <- NA
+    linRange$OutlierOrNAinRange <- NA
+    linRange$type <- "complete Case"
+    
+  } else {# no linear range found
     linRange <- tibble(
       ID = metabolite,
       start = NA,
@@ -200,22 +218,40 @@ slider_func_group <- function(dat, metabolite, points, adjR2 = 0.9, degr = 10, c
       ConcenstrationEnd = NA,
       adjr2 = NA,
       degree = NA,
-      Comment = "no linear Range"
+      Comment = "no linear Range",
+      OutlierOrNAPos = NA,
+      OutlierOrNAinRange = NA,
+      lengthRange = NA,
+      type = "complete Case"
     )
     
   }   
   tbl_linear_Range[[1]] <- linRange
   
   #tbl_lm <- slide(1:(nrow(data) - 2), ~slider_func_lm(tbl = data, x = .x)) %>% ldply
-
+  
+  ## Outliers
+  ##DFFIT is the change in the predicted value for a point, obtained when that point is left out of the regression
+  
+  model <- lm(Intensity ~ Concentration, data)
+  res <- residuals(model)
+  outlier <- which(abs(res) > 3.1)
+  # dffit <- as.data.frame(dffits(model))
+  # thresh <- 2*sqrt((length(model$coefficients)-1)/nrow(data))
+  # outlier <- which(abs(dffit) > thresh)
+  # 
+  # cooksd <- cooks.distance(lm(Intensity ~ Concentration, data)) # detect outlier with cooks distance
+  # outlier <- which(cooksd > 4*mean(cooksd))
+  
   if (any(outlier)){
+    nrOutlier <- length(outlier)  
     linRange <- tibble()
     data_out <- data[-outlier, ]
-    tbl_lm_out <- slide(1:(nrow(data_out) - 2), ~slider_func_lm(tbl = data_out, x = .x)) %>% ldply
+    tbl_lm_out <- slide(1:(nrow(data_out) - 2), ~func_lm(tbl = data_out, .x )) %>% ldply
     
-    linRange <- func_findLinearRange(metabolite. = metabolite, tbl_lm_out, adjR2. = adjR2, degr. = degr, points. = points)
+    linRange <- func_findLinearRange(tbl =  tbl_lm_out, adjR2, degr, points)
     
-    if(length(linRange) > 0) {
+    if(any(linRange$Comment == "")) {
       sum.all <- lm(Intensity ~ Concentration, data = data_out[linRange$start : linRange$end,]) %>%
         summary()
       alpha.rad <- atan(
@@ -224,122 +260,229 @@ slider_func_group <- function(dat, metabolite, points, adjR2 = 0.9, degr = 10, c
       alpha.deg <- 180*alpha.rad/pi
       
       
+      
       linRange$IntensityStart <- data_out$Intensity[linRange$start]
       linRange$IntensityEnd <- data_out$Intensity[linRange$end]
       linRange$ConcenstrationStart <- data_out$Concentration[linRange$start]
       linRange$ConcenstrationEnd <- data_out$Concentration[linRange$end]
+      linRange$start <- data$DilutionPoint[data$Concentration == linRange$ConcenstrationStart]
+      linRange$end <- data$DilutionPoint[data$Concentration == linRange$ConcenstrationEnd]
       linRange$adjr2 <- sum.all$adj.r.squared
       linRange$degree <- alpha.deg
-      linRange$Comment <- "outlier excluded"
+      linRange$Comment <- paste0(nrOutlier," outlier excluded")
+      linRange$OutlierOrNAPos <- paste(outlier, collapse = "; ")
+      linRange$OutlierOrNAinRange <- any(between(outlier,linRange$start, linRange$end ))
+      linRange$type <- "Outlier"
       
       tbl_linear_Range[[2]] <- linRange
+    } else {
+      linRange <- tibble(
+        ID = metabolite,
+        start = NA,
+        end = NA,
+        IntensityStart = NA,
+        IntensityEnd = NA,
+        ConcenstrationStart = NA,
+        ConcenstrationEnd = NA,
+        adjr2 = NA,
+        degree = NA,
+        Comment = paste0(nrOutlier," outlier excluded, no linear Range"),
+        OutlierOrNAPos = paste(outlier, collapse = "; "),
+        OutlierOrNAinRange = any(between(outlier,linRange$start, linRange$end )),
+        lengthRange = NA,
+        type = "Outlier"
+      )
+      
     }
-    
-    # } else {
-    #   linRange <- tibble(
-    #     ID = metabolite,
-    #     start = NA,
-    #     end = NA,
-    #     IntensityStart = NA,
-    #     IntensityEnd = NA,
-    #     ConcenstrationStart = NA,
-    #     ConcenstrationEnd = NA,
-    #     adjr2 = NA,
-    #     degree = NA,
-    #     Comment = "no linear Range"
-    #   )
-    #   
-    # }
-    
   }
-  # adjr2.compare <- (round(tbl_lm$adjr2,2) >= adjr2) & (tbl_lm$degree >= degr)
-  # adjr2.compare.value <- which(adjr2.compare)
-  # 
-  # if (!any(adjr2.compare)) {
-  #   tibble(
-  #     Metabolite = tbl[1],
-  #     linear_range = NA,
-  #     adjr2 = NA,
-  #     degree = NA,
-  #     start = NA,
-  #     end = NA,
-  #     start_intensity = NA,
-  #     end_intensity = NA,
-  #     Comment = "no linear range"
-  #   )
-  # }else{
+  
+  ## NAs
+  
+  if (any(is.na(data$Intensity))){
+    nrNA <- sum(is.na(data$Intensity))
+    NApos <- which(is.na(data$Intensity))
+    linRange <- tibble()
+    data_na <- data[!is.na(data$Intensity), ]
+    tbl_lm_na <- slide(1:(nrow(data_na) - 2), ~func_lm(tbl = data_na, .x )) %>% ldply
     
-    # j <- 1
-    # i <- adjr2.compare.value[1]
-    # count <- 1
-    # for (j in i:length(adjr2.compare)) {
-    #   # if (i != j) { next()
-    #   # }else{
-    #     
-    #     
-    #     first_lin <- i
-    #     for (i in (first_lin : length(adjr2.compare))) {
-    #       if (adjr2.compare[i]) {
-    #         last_lin <- i
-    #         #if (i == length(adjr2.compare)) break()
-    #       }else{
-    #         last_lin <- i - 1
-    #         break()
-    #       }
-    #     }
-        
-        # if (last_lin >= (first_lin + points - 3)) { 
-        #   sum.all <- lm(Intensity ~ Concentration, data = data[first_lin : (last_lin + 2),]) %>%
-        #     summary()
-        #   alpha.rad <- atan(
-        #     (data$Intensity[last_lin + 2] - data$Intensity[first_lin])/
-        #     (data$Concentration[last_lin + 2] - data$Concentration[first_lin]))
-        #   alpha.deg <- 180*alpha.rad/pi
-        #   #alpha = arctan((y3-y1)/(x3-x1))
-        #   tbl_linear_Range[[count]] <- tibble(
-        #     Metabolite = tbl_lm$metabolite[1],
-        #     linear_range = paste(first_lin, "-", last_lin + 2),
-        #     adjr2 = sum.all$adj.r.squared,
-        #     degree = alpha.deg,
-        #     start = first_lin,
-        #     end = last_lin + 2,
-        #     start_intensity = data$Intensity[first_lin],
-        #     end_intensity = data$Intensity[last_lin + 2]
-        #   )}
-        
-        
-        #print(j)
-        #print(last_lin)
-        # if(((last_lin + 1) < length(adjr2.compare)) & any(adjr2.compare[(last_lin + 1) : length(adjr2.compare)])) {
-        #   i <- which(adjr2.compare[(last_lin + 1) : length(adjr2.compare)])[1] + last_lin 
-        #   count <- count + 1 
-        #   next()
-        # }
-       
-    #}#}
-     #return(tbl_linear_Range)
-  # }else{
-  #   
-  #   tbl_linear_Range[[count]] <- tibble(
-  #     Metabolite = tbl_lm$metabolite[1],
-  #     linear_range = paste("no linear range"),
-  #     adjr2 = NA,
-  #     degree = NA,
-  #     start = NA,
-  #     end = NA
-  #   )  
-  #   
-  # }
+    linRange <- func_findLinearRange(tbl =  tbl_lm_na, adjR2, degr, points)
+    
+    if(any(linRange$Comment == "")) {
+      sum.all <- lm(Intensity ~ Concentration, data = data_na[linRange$start : linRange$end,]) %>%
+        summary()
+      alpha.rad <- atan(
+        (data_na$Intensity[linRange$end] - data_na$Intensity[linRange$start])/
+          (data_na$Concentration[linRange$end] - data_na$Concentration[linRange$start]))
+      alpha.deg <- 180*alpha.rad/pi
+      
+      
+      linRange$IntensityStart <- data_na$Intensity[linRange$start]
+      linRange$IntensityEnd <- data_na$Intensity[linRange$end]
+      linRange$ConcenstrationStart <- data_na$Concentration[linRange$start]
+      linRange$ConcenstrationEnd <- data_na$Concentration[linRange$end]
+      linRange$start <- data$DilutionPoint[data$Concentration == linRange$ConcenstrationStart]
+      linRange$end <- data$DilutionPoint[data$Concentration == linRange$ConcenstrationEnd]
+      linRange$adjr2 <- sum.all$adj.r.squared
+      linRange$degree <- alpha.deg
+      linRange$Comment <- paste0(nrNA," NA excluded")
+      linRange$OutlierOrNAPos <- paste(NApos, collapse = "; ")
+      linRange$OutlierOrNAinRange <- any(between(NApos,linRange$start, linRange$end ))
+      linRange$type <- "NA"
+      
+      
+      tbl_linear_Range[[2]] <- linRange
+    } else {
+      linRange <- tibble(
+        ID = metabolite,
+        start = NA,
+        end = NA,
+        IntensityStart = NA,
+        IntensityEnd = NA,
+        ConcenstrationStart = NA,
+        ConcenstrationEnd = NA,
+        adjr2 = NA,
+        degree = NA,
+        Comment = paste0(nrNA," NA excluded, no linear Range"),
+        OutlierOrNAPos = paste(NApos, collapse = "; "),
+        OutlierOrNAinRange = any(between(NApos,linRange$start, linRange$end )),
+        lengthRange = NA,
+        type = "NA"
+      )
+      
+    }
+  }
   return(tbl_linear_Range)
 }
+
+# function histogram output
+
+func_hist_summary <- function(dat = dataWithrange){
+  
+  NAdat <- dat %>% filter(type == "NA") %>%  select(OutlierOrNAPos)
+  NAvec <- as.numeric(unlist(lapply( 1:nrow(NAdat), function(x) strsplit(NAdat[x, ],";")))) %>% table()
+  NANr  <- lapply(1:15, function(x) {
+    ifelse(x %in% names(NAvec),yes = NAvec[names(NAvec) == x],no = 0)
+  }) %>%  unlist()
+  
+  Outdat <- dat %>% filter(type == "Outlier") %>%  select(OutlierOrNAPos)
+  Outvec <- as.numeric(unlist(lapply( 1:nrow(Outdat), function(x) strsplit(Outdat[x, ],";")))) %>% table()
+  OutNr  <- lapply(1:15, function(x) {
+    ifelse(x %in% names(Outvec),yes = Outvec[names(Outvec) == x],no = 0)
+  }) %>%  unlist()
+  
+  Compdat <- unique(dat$ID) %>% length
+  
+  
+  library(gridExtra)
+  
+  summary_dat <- tibble(
+    "Dilution Points" = c(1:15),
+    "NAs" = NANr,
+    "Outliers" = OutNr,
+    "Valids" = rep(Compdat, 15) - NANr - OutNr
+  )
+
+ g <-  summary_dat %>% 
+    gather(key = "Nr", value = "Values", 2:4) %>%
+    #mutate(DP = `Dilution Points`) %>% 
+  
+  ggplot( aes(x = `Dilution Points` , y = Values, fill = Nr )) +
+    geom_bar(width = 0.5, position = position_dodge(), stat = "identity") +
+    theme_bw() +
+    scale_x_continuous(breaks = seq(0, 15, by = 1)) +
+    scale_y_continuous(breaks = seq(0, 12, by = 1))
+    # annotate(geom = "table",
+    #        x = 10,
+    #        y = 0,
+    #        label = list(summary_dat))
+ tbl <- tableGrob(summary_dat, rows=NULL)
+ 
+ grid.arrange(g, tbl,
+             ncol=2,
+             as.table=TRUE)
+  
+}
+
+
+
+########################
+# theoretic data
+
 #tbl_linear_Range %>% ldply()
+set.seed(42)
 
 slope_x <- 1.2
-data_c <- tibble(
-  y_raw = c(1,1,1,1, c(1:3 * slope_x,4 * slope_x +6 ,5:7 * slope_x),9,9,9,9),
-  Intensity = y_raw + rnorm(length(y_raw), 0, 0.1),
-  Concentration = 1:length(Intensity),
-  ID = "metabolite1")
+slope_x2 <- 2.6
+
+data_complete <- tibble(
+  y_raw = c(
+    c(1,1,1,1, c(1:7 * slope_x),rep(ceiling(7 * slope_x),4)),
+    c(1,1,1,1, c(1:7 * slope_x2),rep(ceiling(7 * slope_x2),4))
+    ),
+  Intensity = y_raw + rep(rnorm(15, 0, 0.1),length(y_raw)/15),
+  Concentration = rep(1:15, length(y_raw)/15),
+  DilutionPoint = rep(c(1:15),length(y_raw)/15),
+  type = c(rep("completeCase", 15*length(y_raw)/15)),
+  ID = c(rep(paste0("metabolite CC", 1:(length(y_raw)/15)), each = 15))
+)
+
+data_outlier <- tibble(
+  y_raw = c(
+    c(1,1,1,1, c(1:3 * slope_x,4 * slope_x + 6 ,5:7 * slope_x),rep(ceiling(7 * slope_x),4)),
+    c(1,1,1,1, c(1:2 * slope_x,3 * slope_x + 6 ,4 * slope_x + 6 ,5:7 * slope_x),rep(ceiling(7 * slope_x),4)),
+    c(1,1,1,1, c(1:2 * slope_x,3 * slope_x + 6 ,4 * slope_x + 6 ,5:6 * slope_x,  7 * slope_x - 4),rep(ceiling(7 * slope_x),4)),
+    c(1,1,1,1, c(1:3 * slope_x,4 * slope_x - 4 ,5:7 * slope_x),rep(ceiling(7 * slope_x),4)),
+    c(1,1,1,1, c(1:2 * slope_x,3 * slope_x - 4 ,4 * slope_x - 4 ,5:7 * slope_x),rep(ceiling(7 * slope_x),4))
+
+    ),
+  Intensity = y_raw + rep(rnorm(15, 0, 0.1),length(y_raw)/15),
+  Concentration = rep(1:15, length(y_raw)/15),
+  DilutionPoint = rep(c(1:15),length(y_raw)/15),
+  type = c(rep("Outlier", 15*length(y_raw)/15)),
+  ID = c(rep(paste0("metabolite out", 1:(length(y_raw)/15)), each = 15))
+)
+
+data_NA <- tibble(
+  y_raw = c(
+    
+    c(1,1,1,1, c(1:3 * slope_x, NA ,5:7 * slope_x),rep(ceiling(7 * slope_x),4)),
+    c(1,1,1,1, c(1:3 * slope_x, NA, NA ,6:7 * slope_x),rep(ceiling(7 * slope_x),4)),
+    c(1,1,1,1, c(NA, 2:3 * slope_x, NA, NA ,6:7 * slope_x),rep(ceiling(7 * slope_x),4)),
+    c(NA,1,1,1, c(1:3 * slope_x, NA, NA ,6:7 * slope_x),rep(ceiling(7 * slope_x),4)),
+    c(NA,NA,1,1, c(1:7 * slope_x),rep(ceiling(7 * slope_x),4))
+
+    ),
+  Intensity = y_raw + rep(rnorm(15, 0, 0.1),length(y_raw)/15),
+  Concentration = rep(1:15, length(y_raw)/15),
+  DilutionPoint = rep(c(1:15),length(y_raw)/15),
+  type = c(rep("NA", 15*length(y_raw)/15)),
+  ID = c(rep(paste0("metabolite NA", 1:(length(y_raw)/15)), each = 15))
+)
+
+
+
+
+data_c <- rbind(data_complete, data_outlier, data_NA)
+
+
+
+# data_c %>% 
+# mutate(across(type, factor, levels=c("smooth","outlier_high","outlier_low", "NA"))) %>%
+  
+data_c %>%   
+ggplot(aes(Concentration, Intensity)) +
+  geom_point() + 
+  geom_line() + 
+  theme_bw() +
+  #scale_y_continuous(limits = c(0, 30), breaks = seq(0, 12, by = 1)) +
+  facet_wrap(~ID, scales = "free_y")
+
+# ,labeller = as_labeller(c("smooth" = "metabolite1 - smooth", "outlier_high" = "metabolite2 - outlier_high","outlier_low" = "metabolite3 - outlier_low", "NA"= "metabolite4 - missing Values")))
+
+
+
+
+
 
 
 
@@ -352,16 +495,37 @@ data_c <- tibble(
 #   ID = "metabolite1"
 #   )
 #7,73,80,105,114,151)])
-data_c <- data_tbl_complete %>% filter(ID %in% unique(data_tbl_complete$ID)[c(7,73,80,105,114,151)])  
-ggplot(data_c, aes(Concentration, Intensity)) + geom_point() + geom_line() + facet_wrap(~ID, scales = "free_y") + theme_bw() #+ geom_smooth(method='lm')
+#data_c <- data_tbl_complete %>% filter(ID %in% unique(data_tbl_complete$ID)[c(7,73,80,105,114,151)])  
+#ggplot(data_c, aes(Concentration, Intensity)) + geom_point() + geom_line() + facet_wrap(~ID, scales = "free_y") + theme_bw() #+ geom_smooth(method='lm')
 
 
 #data <- data_tbl_complete
 
 rm(metabolite, adjR2, degr, points, dat)
-dataWithrange <- lapply(unique(data_c$ID),function(x) {slider_func_group(dat = data_c, metabolite = x, points = 5, adjR2 = 0.85, degr = 10)}) %>% unlist(., recursive = F) %>% ldply %>%  distinct()
+#data_calc <- data_c %>% filter(type == "NA")
+dataWithrange <- lapply(unique(data_c$ID),function(x) {func_slider_LinearRange(dat = data_c, metabolite = x, points = 5, adjR2 = 0.85, degr = 10)}) %>% unlist(recursive = F) %>% ldply %>%  distinct()
 
 dataWithrange
+
+meta = "metabolite1"
+
+data_plot <- data_c %>% filter( ID == meta) %>% mutate(color = "black", size = 2)
+data_plot$color[dataWithrange[dataWithrange$ID == meta, c("start")]] <- "green"
+data_plot$size[dataWithrange[dataWithrange$ID == meta, c("start")]] <- 4
+data_plot$color[dataWithrange[dataWithrange$ID == meta, c("end")]] <- "green"
+data_plot$size[dataWithrange[dataWithrange$ID == meta, c("end")]] <- 4
+  
+ggplot(data_plot, aes(Concentration, Intensity)) + 
+  geom_point(color = data_plot$color, size = data_plot$size) + 
+  geom_line() + 
+  facet_wrap(~ID, scales = "free_y") + 
+  theme_bw() #+ geom_smooth(method='lm')
+
+
+
+
+
+
 
 # ~2000 peaks
 start = Sys.time()
