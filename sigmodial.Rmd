@@ -25,6 +25,7 @@ editor_options:
 ```{r init_markdown, echo = FALSE, message=FALSE}
 source("init.R")
 library("ggpmisc")
+library(magrittr)
 pacman::p_load(slider)
 opts_chunk$set(fig.width=7, fig.height=7, fig.path='img/',
                echo=FALSE, warning=FALSE, message=FALSE,
@@ -100,7 +101,7 @@ func_findLinearRange <- function(tbl, adjR2 , degr, points){
       cons.lengths.cumsum.end = cumsum(cons$lengths)
       starts = tbl$seqStart[cons.lengths.cumsum.start[indic]]
       ends = tbl$seqEnd[cons.lengths.cumsum.end[indic]]
-      maxlin  <- tbl[which(tbl[ , "adjr2"] == max(tbl[cons.lengths.cumsum.start[indic]:cons.lengths.cumsum.end[indic], "adjr2"])), ]
+      maxlin  <- tbl[which(tbl[ , "degree"] == max(tbl[cons.lengths.cumsum.start[indic]:cons.lengths.cumsum.end[indic], "degree"])), ]
       #newindex = ifelse(indic > 1, indic - 1, 0)
       #starts = cons.lengths.cumsum[newindex] + 1
       #if (0 %in% newindex) starts = c(1,starts)
@@ -111,6 +112,7 @@ func_findLinearRange <- function(tbl, adjR2 , degr, points){
         end = ends,
         lengthRange = ends - starts + 1,
         maxLinearRange = paste(maxlin[, c("seqStart", "seqEnd")], collapse = " : "),
+        maxadjR2 = max(tbl[cons.lengths.cumsum.start[indic]:cons.lengths.cumsum.end[indic], "adjr2"]),
         Comment = ""
       )
     } else { # length of consecutive Trues are to small
@@ -121,6 +123,7 @@ func_findLinearRange <- function(tbl, adjR2 , degr, points){
         end = NA,
         lengthRange = NA,
         maxLinearRange = NA,
+        maxadjR2 = NA,
         Comment = "no linear range"
       )
     }
@@ -134,8 +137,9 @@ func_findLinearRange <- function(tbl, adjR2 , degr, points){
  # input: data table with column names [ID, Intensity, Concentration]; Number of points necessary to consider a linear range, boundaries for adjusted R2 value and slope in degree; cooks distance
  # output: 
 
-func_slider_LinearRange <- function(dat, metabolite, points = 5, adjR2 = 0.9, degr = 10, residual = 3){ #, cooksdis = 4
+func_slider_LinearRange <- function(dat, metabolite, points = 5, adjR2 = 0.85, degr = 10, residual = 2){ #, cooksdis = 4
   
+  print(metabolite)
   tbl_linear_Range <- list()
   linRange <- data.frame()
   data <- dat %>% filter(ID == metabolite) %>% arrange(Concentration) %>% mutate(DilutionPoint = 1 : nrow(.), Comment = "")
@@ -144,7 +148,7 @@ func_slider_LinearRange <- function(dat, metabolite, points = 5, adjR2 = 0.9, de
   #outlier
   data <- data[!is.na(data$Intensity), ]
   model <- lm(Intensity ~ Concentration, data)
-  data$residuals <- residuals(model)
+  data$residuals <- residuals(model)/sd(residuals(model))
   outlier <- which(abs(data$residuals) > residual)
   
   dataRaw <- join(type = "right", data, dataRaw)
@@ -173,25 +177,27 @@ func_slider_LinearRange <- function(dat, metabolite, points = 5, adjR2 = 0.9, de
   
   
   linRange <- func_findLinearRange(tbl = tbl_lm, adjR2, degr, points )
+  linRange <- linRange %>% filter(lengthRange == max(lengthRange))
   
   if (any(linRange$Comment == "")) { # found one linear range, calculate slope and R2 for the whole range
-    sum.all <- lm(Intensity ~ Concentration, data = data[linRange$start:linRange$end,]) %>%
+    sum.all <- lm(Intensity ~ Concentration, data = dataRaw[linRange$start:linRange$end,]) %>%
       summary()
     alpha.rad <- atan(
-      (data$Intensity[linRange$end] - data$Intensity[linRange$start])/
-        (data$Concentration[linRange$end] - data$Concentration[linRange$start]))
+      (dataRaw$Intensity[linRange$end] - dataRaw$Intensity[linRange$start])/
+        (dataRaw$Concentration[linRange$end] - dataRaw$Concentration[linRange$start]))
     alpha.deg <- 180*alpha.rad/pi
     
     
-    linRange$IntensityStart <- data$Intensity[linRange$start]
-    linRange$IntensityEnd <- data$Intensity[linRange$end]
-    linRange$ConcenstrationStart <- data$Concentration[linRange$start]
-    linRange$ConcenstrationEnd <- data$Concentration[linRange$end]
+    linRange$IntensityStart <- dataRaw$Intensity[linRange$start]
+    linRange$IntensityEnd <- dataRaw$Intensity[linRange$end]
+    linRange$ConcenstrationStart <- dataRaw$Concentration[linRange$start]
+    linRange$ConcenstrationEnd <- dataRaw$Concentration[linRange$end]
     linRange$LinearRangeStart <- linRange$start
     linRange$LinearRangeEnd <- linRange$end
     linRange$adjr2 <- sum.all$adj.r.squared
     linRange$degree <- alpha.deg
-    linRange$maxadjR2 <- linRange$maxLinearRange
+    linRange$maxLinearRange <- linRange$maxLinearRange
+    linRange$maxadjR2 <- linRange$maxadjR2
     linRange$Comment <- paste0(sum(dataRaw$Comment == "Outlier"), " outliers and ", sum(dataRaw$Comment == "Missing"), " Missings excluded")
     linRange$PositionOfMissings <- ifelse(any(is.na(dataRaw$Intensity)),paste(dataRaw$DilutionPoint[dataRaw$Comment == "Missing"], collapse = "; "), NA)
     linRange$PositionOfOutliers <- ifelse(any(dataRaw$Comment %in% "Outlier"),paste(dataRaw$DilutionPoint[dataRaw$Comment == "Outlier"], collapse = "; "), NA)
@@ -214,14 +220,17 @@ func_slider_LinearRange <- function(dat, metabolite, points = 5, adjR2 = 0.9, de
     linRange$ConcenstrationEnd <- NA
     linRange$LinearRangeStart <- NA
     linRange$LinearRangeEnd <- NA
+    linRange$lengthRange <- NA
     linRange$adjr2 <- NA
+    maxLinearRange <- NA
     linRange$degree <- NA
     linRange$maxadjR2 <- NA
+    linRange$maxLinearRange <- NA
     linRange$Comment <- "no linear range"
     linRange$PositionOfMissings <- ifelse(any(is.na(dataRaw$Intensity)),paste(dataRaw$DilutionPoint[dataRaw$Comment == "Missing"]), "")
     linRange$PositionOfOutliers <- ifelse(any(dataRaw$Comment %in% "Outlier"),paste(dataRaw$DilutionPoint[dataRaw$Comment == "Outlier"]), "")
-    linRange$OutlierInLinearRange <- any(between(outlier,linRange$start, linRange$end ))
-    linRange$MissingInLinearRange <- any(between(NApos,linRange$start, linRange$end ))
+    linRange$OutlierInLinearRange <- NA
+    linRange$MissingInLinearRange <- NA
     linRange$type <- case_when(
       identical(sort(unique(dataRaw$Comment)), c("","Outlier")) ~ "Outlier",
       identical(sort(unique(dataRaw$Comment)), c("","Missing")) ~ "Missing",
@@ -231,168 +240,74 @@ func_slider_LinearRange <- function(dat, metabolite, points = 5, adjR2 = 0.9, de
     
   }
   
-  tbl_linear_Range[[metabolite]][["SummaryLinearRange"]] <- linRange %>% select(ID, IntensityStart, IntensityEnd, ConcenstrationStart, ConcenstrationEnd, LinearRangeStart, LinearRangeEnd, lengthRange, adjr2, degree, maxLinearRange, Comment, PositionOfOutliers, OutlierInLinearRange, PositionOfMissings, MissingInLinearRange, type)
+  tbl_linear_Range[[metabolite]][["SummaryLinearRange"]] <- linRange %>% select(ID, IntensityStart, IntensityEnd, ConcenstrationStart, ConcenstrationEnd, LinearRangeStart, LinearRangeEnd, lengthRange, adjr2, degree, maxadjR2,maxLinearRange, Comment, PositionOfOutliers, OutlierInLinearRange, PositionOfMissings, MissingInLinearRange, type)
   
-  # #tbl_lm <- slide(1:(nrow(data) - 2), ~slider_func_lm(tbl = data, x = .x)) %>% ldply
-  # 
-  # ## Outliers
-  # ##DFFIT is the change in the predicted value for a point, obtained when that point is left out of the regression
-  # 
-  # model <- lm(Intensity ~ Concentration, data)
-  # res <- residuals(model)
-  # outlier <- which(abs(res) > 3)
-  # # dffit <- as.data.frame(dffits(model))
-  # # thresh <- 2*sqrt((length(model$coefficients)-1)/nrow(data))
-  # # outlier <- which(abs(dffit) > thresh)
-  # # 
-  # # cooksd <- cooks.distance(lm(Intensity ~ Concentration, data)) # detect outlier with cooks distance
-  # # outlier <- which(cooksd > 4*mean(cooksd))
-  # 
-  # if (any(outlier)){
-  #   nrOutlier <- length(outlier)  
-  #   linRange <- tibble()
-  #   data_out <- data[-outlier, ]
-  #   tbl_lm_out <- slide(1:(nrow(data_out) - 2), ~func_lm(tbl = data_out, .x )) %>% ldply
-  #   
-  #   linRange <- func_findLinearRange(tbl =  tbl_lm_out, adjR2, degr, points)
-  #   
-  #   if(any(linRange$Comment == "")) {
-  #     sum.all <- lm(Intensity ~ Concentration, data = data_out[linRange$start : linRange$end,]) %>%
-  #       summary()
-  #     alpha.rad <- atan(
-  #       (data_out$Intensity[linRange$end] - data_out$Intensity[linRange$start])/
-  #         (data_out$Concentration[linRange$end] - data_out$Concentration[linRange$start]))
-  #     alpha.deg <- 180*alpha.rad/pi
-  #     
-  #     
-  #     
-  #     linRange$IntensityStart <- data_out$Intensity[linRange$start]
-  #     linRange$IntensityEnd <- data_out$Intensity[linRange$end]
-  #     linRange$ConcenstrationStart <- data_out$Concentration[linRange$start]
-  #     linRange$ConcenstrationEnd <- data_out$Concentration[linRange$end]
-  #     linRange$start <- data$DilutionPoint[data$Concentration == linRange$ConcenstrationStart]
-  #     linRange$end <- data$DilutionPoint[data$Concentration == linRange$ConcenstrationEnd]
-  #     linRange$adjr2 <- sum.all$adj.r.squared
-  #     linRange$degree <- alpha.deg
-  #     linRange$Comment <- paste0(nrOutlier," outlier excluded")
-  #     linRange$OutlierOrNAPos <- paste(outlier, collapse = "; ")
-  #     linRange$OutlierOrNAinRange <- any(between(outlier,linRange$start, linRange$end ))
-  #     linRange$type <- "Outlier"
-  #     
-  #     tbl_linear_Range[[2]] <- linRange
-  #   } else {
-  #     linRange <- tibble(
-  #       ID = metabolite,
-  #       start = NA,
-  #       end = NA,
-  #       IntensityStart = NA,
-  #       IntensityEnd = NA,
-  #       ConcenstrationStart = NA,
-  #       ConcenstrationEnd = NA,
-  #       adjr2 = NA,
-  #       degree = NA,
-  #       Comment = paste0(nrOutlier," outlier excluded, no linear Range"),
-  #       OutlierOrNAPos = paste(outlier, collapse = "; "),
-  #       OutlierOrNAinRange = any(between(outlier,linRange$start, linRange$end )),
-  #       lengthRange = NA,
-  #       type = "Outlier"
-  #     )
-  #     
-  #   }
-  # }
-  # 
-  # ## NAs
-  # 
-  # if (any(is.na(data$Intensity))){
-  #   nrNA <- sum(is.na(data$Intensity))
-  #   NApos <- which(is.na(data$Intensity))
-  #   linRange <- tibble()
-  #   data_na <- data[!is.na(data$Intensity), ]
-  #   tbl_lm_na <- slide(1:(nrow(data_na) - 2), ~func_lm(tbl = data_na, .x )) %>% ldply
-  #   
-  #   linRange <- func_findLinearRange(tbl =  tbl_lm_na, adjR2, degr, points)
-  #   
-  #   if(any(linRange$Comment == "")) {
-  #     sum.all <- lm(Intensity ~ Concentration, data = data_na[linRange$start : linRange$end,]) %>%
-  #       summary()
-  #     alpha.rad <- atan(
-  #       (data_na$Intensity[linRange$end] - data_na$Intensity[linRange$start])/
-  #         (data_na$Concentration[linRange$end] - data_na$Concentration[linRange$start]))
-  #     alpha.deg <- 180*alpha.rad/pi
-  #     
-  #     
-  #     linRange$IntensityStart <- data_na$Intensity[linRange$start]
-  #     linRange$IntensityEnd <- data_na$Intensity[linRange$end]
-  #     linRange$ConcenstrationStart <- data_na$Concentration[linRange$start]
-  #     linRange$ConcenstrationEnd <- data_na$Concentration[linRange$end]
-  #     linRange$start <- data$DilutionPoint[data$Concentration == linRange$ConcenstrationStart]
-  #     linRange$end <- data$DilutionPoint[data$Concentration == linRange$ConcenstrationEnd]
-  #     linRange$adjr2 <- sum.all$adj.r.squared
-  #     linRange$degree <- alpha.deg
-  #     linRange$Comment <- paste0(nrNA," NA excluded")
-  #     linRange$OutlierOrNAPos <- paste(NApos, collapse = "; ")
-  #     linRange$OutlierOrNAinRange <- any(between(NApos,linRange$start, linRange$end ))
-  #     linRange$type <- "NA"
-  #     
-  #     
-  #     tbl_linear_Range[[2]] <- linRange
-  #   } else {
-  #     linRange <- tibble(
-  #       ID = metabolite,
-  #       start = NA,
-  #       end = NA,
-  #       IntensityStart = NA,
-  #       IntensityEnd = NA,
-  #       ConcenstrationStart = NA,
-  #       ConcenstrationEnd = NA,
-  #       adjr2 = NA,
-  #       degree = NA,
-  #       Comment = paste0(nrNA," NA excluded, no linear Range"),
-  #       OutlierOrNAPos = paste(NApos, collapse = "; "),
-  #       OutlierOrNAinRange = any(between(NApos,linRange$start, linRange$end )),
-  #       lengthRange = NA,
-  #       type = "NA"
-  #     )
-  #     
-  #   }
-  # }
+  tbl_linear_Range[[metabolite]]$rawData <- 
+    tbl_linear_Range[[metabolite]]$rawData %>% 
+    filter(between(
+      DilutionPoint, 
+      tbl_linear_Range[[metabolite]][["SummaryLinearRange"]]$LinearRangeStart,
+      tbl_linear_Range[[metabolite]][["SummaryLinearRange"]]$LinearRangeEnd)) %>%
+    mutate(Comment = replace(Comment, row_number() == 1, "start"), Comment = replace(Comment, row_number() == n(), "end")) %>% 
+    
+    mutate(Comment = ifelse(Comment == "", "linear", Comment)) %>% 
+    rbind(tbl_linear_Range[[metabolite]]$rawData %>%
+        filter( DilutionPoint < tbl_linear_Range[[metabolite]][["SummaryLinearRange"]]$LinearRangeStart |
+            DilutionPoint > tbl_linear_Range[[metabolite]][["SummaryLinearRange"]]$LinearRangeEnd)) %>% 
+    arrange(DilutionPoint)
+      
   return(tbl_linear_Range)
 }
 
 # function histogram output
 
-func_hist_QC_summary <- function(dat = dataWithrange){
+func_hist_QC_summary <- function(datlist = dataWithrangeAll){
   
-  NAdat <- dat %>% filter(type == "NA") %>%  select(OutlierOrNAPos)
-  NAvec <- as.numeric(unlist(lapply( 1:nrow(NAdat), function(x) strsplit(NAdat[x, ],";")))) %>% table()
-  NANr  <- lapply(1:15, function(x) {
-    ifelse(x %in% names(NAvec),yes = NAvec[names(NAvec) == x],no = 0)
+  dataPlot <- lapply(1 : length(datlist), function(x) datlist[[x]][[1]][1]) %>% 
+    unlist(recursive = F, use.names = F) %>% 
+    ldply %>%  
+    distinct()
+  
+  dataPlotsum <- lapply(1 : length(datlist), function(x) datlist[[x]][[1]][3]) %>% 
+    unlist(recursive = F, use.names = F) %>% 
+    ldply %>%  
+    distinct() 
+
+  
+  NAdat <- dataPlot$DilutionPoint[dataPlot$Comment == "Missing"] %>% table()
+  NANr  <- lapply(1:length(unique(dataPlot$DilutionPoint)), function(x) {
+    ifelse(x %in% names(NAdat),yes = NAdat[names(NAdat) == x],no = 0)
   }) %>%  unlist()
   
-  Outdat <- dat %>% filter(type == "Outlier") %>%  select(OutlierOrNAPos)
-  Outvec <- as.numeric(unlist(lapply( 1:nrow(Outdat), function(x) strsplit(Outdat[x, ],";")))) %>% table()
-  OutNr  <- lapply(1:15, function(x) {
-    ifelse(x %in% names(Outvec),yes = Outvec[names(Outvec) == x],no = 0)
+  Outdat <- dataPlot$DilutionPoint[dataPlot$Comment == "Outlier"] %>% table()
+  OutNr  <- lapply(1:length(unique(dataPlot$DilutionPoint)), function(x) {
+    ifelse(x %in% names(Outdat),yes = Outdat[names(Outdat) == x],no = 0)
   }) %>%  unlist()
   
-  Compdat <- unique(dat$ID) %>% length
+  ValidDat <- dataPlot$DilutionPoint[dataPlot$Comment == "linear"] %>% table()
+  ValidNr  <- lapply(1:length(unique(dataPlot$DilutionPoint)), function(x) {
+    ifelse(x %in% names(ValidDat),yes = ValidDat[names(ValidDat) == x],no = 0)
+  }) %>%  unlist()
+ 
+  Compdat <- nrow(dataPlotsum)
   
   
   library(gridExtra)
   
   summary_dat <- tibble(
-    "Dilution Point" = c(1:15),
+    "Dilution Point" = 1 : length(unique(dataPlot$DilutionPoint)),
+    "Concentration" = unique(dataPlot$Concentration),
     "Nr of NAs" = NANr,
     "Nr of Outliers" = OutNr,
-    "Nr of linear points" = dat$lengthRange, 
-    "Nr of invalid Points" = rep(Compdat, 15) - NANr - OutNr - 
+    "Nr of linear points" = ValidNr, 
+    "Nr of non linear Points" = rep(Compdat, length(unique(dataPlot$DilutionPoint))) - NANr - OutNr - ValidNr
   )
 
  g <-  summary_dat %>% 
-    gather(key = "Nr", value = "Values", 2:4) %>%
+    gather(key = "Nr", value = "Values", 3:6) %>%
     #mutate(DP = `Dilution Points`) %>% 
   
-  ggplot( aes(x = `Dilution Points` , y = Values, fill = Nr )) +
+  ggplot( aes(x = `Dilution Point` , y = Values, fill = Nr )) +
     geom_bar(width = 0.5, position = position_dodge(), stat = "identity") +
     theme_bw() +
     scale_x_continuous(breaks = seq(0, 15, by = 1)) +
@@ -404,10 +319,76 @@ func_hist_QC_summary <- function(dat = dataWithrange){
  tbl <- tableGrob(summary_dat, rows=NULL)
  
  grid.arrange(g, tbl,
-             ncol=2,
-             as.table=TRUE)
+             ncol = 1,
+             as.table = TRUE)
   
 }
+
+func_plot_linearRange <- function(datlist, IDs){
+  #plot data with linear range
+  
+  dataPlot <- lapply(1 : length(datlist), function(x) datlist[[x]][[1]][1]) %>% 
+    unlist(recursive = F, use.names = F) %>% 
+    ldply %>%  
+    distinct()
+  
+  dataPlotsum <- lapply(1 : length(datlist), function(x) datlist[[x]][[1]][3]) %>% 
+    unlist(recursive = F, use.names = F) %>% 
+    ldply %>%  
+    distinct() %>% 
+    filter( ID %in% IDs, !is.na(IntensityStart))
+  
+  data_plot <- dataPlot %>% filter( ID %in% IDs) %>% mutate(color = "black", size = 2)
+  
+  data_plot_out <- data_plot[!(data_plot$Comment == "Outlier"), ]
+  
+  data_plot$color[data_plot$Comment %in% c("linear", "start", "end")] <- "green"
+  
+  data_plot$size[data_plot$Comment %in% c("linear", "start", "end")] <- 4
+  
+  
+  maxRange <- data.frame(t(sapply(dataPlotsum$ID, function(x) cbind(strsplit(dataPlotsum[dataPlotsum$ID == x, c("maxLinearRange")], " : ")[[1]][1],strsplit(dataPlotsum[dataPlotsum$ID == x, c("maxLinearRange")], " : ")[[1]][2]))))
+  maxRange <- maxRange %>% mutate(ID = rownames(maxRange), start = as.integer(X1), end = as.integer(X2)) 
+  
+  
+  data_plot <- join(maxRange, data_plot)
+  data_maxRange <- data_plot %>% group_by(ID) %>%  filter(DilutionPoint >= start & DilutionPoint <= end )
+  
+  #data_plot$color[dataWithrange[dataWithrange$ID == meta, c("LinearRangeEnd")]] <- "green"
+  #data_plot$size[dataWithrange[dataWithrange$ID == meta, c("LinearRangeEnd")]] <- 4
+  # data_plot$color[ 
+  #   strsplit(dataPlotsum[dataPlotsum$ID == IDs, c("maxLinearRange")], " : ")[[1]][1] :
+  #     strsplit(dataPlotsum[dataPlotsum$ID == IDs, c("maxLinearRange")], " : ")[[1]][2]] <- "purple"
+  
+  data_plot$color[data_plot$Comment == "Outlier"] <- "red"
+  data_plot$line[data_plot$Comment == "Missing"] <- data_plot$Concentration[data_plot$Comment == "Missing"]
+  
+#reg <- data_plot %>% group_by(ID)  %>% lm(formula = Intensity~poly(Concentration,2))
+
+
+  data_plot %>% group_by(ID) %>% 
+   
+  ggplot( aes(Concentration, Intensity)) + 
+    geom_point(color = data_plot$color, size = data_plot$size) +
+    geom_point(data = data_maxRange, color = "purple", size = data_maxRange$size) +
+    geom_line() + 
+     
+    geom_vline(xintercept = data_plot$Concentration[data_plot$Comment == "Missing"], color = "red") +
+    facet_wrap(~ID, scales = "free_y") + 
+    #geom_vline( aes(xintercept = line, color = "red")) +
+    geom_smooth(data = data_plot[data_plot$Comment %in% c("linear", "start", "end"),], method = lm) +
+   # stat_smooth(data = data_plot[data_plot$Comment %in% c("linear", "start", "end"),] %>%  drop_na(), method = "lm", formula = y ~ poly(x,2), aes(Concentration, reg$fitted.values, col = "Order 1")) +
+
+    #geom_smooth(data = data_plot_out[c(dataPlotsum[dataPlotsum$ID %in% IDs, c("LinearRangeStart")] : dataPlotsum[dataPlotsum$ID %in% IDs, c("LinearRangeEnd")]), ],method = lm,) + 
+    theme_bw() #+
+    #scale_x_continuous(breaks = seq(0, 3, by = 0.25))
+  
+}
+
+
+
+
+
 ```
 ```{r simulating test scenarios}
 
@@ -475,128 +456,431 @@ ggplot(aes(Concentration, Intensity)) +
   facet_wrap(~ID, scales = "free_y")
 
 rm(metabolite, adjR2, degr, points, dat)
-dataWithrangeAll <- lapply(unique(data_c$ID),function(x) {func_slider_LinearRange(dat = data_c, metabolite = x, points = 5, adjR2 = 0.85, degr = 10)})
+dataWithrangeAll <- lapply(unique(data_c$ID),function(x) {func_slider_LinearRange(dat = data_c, metabolite = x, points = 5, adjR2 = 0.85, degr = 10, residual = 2)})
 
 dataWithrange <- lapply(1 :length(dataWithrangeAll), function(x) dataWithrangeAll[[x]][[1]][3]) %>% unlist(recursive = F, use.names = F) %>% ldply %>%  distinct()
 dataWithrange
 
 #plot data with linear range
-meta = "metabolite NA4"
 
-dataPlot <- lapply(1 :length(dataWithrangeAll), function(x) dataWithrangeAll[[x]][[1]][1]) %>% unlist(recursive = F, use.names = F) %>% ldply %>%  distinct()
+func_plot_linearRange(datlist = dataWithrangeAll, IDs = "metabolite out4")
 
-data_plot <- dataPlot %>% filter( ID == meta) %>% mutate(color = "black", size = 2)
-data_plot$color[c(dataWithrange[dataWithrange$ID == meta, c("LinearRangeStart")] : dataWithrange[dataWithrange$ID == meta, c("LinearRangeEnd")])] <- "green"
-data_plot$size[c(dataWithrange[dataWithrange$ID == meta, c("LinearRangeStart")] : dataWithrange[dataWithrange$ID == meta, c("LinearRangeEnd")])] <- 4
-#data_plot$color[dataWithrange[dataWithrange$ID == meta, c("LinearRangeEnd")]] <- "green"
-#data_plot$size[dataWithrange[dataWithrange$ID == meta, c("LinearRangeEnd")]] <- 4
-data_plot$color[data_plot$Comment == "Outlier"] <- "red"
-data_plot$color[ strsplit(dataWithrange[dataWithrange$ID == meta, c("maxLinearRange")], " : ")[[1]][1] : strsplit(dataWithrange[dataWithrange$ID == meta, c("maxLinearRange")], " : ")[[1]][2]] <- "purple"
-
-ggplot(data_plot, aes(Concentration, Intensity)) + 
-  geom_point(color = data_plot$color, size = data_plot$size) + 
-  geom_line() + 
-  geom_smooth(data = data_plot[c(dataWithrange[dataWithrange$ID == meta, c("LinearRangeStart")] : dataWithrange[dataWithrange$ID == meta, c("LinearRangeEnd")]), ],method = lm) +  
-  geom_vline(xintercept = data_plot$DilutionPoint[data_plot$Comment == "Missing"], color = "red") +
-  facet_wrap(~ID, scales = "free_y") + 
-  theme_bw() #+ geom_smooth(method='lm')
-
-
+func_hist_QC_summary(datlist = dataWithrangeAll)
 ```
 Real data
 
-```{r data preparation, results ='hide'}
+```{r real data data preparation, results ='hide'}
 
-data_tbl_raw <- read.csv(file.path("..", "data/input/20211216_DataSet_Replicates_Updated.csv"), header = T, check.names = F, blank.lines.skip = TRUE)
+data_tbl_raw <- read.csv(file.path("..", "data/input/20211217_DataMatrixD_Replicates_Updated.csv"), header = T, check.names = F, blank.lines.skip = TRUE)
 
-
-
-
-RSD <- round(sd(x)/mean(x) * 100, digits = 1)
-
-
-
-data_tbl_work <- data_tbl_raw2 %>% 
-  slice(-c(1:6, 16:17, 27:28)) %>%
-  gather(key = "Metabolite", value = "Intensity", 3:ncol(data_tbl_raw2)) %>%
-  separate(Sample, c("Time", "Batch"), "_", remove = FALSE, extra = "merge") %>%
-  arrange(Metabolite, Batch) %>%
-  mutate(Intensity = as.numeric(Intensity)) %>% 
-  unite("ID",c(Batch, Metabolite), remove = FALSE)
-
-data_table_extract <- tibble(
-  Metabolite = unique(data_tbl_work$Metabolite),
-  MZ = unlist(data_tbl_raw2[4,-c(1:2)],use.names = F ),
-  RT = unlist(data_tbl_raw2[5,-c(1:2)],use.names = F)
-)
-
-data_tbl_work <- left_join(data_tbl_work, data_table_extract, by = "Metabolite")
+data_tbl_work1 <- data_tbl_raw %>% 
+  mutate(Intensity = as.numeric(Area), Concentration = as.numeric(Dilution), ID = Compound, .keep = "unused" )
+  
+#RSD <- round(sd(x)/mean(x) * 100, digits = 1)
 
 ```
 
 Need input table called "data_tbl_work" with minimal following colnames:
 ID, MZ, RT, Concentration, Intensity
 
-```{r data wrangling, results ='hide'}
+```{r label = "211231 data wrangling - adjR2 = 0.85, degree = 10, residual = 2", results ='hide'}
 
-#generate result table template with 3 columns ID, MZ, RT
-data_tbl_result <- data_tbl_work %>% group_by(ID) %>% select(ID, MZ, RT) %>% distinct()
+#FEAT_106_05__396_628, FEAT_120_091__335_893, FEAT_167_086__30_772, FEAT_195_003__438_391, FEAT_166_084__336_637, FEAT_147_077__395_524, FEAT_72_0813__341_261, FEAT_144_102__332_147, FEAT_211_144__31_6455, FEAT_546_353__229_961, FEAT_592_502__27_4584 
 
-# remove all metabolites with less than 5 points
 
-data_tbl_result <- data_tbl_work %>% 
-  group_by(ID) %>% 
-  summarise( "excluded" = !sum(!is.na(Intensity)) >= 5,
-    "nConcentration" = sum(!is.na(Intensity))) %>% 
-  mutate("Comment" = ifelse(excluded, "not enough measure points for linear regression", NA)) %>% 
-  left_join(., data_tbl_result, by = "ID") %>% 
-  select(ID, MZ, RT, everything())
+data_tbl_work <- data_tbl_work1 %>% 
+  filter( Replicate == 1, ID %in% c('FEAT_106_05__396_628', 'FEAT_120_091__335_893', 'FEAT_167_086__30_772', 'FEAT_195_003__438_391', 'FEAT_166_084__336_637', 'FEAT_147_077__395_524', 'FEAT_72_0813__341_261', 'FEAT_144_102__332_147', 'FEAT_211_144__31_6455', 'FEAT_546_353__229_961', 'FEAT_592_502__27_4584')) %>% 
+  arrange(Concentration)
 
+# plot data
+#data_tbl_work$Concentration[data_tbl_work$ID == 'FEAT_167_086__30_772']
+reg1 <- data_tbl_work %>%  filter(ID == 'FEAT_120_091__335_893') %>% mutate(log_conc = log(Concentration)) %>%lm(formula = Intensity~poly(log_conc,1))
+reg2 <- data_tbl_work %>%  filter(ID == 'FEAT_167_086__30_772') %>% mutate(log_conc = log(Concentration)) %>%lm(formula = Intensity~poly(log_conc,2))
+
+#stat_smooth(method = "lm", formula = y~poly(x,1), aes(Concentration, reg1$fitted.values, col = "Order 1"))
+
+
+
+ data_tbl_work %>% 
+   drop_na() %>% 
+   #filter(ID == 'FEAT_167_086__30_772') %>%  
+   mutate(log_conc = log(Concentration)) %>%   
+ggplot(aes(log_conc, Intensity)) +
+  geom_point() + 
+  geom_line() + 
+   geom_line(aes(log_conc, Intensity)) +
+  theme_bw() +
+  geom_smooth(method = lm) +
+   #stat_smooth(method = "lm", formula = y~poly(x,2), aes(log_conc, reg2$fitted.values, col = "Order 1")) +
+  #scale_y_continuous(limits = c(0, 30), breaks = seq(0, 12, by = 1)) +
+  facet_wrap(~ID, scales = "free_y")
+
+
+ data_tbl_work <- data_tbl_work %>%  mutate(Concentration_raw = Concentration, Concentration = log(Concentration))
+
+dataWithrangeAll <- lapply(unique(data_tbl_work$ID),function(x) {func_slider_LinearRange(dat = data_tbl_work, metabolite = x, points = 5, adjR2 = 0.85, degr = 10, residual = 2)})
+
+dataWithrange <- lapply(1 :length(dataWithrangeAll), function(x) dataWithrangeAll[[x]][[1]][3]) %>% unlist(recursive = F, use.names = F) %>% ldply %>%  distinct()
+dataWithrange
+
+#plot data with linear range
+
+h <- !unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]
+g <- unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]]
+
+func_plot_linearRange(datlist = dataWithrangeAll[h], IDs = g)
+
+func_hist_QC_summary(datlist = dataWithrangeAll)
+```
+
+```{r label = "220110 data wrangling - adjR2 = 0.90, degree = 10, residual = 2", results ='hide'}
+
+#FEAT_106_05__396_628, FEAT_120_091__335_893, FEAT_167_086__30_772, FEAT_195_003__438_391, FEAT_166_084__336_637, FEAT_147_077__395_524, FEAT_72_0813__341_261, FEAT_144_102__332_147, FEAT_211_144__31_6455, FEAT_546_353__229_961, FEAT_592_502__27_4584 
+
+
+data_tbl_work <- data_tbl_work1 %>% 
+  filter( Replicate == 1, ID %in% c('FEAT_106_05__396_628', 'FEAT_120_091__335_893', 'FEAT_167_086__30_772', 'FEAT_195_003__438_391', 'FEAT_166_084__336_637', 'FEAT_147_077__395_524', 'FEAT_72_0813__341_261', 'FEAT_144_102__332_147', 'FEAT_211_144__31_6455', 'FEAT_546_353__229_961', 'FEAT_592_502__27_4584')) %>% 
+  arrange(Concentration)
+
+# plot data
+# data_tbl_work %>% filter(ID == 'FEAT_120_091__335_893') %>%   
+# ggplot(aes(Concentration, Intensity)) +
+#   geom_point() + 
+#   geom_line() + 
+#   theme_bw() +
+#   geom_smooth(method = stats::lm(Intensity ~ Concentration, data, weights = 1/Concentration^2))
+#   #scale_y_continuous(limits = c(0, 30), breaks = seq(0, 12, by = 1)) +
+#   facet_wrap(~ID, scales = "free_y")
+
+
+
+dataWithrangeAll <- lapply(unique(data_tbl_work$ID),function(x) {func_slider_LinearRange(dat = data_tbl_work, metabolite = x, points = 5, adjR2 = 0.9, degr = 10, residual = 2)})
+
+dataWithrange <- lapply(1 :length(dataWithrangeAll), function(x) dataWithrangeAll[[x]][[1]][3]) %>% unlist(recursive = F, use.names = F) %>% ldply %>%  distinct()
+dataWithrange
+
+#plot data with linear range
+h <- !unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]
+g <- unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]]
+
+
+
+bla <- list()
+
+for(x in 1 : length(g)){
+    
+ bla[x] <-  func_plot_linearRange(datlist = dataWithrangeAll[h], IDs = g[x])
+    
+  }
+print(
+ bla[1], bla[2]
+)
+
+grid.arrange(
+  func_plot_linearRange(datlist = dataWithrangeAll, IDs = unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]][1]),
+    func_plot_linearRange(datlist = dataWithrangeAll, IDs = unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]][2]),
+      func_plot_linearRange(datlist = dataWithrangeAll, IDs = unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]][3]),
+        func_plot_linearRange(datlist = dataWithrangeAll, IDs = unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]][4]),
+          func_plot_linearRange(datlist = dataWithrangeAll, IDs = unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]][5]),
+            func_plot_linearRange(datlist = dataWithrangeAll, IDs = unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]][6]),
+              func_plot_linearRange(datlist = dataWithrangeAll, IDs = unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]][7]),
+                func_plot_linearRange(datlist = dataWithrangeAll, IDs = unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]][8]),
+                  func_plot_linearRange(datlist = dataWithrangeAll, IDs = unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]][9]),
+                    func_plot_linearRange(datlist = dataWithrangeAll, IDs = unique(data_tbl_work$ID)[!unique(data_tbl_work$ID) %in% dataWithrange$ID[dataWithrange$Comment == "no linear range"]][10]),
+                      ncol = 4
+)  
+
+
+
+func_hist_QC_summary(datlist = dataWithrangeAll)
 ```
 
 
+```{r triplicates}
+
+data_tbl_work <- data_tbl_work1 %>% 
+  filter(ID %in% c('FEAT_106_05__396_628', 'FEAT_120_091__335_893', 'FEAT_167_086__30_772', 'FEAT_195_003__438_391', 'FEAT_166_084__336_637', 'FEAT_147_077__395_524', 'FEAT_72_0813__341_261', 'FEAT_144_102__332_147', 'FEAT_211_144__31_6455', 'FEAT_546_353__229_961', 'FEAT_592_502__27_4584')) %>% 
+  #mutate(ID = paste( ID, Replicate,sep = "_" )) %>% 
+  arrange(Concentration)
+
+dataWithrangeAll <- lapply(unique(data_tbl_work$ID),function(x) {func_slider_LinearRange(dat = data_tbl_work, metabolite = x, points = 5, adjR2 = 0.85, degr = 10, residual = 2)})
+
+dataWithrange <- lapply(1 :length(dataWithrangeAll), function(x) dataWithrangeAll[[x]][[1]][3]) %>% unlist(recursive = F, use.names = F) %>% ldply %>%  distinct()
+dataWithrange
+
+
+data_tbl_work %>% filter(ID %in% c('FEAT_106_05__396_628')) %>% 
+  ggplot(aes( x = Concentration, y = Intensity, color = Replicate)) +
+  geom_point() +
+  
+
+
+RSD <- data_tbl_work %>% 
+  group_by(ID, Concentration) %>% 
+  summarize(mean = abs(mean(Intensity, na.rm = T)), sd = sd(Intensity, na.rm = T), RSD = round(100 * sd(Intensity, na.rm = T)/abs(mean(Intensity, na.rm = T)), digits = 1))
+
+RSD <- RSD %>% 
+  mutate(RSDsum = case_when(
+    RSD < 15 ~ '< 15 %',
+    RSD < 20 ~ '< 20 %',
+    RSD < 25 ~ '< 25 %',
+    RSD < 30 ~ '< 30 %',
+    TRUE ~  '> 30 %'
+  ))
+
+# barplot
+RSD %>% group_by(Concentration, RSDsum) %>% summarise(n = n()) %>% 
+  ggplot( aes(x = as.factor(Concentration), y = n,  fill = RSDsum)) + 
+  geom_bar(width = 0.5, position = position_dodge(), stat = "identity") +
+  scale_y_continuous(breaks = seq(0, 12, by = 1))
+
+
+# boxplot
+RSD %>% 
+  ggplot( aes(x = as.factor(Concentration), y = RSD)) +
+  geom_boxplot() +
+  geom_hline(yintercept = 30)
+
+
+ggplot( aes(x = `Dilution Point` , y = Values, fill = Nr )) +
+    geom_bar(width = 0.5, position = position_dodge(), stat = "identity") +
+    theme_bw() +
+    scale_x_continuous(breaks = seq(0, 15, by = 1)) +
+    scale_y_continuous(breaks = seq(0, 12, by = 1))
+    # 
+
+RSD_average <- data_tbl_work %>% 
+  group_by(Concentration) %>% 
+  summarize(mean = abs(mean(Intensity, na.rm = T)), sd = sd(Intensity, na.rm = T), RSD = round(100 * sd(Intensity, na.rm = T)/abs(mean(Intensity, na.rm = T)), digits = 1))
+
+
+
+```
+
+```{r label = "data for polynomial approach"}
+
+data_tbl_raw <- read.csv(file.path("..", "data/input/20211217_DataMatrixD_Replicates_Updated.csv"), header = T, check.names = F, blank.lines.skip = TRUE)
+
+data_tbl_work1 <- data_tbl_raw %>% 
+  mutate(Intensity = as.numeric(Area), Concentration = as.numeric(Dilution), ID = Compound, .keep = "unused" )
+
+name = 'FEAT_120_091__335_893'
+
+data_tbl_work <- data_tbl_work1 %>% 
+  filter( Replicate == 1, ID %in% c('FEAT_106_05__396_628', 'FEAT_120_091__335_893', 'FEAT_167_086__30_772', 'FEAT_195_003__438_391', 'FEAT_166_084__336_637', 'FEAT_147_077__395_524', 'FEAT_72_0813__341_261', 'FEAT_144_102__332_147', 'FEAT_211_144__31_6455', 'FEAT_546_353__229_961', 'FEAT_592_502__27_4584')) %>% 
+  arrange(Concentration)
+
+dat <- data_tbl_work %>% 
+          drop_na() %>% 
+         #filter(ID == 'FEAT_546_353__229_961') %>% 
+         filter(ID == name) %>%
+         #filter(ID == 'FEAT_592_502__27_4584') %>%
+         mutate(log_conc = log(Concentration))
+
+```
+```{r categorize}
+
+# use package sicegar to categorize signals
+library(sicegar)
+
+dat.red <- dat %>%   mutate(time = log(Concentration) + 3, intensity = Intensity) %>% select(time, intensity)
+
+dat.norm <- normalizeData(dataInput = dat.red)
+
+sigmoidalModel <- multipleFitFunction(dataInput = dat.norm,
+                                          model = "sigmoidal",
+                                          n_runs_min = 20,
+                                          n_runs_max = 500,
+                                          showDetails = FALSE)
+
+doubleSigmoidalModel <- multipleFitFunction(dataInput = dat.norm,
+                                                model = "doublesigmoidal",
+                                                n_runs_min = 20,
+                                                n_runs_max = 500,
+                                                showDetails = FALSE)
+# Calculate additional parameters
+sigmoidalModel <- parameterCalculation(sigmoidalModel)
+
+# Calculate additional parameters
+doubleSigmoidalModel <- parameterCalculation(doubleSigmoidalModel)
+
+decisionProcess <- categorize(threshold_minimum_for_intensity_maximum = 0.3,
+                                      threshold_intensity_range = 0.1,
+                                      threshold_t0_max_int = 0.05*10000000,
+                                      parameterVectorSigmoidal = sigmoidalModel,
+                                      parameterVectorDoubleSigmoidal = doubleSigmoidalModel)
+                                      
+fig01 <- sicegar::figureModelCurves(dataInput = dat.norm,
+                                  doubleSigmoidalFitVector = doubleSigmoidalModel,
+                                  showParameterRelatedLines = TRUE)
+print(fig01)
+
+fig02 <- sicegar::figureModelCurves(dataInput = dat.norm,
+                                  sigmoidalFitVector = sigmoidalModel,
+                                  showParameterRelatedLines = TRUE)
+print(fig02)
+
+```
+```{r find linear range}
+# fit with polynomial function
+a <- lm(data = dat, formula = Intensity ~ poly(log_conc,1))
+b <- lm(data = dat, formula = Intensity ~ poly(log_conc,2))
+c <- lm(data = dat, formula = Intensity ~ poly(log_conc,3))
+d <- lm(data = dat, formula = Intensity ~ poly(log_conc,4))
+
+# calculate correaltion
+cor.poly <- c(
+  cor(dat$Intensity, predict(a)),
+  cor(dat$Intensity, predict(b)),
+  cor(dat$Intensity, predict(c)),
+  cor(dat$Intensity, predict(d))
+)
+
+cor.max <-  which(cor.poly == max(cor.poly))
+cor.max <- get(chartr("1234", "abcd",cor.max))
+#e <- glm(family = "poisson", data = dat, formula = Intensity ~ log_conc)
+
+fitted(cor.max)
+#sum((fitted(b) - dat.red$time)^2)
+
+# plot raw data
+plot(dat$Intensity ~ dat$Concentration, pch = 19)
+title(name)
+
+# plot log transformed data
+plot(dat$Intensity ~ dat$log_conc, pch = 19)
+title(name)
+
+# plot fitted curve
+lines(y = fitted(cor.max), x = dat$log_conc, col = "green")
+
+# calculate halfmax intensity of fitted curve
+int50 <- DescTools::Closest(x = dat$Intensity,a = max(fitted(d))/2, which = TRUE)
+
+
+#create linear regression line going through int50
+linear.range <- lm(fitted(d)[(int50 - 1) : (int50 + 1)] ~ dat$log_conc[(int50 - 1) : (int50 + 1)])
+abline.intensity <- coef(linear.range)[1] + coef(linear.range)[2]*dat$log_conc
+
+abline(h = 0, lty = "dashed")
+concentrationAt0 <- (0 - coef(linear.range)[1] )/ coef(linear.range)[2]
+
+# compare regression line with fitted curve, calculate normalized differences, determine linear range start and end
+
+ndx <- which(abs((abline.intensity - fitted(c))/max(abs(abline.intensity - fitted(c)))) < 0.5)
+
+abline(linear.range, col = "red")
+abline(v = dat$log_conc[ndx[1]], lty = "dashed")
+abline(v = dat$log_conc[tail(ndx,1)], lty = "dashed")
+
+
+
+
+# slopes <- function(x, dat = dat){
+# (fitted(c)[x] - fitted(c)[x+1]) /(dat$log_con[x] - dat$log_con[x + 1])
+# 
+# }
+# 
+# slopes(x = 1)
+# 
+# lines(y = int50, x = dat$log_conc[dat$Intensity == int50], col = "purple", type = "p", cex = 4)
+
+
+
+```
+
+other possibilities: 
+
+library(dr4pl)
+
+a <- dr4pl(dose = sample_data_1$Dose,
+             response = sample_data_1$Response,
+             method.init = "logistic")
+  d = plot(a)
+  d + geom_hline(yintercept = a$parameters[1]) + geom_hline(yintercept = a$parameters[4])
+  
+  
+  dat <- data_tbl_work %>% 
+          drop_na() %>% 
+         filter(ID == 'FEAT_546_353__229_961') %>%  
+         mutate(log_conc = log(Concentration))
+  
+  
+  a <- dr4pl(dose = dat$Concentration,
+             response = dat$Intensity,
+             method.init = "logistic")
+  d = plot(a)
+  d + geom_hline(yintercept = a$parameters[1]) + geom_hline(yintercept = a$parameters[4])
+  
+  
+  
+  
+
+  ##Use default or Assign method.init = "Mead" to use Mead's method of estimation.
+  # Use method.robust to select desired loss function
+  # formula method
+  b <- dr4pl(formula = Response~Dose,
+             data = sample_data_4,
+             method.init = "Mead",
+             method.robust = "Tukey" )
+  plot(b)
+
+  #data.frame method
+  c <- dr4pl(data = sample_data_10,
+             dose = Dose,
+             response = Response)
+  plot(c)
+
+  ##compatable with ggplot
+  library(ggplot2) #load ggplot2
+  c <- dr4pl(Response~Dose,
+             data = drc_error_2,
+             method.optim = "CG",
+             trend = "decreasing" )
+  d <- plot(c, x.breaks = c(.00135, .0135, .135, 1.35, 13.5))
+  d + theme_grey()
+
+
+library(drda)
+
+fit = drda(data = dat, formula = Intensity ~ Concentration, is_log = F, mean_function = "logistic4")
+fit2 = drda(data = dat, formula = Intensity ~ Concentration, is_log = F, mean_function = "logistic2")
+
+
+
+summary(fit)
+#fit$
+plot(fit2)
+
+
+library(drc)
+
+fit <- drm(Intensity ~ Concentration, data = dat, fct =LL.4())
+
+summary(fit)
+
+plot(fit)
+plot(fit, level = c(1,2), add = T,col = TRUE)
 
 
 
 
 
+dat <- data_c %>% filter(ID == "metabolite CC1") %>% mutate(log_conc = Concentration)
 
 
 
+sigmoid = function(x) {
+   1 / (1 + exp(-x))
+}
 
 
 
+#sse <- sum((fitted(a) - dat.red$time)^2)
 
 
 
-
-
-
-
-
-
-# ~2000 peaks
-start = Sys.time()
-
-dataWithrange.complete <- lapply(unique(data_tbl_complete$ID),function(x) {
-  slider_func_group(dat = data_tbl_complete, metabolite = x, points = 5, adjR2 = 0.85, degr = 10)}) %>%
-  unlist(., recursive = F) %>%
-  ldply
-
-end = Sys.time()
-end - start
-dataWithrange.complete
-
-
-
-
-
-
-
-
-
-
-
+ 
  ###
 #slope in degree
 # Satz des Pythagoras:  tan(alpha) = Gegenkathete / Ankathete  -> alpha = arctan((y3-y1)/(x3-x1))
@@ -604,65 +888,6 @@ dataWithrange.complete
 ##########
 
  
-ggplot(data, aes(Concentration, Intensity)) + geom_point() + geom_line() #+ geom_smooth(method='lm')
-
-slider_func_group <- function(dat, metabolite){
-  dat %>% filter(ID == metabolite) %>% 
-    
-    slide(., ~slider_func_lm(tbl = .x), .before = 1, .complete = TRUE) %>%
-    ldply %>% 
-    select(term, estimate) %>% 
-    mutate("ID" = metabolite) 
-}
-
-data_tbl_logSlope <- ldply(unique(data_tbl_complete$ID),function(x) {slider_func_group(data_tbl_complete, x)})
-
-
-
-
-
-
-# data_tbl_raw3 <- read.csv("C:/Users/wiebachj/OneDrive - Charité - Universitätsmedizin Berlin/Kirwan/20210525_Ratios_using_IS.csv", header = T, check.names = F, skip = 0)
-
-
-# data_tbl_raw <- read.csv("C:/Users/wiebachj/OneDrive - Charité - Universitätsmedizin Berlin/Kirwan/Dilutionseries_B1_pos.csv", header = T, check.names = F)
-# 
-# data_tbl_test <- data_tbl_raw %>% gather(key = "Metabolite", value = "Intensity", 3:ncol(data_tbl_raw)) %>%
-#   separate(Metabolite, c("Metabolite", "Rest"), "_") %>%
-#   arrange(Metabolite, Sample_ID)
-# 
-# 
-# data_tbl_test %>%
-# filter(between(as.numeric(data_tbl_test$Metabolite), as.numeric(data_tbl_raw2$BIN_000240_SECIMPos[4]) - 0.0005, as.numeric(data_tbl_raw2$BIN_000240_SECIMPos[4]) + 0.0005))
-
-
-#147.1127
-
-## look at the data
-#data_tbl %>% filter(Metabolite == "147.112692632533_52.1715469360352") %>%
-pdf("plots.pdf", , onefile = TRUE)  
-for (metabolite in unique(data_tbl$Metabolite)) {
-  progress_time() 
-  title <- as.character(metabolite)
-  data <- data_tbl %>% filter(Metabolite == metabolite) 
-  metplot <- ggplot(data, aes(x = `Concentration`, y = Intensity, group = ID, color = Batch)) + geom_point() + geom_line() + ggtitle(title)
-  print(metplot)
- 
-
-}  
-dev.off()
-#-------------
-#Questions: 
-#1. How treating missing values? 
-#2. How many measuring points are necessary?
-#3. When is linear biological linear? What is with spikes or drops?
-#--------------
-
-
-
-
-
-```
 
 ***
 
