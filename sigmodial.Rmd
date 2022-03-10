@@ -51,15 +51,15 @@ https://davisvaughan.github.io/slider/
 # function func_lm performs linear regression for 3 consecutive points, starting at point x
   # input : data table with column names [Intensity, Concentration, ID]
   # output: tibble with informations about ID, analyzed point x, n distance and degree, and adjusted R2
-func_lm <- function(tbl, x){
+func_lm <- function(tbl, x, explanVar = 'Concentration'){
   
   tbl_linear_Range <- list()
-  lm_sum <- lm(Intensity ~ Concentration, data = tbl[x : (x + 2),]) %>%
+  lm_sum <- lm(Intensity ~ get(explanVar), data = tbl[x : (x + 2),]) %>%
     summary()
   
-  alpha.rad <- atan(
-    (tbl$Intensity[x + 2] - tbl$Intensity[x])/
-    (tbl$Concentration[x + 2] - tbl$Concentration[x]))
+  slope <- coef(lm_sum)[2]
+  alpha.rad <- atan(slope)
+  
   alpha.deg <- 180*alpha.rad/pi
   
     
@@ -284,7 +284,7 @@ func_hist_QC_summary <- function(datlist = dataWithrangeAll){
     ifelse(x %in% names(Outdat),yes = Outdat[names(Outdat) == x],no = 0)
   }) %>%  unlist()
   
-  ValidDat <- dataPlot$DilutionPoint[dataPlot$Comment == "linear"] %>% table()
+  ValidDat <- dataPlot$DilutionPoint[dataPlot$Comment %in% c("linear", "start", "end")] %>% table()
   ValidNr  <- lapply(1:length(unique(dataPlot$DilutionPoint)), function(x) {
     ifelse(x %in% names(ValidDat),yes = ValidDat[names(ValidDat) == x],no = 0)
   }) %>%  unlist()
@@ -300,7 +300,7 @@ func_hist_QC_summary <- function(datlist = dataWithrangeAll){
     "Nr of NAs" = NANr,
     "Nr of Outliers" = OutNr,
     "Nr of linear points" = ValidNr, 
-    "Nr of non linear Points" = rep(Compdat, length(unique(dataPlot$DilutionPoint))) - NANr - OutNr - ValidNr
+    "Nr of non valid Points" = rep(Compdat, length(unique(dataPlot$DilutionPoint))) - ValidNr
   )
 
  g <-  summary_dat %>% 
@@ -370,12 +370,13 @@ func_plot_linearRange <- function(datlist, IDs){
    
   ggplot( aes(Concentration, Intensity)) + 
     geom_point(color = data_plot$color, size = data_plot$size) +
-    geom_point(data = data_maxRange, color = "purple", size = data_maxRange$size) +
+    #geom_point(data = data_maxRange, color = "purple", size = data_maxRange$size) +
     geom_line() + 
      
-    geom_vline(xintercept = data_plot$Concentration[data_plot$Comment == "Missing"], color = "red") +
+    # geom_vline(xintercept = data_plot$Concentration[data_plot$Comment == "Missing"], color = "red") +
     facet_wrap(~ID, scales = "free_y") + 
-    #geom_vline( aes(xintercept = line, color = "red")) +
+    #geom_vline(xintercept = data_plot$Concentration[data_plot$Comment == "Missing"], color = "red") +
+    geom_vline( aes(xintercept = line, color = "red")) +
     geom_smooth(data = data_plot[data_plot$Comment %in% c("linear", "start", "end"),], method = lm) +
    # stat_smooth(data = data_plot[data_plot$Comment %in% c("linear", "start", "end"),] %>%  drop_na(), method = "lm", formula = y ~ poly(x,2), aes(Concentration, reg$fitted.values, col = "Order 1")) +
 
@@ -461,9 +462,10 @@ dataWithrangeAll <- lapply(unique(data_c$ID),function(x) {func_slider_LinearRang
 dataWithrange <- lapply(1 :length(dataWithrangeAll), function(x) dataWithrangeAll[[x]][[1]][3]) %>% unlist(recursive = F, use.names = F) %>% ldply %>%  distinct()
 dataWithrange
 
+result <- dataWithrange %>% select("ID", "IntensityStart", "IntensityEnd", "ConcenstrationStart", "ConcenstrationEnd", "lengthRange", Comment, PositionOfOutliers, OutlierInLinearRange, PositionOfMissings, MissingInLinearRange,type)
 #plot data with linear range
 
-func_plot_linearRange(datlist = dataWithrangeAll, IDs = "metabolite out4")
+func_plot_linearRange(datlist = dataWithrangeAll, IDs = dataWithrange$ID)#"metabolite out4")
 
 func_hist_QC_summary(datlist = dataWithrangeAll)
 ```
@@ -664,7 +666,7 @@ data_tbl_raw <- read.csv(file.path("..", "data/input/20211217_DataMatrixD_Replic
 data_tbl_work1 <- data_tbl_raw %>% 
   mutate(Intensity = as.numeric(Area), Concentration = as.numeric(Dilution), ID = Compound, .keep = "unused" )
 
-name = 'FEAT_120_091__335_893'
+name = 'FEAT_546_353__229_961'
 
 data_tbl_work <- data_tbl_work1 %>% 
   filter( Replicate == 1, ID %in% c('FEAT_106_05__396_628', 'FEAT_120_091__335_893', 'FEAT_167_086__30_772', 'FEAT_195_003__438_391', 'FEAT_166_084__336_637', 'FEAT_147_077__395_524', 'FEAT_72_0813__341_261', 'FEAT_144_102__332_147', 'FEAT_211_144__31_6455', 'FEAT_546_353__229_961', 'FEAT_592_502__27_4584')) %>% 
@@ -675,12 +677,140 @@ dat <- data_tbl_work %>%
          #filter(ID == 'FEAT_546_353__229_961') %>% 
          filter(ID == name) %>%
          #filter(ID == 'FEAT_592_502__27_4584') %>%
-         mutate(log_conc = log(Concentration))
+         #mutate(log_conc = log(Concentration))
+         mutate(Concentration_raw = Concentration, Concentration = log(Concentration)) %>% 
+  mutate(DilutionPoint = 1 : nrow(.), Comment = "", Intensity_raw = Intensity, Intensity = Intensity/max(Intensity)*100, DP = DilutionPoint-mean(DilutionPoint))
+
+plot(y = dat$Intensity,x = dat$DP)
+
+#position from which Intensity is not anymore unqihely related to concentration
+
+```
+
+
+trim ends, remove all points which have a higher intensity than last point or a lower intensity than first point
+```{r trimming}
+trimCurve <- function(dat){
+  
+  if(last(dat$Intensity) != max(dat$Intensity)){  
+    dat.reduced.max <- dat %>% 
+      filter(Intensity >= last(Intensity)) %>% 
+      mutate(Comment = "invalid") %>% 
+      select(DilutionPoint, Comment)
+  } else {dat.reduced.max <- dat %>% select(DilutionPoint, Comment)}
+    
+  if(dat$Intensity[1] != min(dat$Intensity)){
+    dat.reduced.min <- dat %>% 
+      filter(Intensity <= Intensity[1]) %>% 
+      mutate(Comment = "invalid") %>% 
+      select(DilutionPoint, Comment)
+  } else {dat.reduced.min <- dat %>% select(DilutionPoint, Comment)}
+    
+    dat.combined <- join_all(list(dat.reduced.max,dat.reduced.min, dat %>% select(-Comment)), type = "right", by = c("DilutionPoint"))
+    
+    
+}
+
+trim.dat <- trimCurve(dat)
+
+    valid.dat <- trim.dat %>% filter(is.na(Comment))
+    cons <- rle(diff(valid.dat$DilutionPoint) == 1)
+    
+    any(cons$lengths >= 5 & cons$values == TRUE)
+
+
+
+
+```
+Remove Endpoints, which are obviosly not in the linear range.
+1.) calculate slope
+```{r slope}
+slope <- function(x, y, index ){180 * atan((y[index] - (y[index - 1]))/(x[index] - (x[index - 1])))/pi}
+
+
+slopes <- slide(2 : nrow(dat), ~ slope(y = dat$Intensity, x = dat$DP, index = .x)) %>% ldply %>% mutate(Nr = 2:nrow(dat), comment = "")
+
+# remove negative slopes at the ends
+trimSlope <- function(dat){
+  
+  dat <- dat %>% rbind(c(0,1,""), .)
+  datnew <- dat
+  
+  while(last(dat$V1) < 0 ){ # end
+    
+    if(last(dat$V1) >= 0){
+      
+      dat$comment[nrow(dat)] = "in"
+      datnew$comment[nrow(dat)] <- dat$comment[nrow(dat)]
+      
+    } else {
+      dat$comment[nrow(dat)] = "out"
+      datnew$comment[nrow(dat)] <- dat$comment[nrow(dat)]
+      dat <- dat[-nrow(dat),]
+    }
+  }
+  
+  dat <- datnew
+  
+  while(dat$V1[2] < 0 ){ #start
+    if(dat$V1[2] >= 0){
+      
+      dat$comment[1] = "in"
+      datnew$comment[dat$Nr[1]] <- dat$comment[1]
+      
+    } else {
+      dat$comment[1] = "out"
+      datnew$comment[dat$Nr[1]] <- dat$comment[1]
+      dat <- dat[-1,]
+    }  
+    
+    
+  }
+  return(datnew)
+}
+
+trimmed <- trimSlope(slopes)
+dat.trim <- dat %>% filter(trimmed$comment != "out")
+
+plot(y = dat.trim$Intensity,x = dat.trim$DP)
+
+  tbl_lm <- slide(1:(nrow(dat.trim) - 2), ~func_lm(tbl = dat.trim, .x , explanVar = "DP")) %>% ldply
+
 
 ```
 ```{r categorize}
 
+#dat <- data_c %>%  filter(ID %in% "metabolite CC1") %>% mutate(DilutionPoint = 1 : nrow(.), Comment = "")
+ 
+
+dat <- data.frame(ID = rep("test",10),Intensity = c( 1, 2, 3, 4, 4.5, 4.5 , 4.5, 4.3,4.5,4.3), Concentration = c(0 : 9)) %>% mutate(DilutionPoint = 1 : nrow(.), DP = DilutionPoint-mean(DilutionPoint), Comment = "")#, Intensity = Intensity/max(Intensity)*100)
+
+plot(y = dat$Intensity,x = dat$Concentration)#dat$Concentration)
+
+  tbl_lm <- slide(1:(nrow(dat) - 2), ~func_lm(tbl = dat, .x , explanVar = "DP")) %>% ldply
+  
+  dat$Intensity %>% detect_index(~ . >= last(dat$Intensity))
+
+
+library(drc)
+model.sigmoid <- drm(Intensity ~ DP, fct = L.3(), data = dat.trim)
+model.linear <- lm(Intensity ~ DP, data = dat.trim)
+model.quadratic <- lm(Intensity ~ poly(DP,2,raw=TRUE), data = dat.trim)
+
+lines(y = predict(model.sigmoid), x = dat.trim$DP,col = "green")
+lines(y = predict(model.linear), x = dat.trim$DP, col = "red")
+#lines(y = predict(model.quadratic), x = dat.trim$DP, col = "blue")
+# correlation
+cor(dat.trim$Intensity, predict(model.sigmoid))
+cor(dat.trim$Intensity, predict(model.linear))
+cor(dat.trim$Intensity, predict(model.quadratic))
+# SSE (Sum of Squares Error)
+sum((fitted(model.sigmoid) - dat.trim$Intensity)^2)
+sum((fitted(model.linear) - dat.trim$Intensity)^2)
+sum((fitted(model.quadratic) - dat.trim$Intensity)^2)
+
 # use package sicegar to categorize signals
+
 library(sicegar)
 
 dat.red <- dat %>%   mutate(time = log(Concentration) + 3, intensity = Intensity) %>% select(time, intensity)
@@ -755,21 +885,23 @@ title(name)
 lines(y = fitted(cor.max), x = dat$log_conc, col = "green")
 
 # calculate halfmax intensity of fitted curve
-int50 <- DescTools::Closest(x = dat$Intensity,a = max(fitted(d))/2, which = TRUE)
+int50 <- DescTools::Closest(x = dat$Intensity,a = max(fitted(cor.max))/2, which = TRUE)
 
+lines(y = fitted(cor.max)[int50], x = dat$log_conc[int50], col = "red", type = "p", cex = 2, pch = 19)
 
 #create linear regression line going through int50
-linear.range <- lm(fitted(d)[(int50 - 1) : (int50 + 1)] ~ dat$log_conc[(int50 - 1) : (int50 + 1)])
+linear.range <- lm(fitted(cor.max)[(int50 - 1) : (int50 + 1)] ~ dat$log_conc[(int50 - 1) : (int50 + 1)])
 abline.intensity <- coef(linear.range)[1] + coef(linear.range)[2]*dat$log_conc
 
-abline(h = 0, lty = "dashed")
-concentrationAt0 <- (0 - coef(linear.range)[1] )/ coef(linear.range)[2]
+abline(linear.range, col = "red")
+#abline(h = 0, lty = "dashed")
+#concentrationAt0 <- (0 - coef(linear.range)[1] )/ coef(linear.range)[2]
 
 # compare regression line with fitted curve, calculate normalized differences, determine linear range start and end
 
-ndx <- which(abs((abline.intensity - fitted(c))/max(abs(abline.intensity - fitted(c)))) < 0.5)
+ndx <- which(abs((dat$Intensity - abline.intensity) /max(abs(dat$Intensity - abline.intensity))) < 0.1)
 
-abline(linear.range, col = "red")
+
 abline(v = dat$log_conc[ndx[1]], lty = "dashed")
 abline(v = dat$log_conc[tail(ndx,1)], lty = "dashed")
 
