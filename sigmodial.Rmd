@@ -663,46 +663,140 @@ RSD_average <- data_tbl_work %>%
 
 data_tbl_raw <- read.csv(file.path("..", "data/input/20211217_DataMatrixD_Replicates_Updated.csv"), header = T, check.names = F, blank.lines.skip = TRUE)
 
+process.list <- list( data_raw = data_tbl_raw )
+
+
 data_tbl_work1 <- data_tbl_raw %>% 
   mutate(Intensity = as.numeric(Area), Concentration = as.numeric(Dilution), ID = Compound, .keep = "unused" )
 
-name = 'FEAT_546_353__229_961'
 
-data_tbl_work <- data_tbl_work1 %>% 
-  filter( Replicate == 1, ID %in% c('FEAT_106_05__396_628', 'FEAT_120_091__335_893', 'FEAT_167_086__30_772', 'FEAT_195_003__438_391', 'FEAT_166_084__336_637', 'FEAT_147_077__395_524', 'FEAT_72_0813__341_261', 'FEAT_144_102__332_147', 'FEAT_211_144__31_6455', 'FEAT_546_353__229_961', 'FEAT_592_502__27_4584')) %>% 
-  arrange(Concentration)
 
-dat <- data_tbl_work %>% 
-          drop_na() %>% 
-         #filter(ID == 'FEAT_546_353__229_961') %>% 
-         filter(ID == name) %>%
-         #filter(ID == 'FEAT_592_502__27_4584') %>%
-         #mutate(log_conc = log(Concentration))
-         mutate(Concentration_raw = Concentration, Concentration = log(Concentration)) %>% 
-  mutate(DilutionPoint = 1 : nrow(.), Comment = "", Intensity_raw = Intensity, Intensity = Intensity/max(Intensity)*100, DP = DilutionPoint-mean(DilutionPoint))
+#name = 'FEAT_279_232__57_1146'#'FEAT_245_048__371_345'
 
-plot(y = dat$Intensity,x = dat$DP)
+# data_tbl_work <- data_tbl_work1 %>% 
+#   filter( Replicate == 1, ID %in% c('FEAT_106_05__396_628', 'FEAT_120_091__335_893', 'FEAT_167_086__30_772', 'FEAT_195_003__438_391', 'FEAT_166_084__336_637', 'FEAT_147_077__395_524', 'FEAT_72_0813__341_261', 'FEAT_144_102__332_147', 'FEAT_211_144__31_6455', 'FEAT_546_353__229_961', 'FEAT_592_502__27_4584')) %>% 
+#   arrange(Concentration)
+
+dat <- data_tbl_work1 %>% 
+  #drop_na() %>% 
+  group_by(ID) %>%  
+  filter(Replicate == 1) %>% #, ID %in% c(sample(metabolites, 25), name)) %>%  
+  mutate(Concentration_raw = Concentration, Concentration_log = log(Concentration)) %>%
+  mutate(DilutionPoint = row_number(), Comment = "", Intensity_raw = Intensity, Intensity_norm = Intensity/max(Intensity, na.rm = T)*100, DP = DilutionPoint-mean(DilutionPoint))
+
+process.list$data_prep = dat
+
+metabolites <- unique(data_tbl_work1$ID)
+
+dat %>% 
+ggplot(aes(DP, Intensity_norm)) +
+  geom_point() + 
+  #geom_line() + 
+   #geom_line(aes(DP, Intensity.norm)) +
+  theme_bw() +
+  #geom_smooth(method = lm) +
+   #stat_smooth(method = "lm", formula = y~poly(x,2), aes(log_conc, reg2$fitted.values, col = "Order 1")) +
+  #scale_y_continuous(limits = c(0, 30), breaks = seq(0, 12, by = 1)) +
+  facet_wrap(~ID, scales = "free_y")
+
+
+plot(y = dats$Intensity_norm,x = dats$DP)
 
 #position from which Intensity is not anymore unqihely related to concentration
 
 ```
+```{r find outlier}
+## fitting
+name = 'FEAT_159_051__251_569'#'FEAT_117_07__28_9557'#'FEAT_133_097__482_438'#c('FEAT_146_081__71_7346', 'FEAT_117_07__28_9557', 'FEAT_118_061__394_271')
 
+data.input <- dat %>% filter(ID %in% name)
+dats = data.input
+
+library(drc)
+out <- function(dats, res = 2){
+
+  dats <- dats %>% drop_na()
+  
+  dats$color = "black"
+  dats$pch = 1
+
+a <- drm(Intensity_norm ~ DP, fct = L.3(), data = dats) #model.sigmoid
+b <- lm(Intensity_norm ~ DP, data = dats) #model.linear
+c <- lm(Intensity_norm ~ poly(DP,2,raw=TRUE), data = dats) #model.quadratic
+
+
+# lines(y = predict(a), x = dat$DP,col = "green")
+# lines(y = predict(b), x = dat$DP, col = "red")
+# lines(y = predict(c), x = dat$DP, col = "blue")
+
+
+
+# calculate correlation
+cor.poly <- c(
+  cor(dats$Intensity_norm, predict(a)),
+  cor(dats$Intensity_norm, predict(b)),
+  cor(dats$Intensity, predict(c))
+)
+
+cor.max <-  which(cor.poly == max(cor.poly))
+cor.max <- get(chartr("123", "abc",cor.max))
+
+SSE <- sum((fitted(cor.max) - dats$Intensity_norm)^2)
+
+# plot fitted curve
+#lines(y = fitted(cor.max), x = dats$DP, col = "green")
+
+# residuals
+if(max(cor.poly) < 0.99) {
+  residual <- abs(residuals(cor.max)/sd(residuals(cor.max)))
+  if(max(residual) > res){rs <- which(residual == max(residual))}
+
+#points( y = dat$Intensity_norm[rs], x = dat$DP[rs], col = "red", pch = 20)
+
+dats$color[rs] = "red"
+dats$pch[rs] = 19
+}
+return(dats)
+}
+
+data.out <- lapply(unique(dat$ID)[1:100], function(x) out(dat %>% filter(ID %in% x))) %>% ldply %>%  distinct()
+
+
+#data.out <- out(data.input)
+
+data.out %>% 
+  filter( ID %in% sample(unique(.$ID), 25)) %>%  
+  ggplot(aes(DP, Intensity_norm)) +
+  geom_point(aes(color = color, shape = pch))+
+  scale_shape_identity() + 
+  scale_colour_identity() +
+  #geom_line() + 
+  #geom_line(aes(DP, Intensity.norm)) +
+  theme_bw() +
+#geom_smooth(method = lm) +
+#stat_smooth(method = "lm", formula = y~poly(x,2), aes(log_conc, reg2$fitted.values, col = "Order 1")) +
+#scale_y_continuous(limits = c(0, 30), breaks = seq(0, 12, by = 1)) +
+facet_wrap(~ID, scales = "free_y")
+
+
+
+```
 
 trim ends, remove all points which have a higher intensity than last point or a lower intensity than first point
-```{r trimming}
-trimCurve <- function(dat){
+```{r function trimming}
+trimCurve <- function(dat, Intensity.name = "Intensity_norm", thresh = 0){
   
-  if(last(dat$Intensity) != max(dat$Intensity)){  
+  if(last(dat[[Intensity.name]]) != max(dat[[Intensity.name]])){  
     dat.reduced.max <- dat %>% 
-      filter(Intensity >= last(Intensity)) %>% 
-      mutate(Comment = "invalid") %>% 
+      filter(get(Intensity.name) >= last(get(Intensity.name)) - thresh) %>% 
+      mutate(Comment = "bigger") %>% 
       select(DilutionPoint, Comment)
   } else {dat.reduced.max <- dat %>% select(DilutionPoint, Comment)}
     
-  if(dat$Intensity[1] != min(dat$Intensity)){
+  if(dat[[Intensity.name]][1] != min(dat[[Intensity.name]])){
     dat.reduced.min <- dat %>% 
-      filter(Intensity <= Intensity[1]) %>% 
-      mutate(Comment = "invalid") %>% 
+      filter(get(Intensity.name) <= get(Intensity.name)[1] + thresh) %>% 
+      mutate(Comment = "smaller") %>% 
       select(DilutionPoint, Comment)
   } else {dat.reduced.min <- dat %>% select(DilutionPoint, Comment)}
     
@@ -710,14 +804,61 @@ trimCurve <- function(dat){
     
     
 }
+```
+```{r process trimming}
 
-trim.dat <- trimCurve(dat)
 
-    valid.dat <- trim.dat %>% filter(is.na(Comment))
-    cons <- rle(diff(valid.dat$DilutionPoint) == 1)
-    
-    any(cons$lengths >= 5 & cons$values == TRUE)
+process.list$data.trimmed <- lapply(unique(data.out$ID), function(x) {trimCurve(data.out %>% filter(color != "red", ID %in% x))}) 
 
+trim.dat <- process.list$data.trimmed %>% ldply %>%  distinct()
+
+trim_out <- left_join(data.out %>% select(-Comment), trim.dat, )
+trim_out$color[trim_out$Comment %in% c("bigger", "smaller")] <- "blue"
+trim_out$pch[trim_out$Comment %in% c("bigger", "smaller")] <- 19
+
+trim_out %>% 
+  filter( ID %in% sample(unique(.$ID), 25)) %>%  
+  ggplot(aes(DP, Intensity_norm)) +
+  geom_point(aes(color = color, shape = pch))+
+  scale_shape_identity() + 
+  scale_colour_identity() +
+  #geom_line() + 
+  #geom_line(aes(DP, Intensity.norm)) +
+  theme_bw() +
+#geom_smooth(method = lm) +
+#stat_smooth(method = "lm", formula = y~poly(x,2), aes(log_conc, reg2$fitted.values, col = "Order 1")) +
+#scale_y_continuous(limits = c(0, 30), breaks = seq(0, 12, by = 1)) +
+facet_wrap(~ID, scales = "free_y")
+
+
+
+
+
+valid.dat <- trim.dat %>% filter(is.na(Comment))
+cons <- rle(diff(valid.dat$DilutionPoint) == 1)
+
+any(cons$lengths >= 5 & cons$values == TRUE)
+
+slopes <- slide(2 : nrow(dat), ~ slope(y = dat$Intensity_norm, x = dat$DP, index = .x)) %>% ldply %>% mutate(Nr = 2:nrow(dat), comment = "")
+
+
+
+## fitting
+library(drc)
+model.sigmoid <- drm(Intensity_norm ~ DP, fct = L.3(), data = dat)
+model.linear <- lm(Intensity_norm ~ DP, data = dat)
+model.quadratic <- lm(Intensity_norm ~ poly(DP,2,raw=TRUE), data = dat)
+
+
+lines(y = predict(model.sigmoid), x = dat$DP,col = "green")
+lines(y = predict(model.linear), x = dat$DP, col = "red")
+lines(y = predict(model.quadratic), x = dat$DP, col = "blue")
+
+which(abs(residuals(model.sigmoid)/sd(residuals(model.sigmoid))) > 2)
+
+cor(dat$Intensity_norm, predict(model.sigmoid))
+cor(dat$Intensity_norm, predict(model.linear))
+cor(dat$Intensity, predict(model.quadratic))
 
 
 
