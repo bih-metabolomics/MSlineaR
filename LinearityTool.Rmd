@@ -1,0 +1,802 @@
+---
+title: "Biometrical analysis"
+author:
+- affiliation: Institute of Biometry and Clinical Epidemiology
+  name: Janine Wiebach (janine.wiebach@charite.de)
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_notebook:
+  #   code_folding: hide
+  #   highlight: zenburn
+  #   number_sections: yes
+  #   theme: united
+  #   #toc: yes
+  #   #toc_float:
+  #     #collapsed: no
+  #     #smooth_scroll: no
+  # html_document:
+  #   df_print: paged
+  #   toc: yes
+editor_options:
+  chunk_output_type: console
+abstract: This is the abstract text and should describe in some short words what is
+  happening in the following document.
+---
+
+***
+
+```{r init_markdown, echo = FALSE, message=FALSE}
+source("init.R")
+opts_chunk$set(fig.width=7, fig.height=7, fig.path='img/',
+               echo=FALSE, warning=FALSE, message=FALSE,
+               cache.path='cache/')
+## To use for fills, add
+## scale_fill_manual(values=cbbPalette)
+## To use for line and point colors, add
+## scale_colour_manual(values=cbbPalette)
+## kableExtra stuff:
+## http://haozhu233.github.io/kableExtra/awesome_table_in_html.html
+```
+
+# Assessing Linearity in untargeted metabolomics analysis
+
+Background:   
+In a dilution series biological signal should follow a sigmoid curve ("dose response curve"). This behavior can be used for an automated distinction between biological signals and non biological signals, like noise. Additionally we want to find the range for which the intensity is related to the concentration.
+
+### Required Packages
+- drc
+- pacman
+- slider
+- readxl
+- tidyverse
+- plyr
+- magrittr
+- knitr
+- kableExtra
+- grid
+- gridExtra
+- broom
+- ggplot2
+- ggpmisc
+
+## Functions
+This section describes all functions which were generated for assessing the linearity of mass spectrometry signals
+Most af the functions are written for one signal with n dilutions or concentrations. 
+
+### 1. Function "prepareData"
+normalized to 100
+centralized
+
+### 2. Function "outlierDetection"
+This function combines the functions"chooseModel" and "outlier".
+It returns a list with 3 sublists. The first sublist contains information about the choosen Model for each signal, the second about the outlier and position of the outlier for each signal and the third list contains all datapoints informations which are necessary for plotting and excluding the outlier. The function "outlier" will only be triggered if the correlation from "chooseModel" is below a certain value. That allows the control of the ... of the outlier detection.
+
+#### 2.1 Function "chooseModel"
+Data are fitted with at least one function. The Model is choosen by comparing the correlation of predicted to observed data, choosing highest correlation between models. The function will generate a list including the name of the model with the highest correlation, the model and the correlation. Default models are : 3 Point logistic regression, linear regression, quadratic regression. If models have the same correlation the following ranking will be used: linear regression, logistic regression, quadratic regression. 
+
+#### 2.2. Function "outlier"
+This function takes as input an object of class lm or drc, calculates the residuals and return if one residual is bigger than a given value and considered as outlier and the position of the outlier. Currently only the highest residual will be considered as outlier. 
+
+### 3. Function "trimCurve"
+This function marks all values which are higher than the last point or lower than the first point. A fixed value can be added as tolerance for the maximum and minimum value.
+
+#### 3.1. Function consecutiveVali
+Verifies if the signals from the output of function "trimCurve" have at least n consecituve points. Returns ID with a logical vector.
+
+```{r functions, echo = TRUE, collapse = TRUE}
+
+prepareData <- function(dat, x, y, identifier = c("ID")){
+  
+  dat <- dat %>% 
+    mutate(ID = get(identifier), ConcentrationRaw = get(x), IntensityRaw = get(y)) %>% 
+    dplyr::group_by(ID) %>%  
+    mutate(ConcentrationLog = log(ConcentrationRaw),DilutionPoint = row_number(), Comment = NA, 
+      IntensityNorm = IntensityRaw/max(IntensityRaw, na.rm = T)*100, DP = DilutionPoint - mean(DilutionPoint)) %>%
+    ungroup() %>% 
+    mutate(pch = 19, color = "black", enoughPoints = TRUE) %>% 
+    select(ID, IntensityNorm, DP, Comment, pch, color, ConcentrationRaw, IntensityRaw, ConcentrationLog, IntensityRaw, DilutionPoint, enoughPoints)
+  
+  return(dat)
+}
+
+chooseModel <- function(dat, y="IntensityNorm", x="DP", model=c("logistic", "linear", "quadratic")){
+  
+  dat <- dat %>% drop_na(y)
+  
+  if ("logistic" %in% model) {
+    logistic <- drm(get(y) ~ get(x), fct = L.3(), data = dat)
+    cor.logistic <- cor(dat[y], predict(logistic))
+  } else{cor.logistic <- NA}
+  
+  if ("linear" %in% model) {
+    linear <- lm(get(y) ~ get(x), data = dat)
+    cor.linear <- cor(dat[y], predict(linear))
+  } else{cor.linear <- NA}
+  
+  
+  if ("quadratic" %in% model) {
+    quadratic <- lm(get(y) ~ poly(get(x), 2, raw = TRUE), data = dat)
+    cor.quadratic <- cor(dat[y], predict(quadratic))
+  } else{
+    cor.quadratic <- NA
+  }
+  
+  
+  # calculate correlation
+  cor.poly <- c(
+    "cor.logistic" = cor.logistic,
+    "cor.linear" = cor.linear,
+    "cor.quadratic" = cor.quadratic
+  )
+  
+  cor.max <-  names(which(cor.poly == max(cor.poly, na.rm = T)))
+  
+  if ("cor.linear" %in% cor.max) {cor.max = "cor.linear"} else if (cor.max %in% c("cor.logistic", "cor.quadratic")) {cor.max = "cor.logistic"}  # if same correlation
+  model <- get(substr(cor.max,5, 100 ))
+  
+  
+  tmp <- list(
+    "tmp" = list(
+      "model.name" = substr(cor.max,5, 100 ), 
+      "model" = model, 
+      "cor" = max(cor.poly, na.rm = T)
+      )
+    )
+  
+  names(tmp) <- unique(dat$ID)
+ 
+  #SSE <- sum((fitted(cor.max) - dat$Intensity_norm)^2)
+
+  return(tmp)
+  
+}
+
+outlier <- function(ID, modelObject, res=2){
+
+  residual <- abs(residuals(modelObject)/sd(residuals(modelObject)))
+  if(max(residual) > res) {
+    rs <- data.frame(
+      "ID" = ID,
+      "outlier" = TRUE,
+      "outlier_position" = which(residual == max(residual))
+    )
+  } else {
+    rs <- data.frame(
+      "ID" = ID,
+      "outlier" = FALSE,
+      "outlier_position" = NA
+    )
+  }
+  
+  return(rs)
+}
+
+outlierDetection <- function(dat, y="IntensityNorm", x="DP", model=c("logistic", "linear", "quadratic"), res=2, threshCor=0.99){
+  #browser()
+  #dat <- dat %>% drop_na(y)
+  dataOutlier <- dat %>% drop_na(y)
+  dataOutlier$Outlier <- NA
+  bestModel <- chooseModel(dat, y, x, model)
+  
+  dataModel <- data.frame(
+    "ID" = names(bestModel),
+    "ModelFit" = map(bestModel, 1) %>%  unlist(use.names = F),
+    "correlation" = map(bestModel, 3) %>%  unlist(use.names = F)
+  )
+  
+  if (dataModel$correlation < threshCor) {
+    outlierSum <- outlier(unique(dat$ID), bestModel[[1]][[2]], res)
+    if (outlierSum$outlier %in% TRUE) {
+      dataOutlier$color[outlierSum$outlier_position] <- "red"
+      dataOutlier$pch[outlierSum$outlier_position] <- 19
+      dataOutlier$Outlier[outlierSum$outlier_position] <- TRUE
+    }
+  } else{
+    outlierSum <- outlier(unique(dat$ID), bestModel[[1]][[2]], res = 100)
+  }
+  
+  dataOutlier <- join(type = "full", dataOutlier, dat %>% select(-color,-pch))
+  tmp <- list("tmp" = list("Model" = dataModel, "Outlier" = outlierSum, "dataOutlier" = dataOutlier))
+  names(tmp) <- unique(dat$ID)
+  return(tmp) 
+  
+}
+
+trimEnds <- function(dat, y="IntensityNorm", x="DP", thresh=0){
+  #browser()
+  if (last(dat[[y]]) != max(dat[[y]])) {  
+    dat.reduced.max <- dat %>% 
+      filter(get(y) >= last(get(y)) - thresh) %>% 
+      mutate(Comment = "bigger") 
+    dat.reduced.max$Comment[nrow(dat.reduced.max)] <- "last"
+  } else {dat.reduced.max <- dat}
+    
+  if (dat[[y]][1] != min(dat[[y]])){
+    dat.reduced.min <- dat %>% 
+      filter(get(y) <= get(y)[1] + thresh) %>% 
+      mutate(Comment = "smaller") 
+    dat.reduced.min$Comment[1] <- "first"
+  } else {dat.reduced.min <- dat}
+    
+    tmp <- full_join(dat.reduced.max,dat.reduced.min, by = names(dat)[-which(arr.ind = T,names(dat) == "Comment" )]) %>%
+      unite(Comment, c("Comment.x","Comment.y"), remove = TRUE, na.rm = TRUE)
+    
+    tmp$color[str_detect(tmp$Comment, "bigger|smaller|last|first")] <-  "grey"
+    tmp$pch[str_detect(tmp$Comment, "bigger|smaller|last|first")] <- 19
+
+    return(tmp)
+}
+
+consecutiveVali <- function(dat, minConsecutives=5 ){
+  
+  valid.dat <- dat %>% filter(! Comment %in% c("bigger", "smaller", "last", "first"))
+  cons <- rle(diff(valid.dat$DilutionPoint) == 1)
+  
+  tmp <- data.frame("ID" = unique(dat$ID), "enoughPoints" = any(cons$lengths >= minConsecutives & cons$values == TRUE)) 
+  
+  return(tmp)
+}
+
+
+plotSignals <- function(dat, x="DP", y = "IntensityNorm"){
+  #browser()
+  g <- dat %>% 
+    ggplot(aes(get(x), get(y))) +
+    geom_point(aes(color = color, shape = pch)) +
+    scale_shape_identity() + 
+    scale_colour_identity() +
+    geom_hline(aes(yintercept = get(y)), data = . %>% filter(str_detect(Comment, "last|first")), linetype = "dashed", color = "blue") +
+    theme_bw() +
+    labs(x = x, y = y) +
+    scale_x_continuous(labels = c(min(dat$DilutionPoint): max(dat$DilutionPoint)), breaks = seq(min(dat$DP), max(dat$DP))) +
+    facet_wrap(~ID, scales = "free_y", ncol = 5)
+  
+  if (any(is.na(dat[y]))){
+    g <- g + geom_vline(data = dat %>% filter(is.na(get(y))), aes(xintercept = get(x), color = "darkgrey"))
+  }
+    
+    
+    if (any(!dat$enoughPoints)){
+      g <- g + geom_segment(aes(y = 0, x = min(dat$DP), yend = 100, xend = max(dat$DP), color = "red"), data = . %>% filter(enoughPoints %in% FALSE))
+    }
+  
+  return(g)
+}
+
+findLinearRange <- function(dat, x="DP", y = "IntensityNorm", modelObject){
+  
+  
+  int50 <- DescTools::Closest(x = dat[[y]] ,a = max( fitted(modelObject[[1]]))/2, which = TRUE)
+  
+  dat$color[int50] <-  "green"
+  dat$pch[int50] <- 19
+  
+  #create linear regression line going through int50
+linearRange <- lm(fitted(modelObject[[1]])[(int50 - 1) : (int50 + 1)] ~ dat[[x]][(int50 - 1) : (int50 + 1)])
+ablineIntensity <- coef(linear.range)[1] + coef(linear.range)[2]*dat[[x]]
+
+#abline(linearRange, col = "red")
+#abline(h = 0, lty = "dashed")
+#concentrationAt0 <- (0 - coef(linear.range)[1] )/ coef(linear.range)[2]
+
+# compare regression line with fitted curve, calculate normalized differences, determine linear range start and end
+
+ndx <- which(abs((dat[[y]] - ablineIntensity) /max(abs(dat[[y]] - ablineIntensity))) < 0.1)
+
+
+abline(v = dat$log_conc[ndx[1]], lty = "dashed")
+abline(v = dat$log_conc[tail(ndx,1)], lty = "dashed")
+  
+  
+}
+
+
+
+
+
+
+# function func_lm performs linear regression for 3 consecutive points, starting at point x
+  # input : data table with column names [Intensity, Concentration, ID]
+  # output: tibble with informations about ID, analyzed point x, n distance and degree, and adjusted R2
+rollingLinearRegression <- function(tbl, x, explanVar = 'Concentration'){
+  
+  tbl_linear_Range <- list()
+  lm_sum <- lm(Intensity ~ get(explanVar), data = tbl[x : (x + 2),]) %>%
+    summary()
+  
+  slope <- coef(lm_sum)[2]
+  alpha.rad <- atan(slope)
+  
+  alpha.deg <- 180*alpha.rad/pi
+  
+    
+  tibble(
+    metabolite = tbl$ID[x],
+    seqStart = tbl$DilutionPoint[x],
+    seqEnd = tbl$DilutionPoint[x + 2],
+    slope = lm_sum$coefficient[2], 
+    adjr2 = lm_sum$adj.r.squared,
+    degree = alpha.deg#,
+    #indice = tbl$indice[x]
+  )
+}
+
+# function func_findLinearRange compares adjusted R2 and slope in degree to defined borders
+  # input : data table from func_lm with column names [metabolite, adjR2, degree]; values for adjusted R2 and degree; Number of points necessary to consider a linear range
+  # output: tibble with informations about ID, start of linear range, end of linear range, Comment
+linearRangeBorder <- function(tbl, adjR2 , degr, points){
+  
+  adjr2.compare <- (round(tbl$adjr2,2) >= adjR2) & (tbl$degree >= degr)
+  
+  if (!any(adjr2.compare)) { # adjusted R2 and /or slope are to small 
+    tibble(
+      ID = unique(tbl$metabolite),
+      start = NA,
+      end = NA,
+      lengthRange = NA,
+      Comment = "no linear range"
+    )
+    
+  }else{ # minimum of 3 consecutive points with sufficient adjusted R2 and slope
+    
+    
+    cons <- rle(adjr2.compare) # Compute the lengths of consecutive Trues and Falses
+    indic <- which(cons$values == TRUE & cons$lengths >= (points - 2) )
+    
+    if (length(indic) > 0 ){ # length of consecutive Trues are sufficent
+      cons.lengths.cumsum.start = cumsum(cons$lengths) - cons$lengths + 1
+      cons.lengths.cumsum.end = cumsum(cons$lengths)
+      starts = tbl$seqStart[cons.lengths.cumsum.start[indic]]
+      ends = tbl$seqEnd[cons.lengths.cumsum.end[indic]]
+      maxlin  <- tbl[which(tbl[ , "degree"] == max(tbl[cons.lengths.cumsum.start[indic]:cons.lengths.cumsum.end[indic], "degree"])), ]
+      #newindex = ifelse(indic > 1, indic - 1, 0)
+      #starts = cons.lengths.cumsum[newindex] + 1
+      #if (0 %in% newindex) starts = c(1,starts)
+      
+      tibble(
+        ID = unique(tbl$metabolite),
+        start = starts,
+        end = ends,
+        lengthRange = ends - starts + 1,
+        maxLinearRange = paste(maxlin[, c("seqStart", "seqEnd")], collapse = " : "),
+        maxadjR2 = max(tbl[cons.lengths.cumsum.start[indic]:cons.lengths.cumsum.end[indic], "adjr2"]),
+        Comment = ""
+      )
+    } else { # length of consecutive Trues are to small
+      
+      tibble(
+        ID = unique(tbl$metabolite),
+        start = NA,
+        end = NA,
+        lengthRange = NA,
+        maxLinearRange = NA,
+        maxadjR2 = NA,
+        Comment = "no linear range"
+      )
+    }
+    
+    
+  }
+  #})
+}
+
+# function func_slider_LinearRange slides through data table of metabolites
+ # input: data table with column names [ID, Intensity, Concentration]; Number of points necessary to consider a linear range, boundaries for adjusted R2 value and slope in degree; cooks distance
+ # output: 
+
+findLinearRange <- function(dat, metabolite, points = 5, adjR2 = 0.85, degr = 10, residual = 2){ #, cooksdis = 4
+  
+  print(metabolite)
+  tbl_linear_Range <- list()
+  linRange <- data.frame()
+  data <- dat %>% filter(ID == metabolite) %>% arrange(Concentration) %>% mutate(DilutionPoint = 1 : nrow(.), Comment = "")
+  dataRaw <- data
+  
+  #outlier
+  data <- data[!is.na(data$Intensity), ]
+  model <- lm(Intensity ~ Concentration, data)
+  data$residuals <- residuals(model)/sd(residuals(model))
+  outlier <- which(abs(data$residuals) > residual)
+  
+  dataRaw <- join(type = "right", data, dataRaw)
+  dataRaw$Comment[abs(dataRaw$residuals) > residual] = "Outlier"
+  dataRaw$Comment[is.na(dataRaw$Intensity)] = "Missing"
+  tbl_linear_Range[[metabolite]][["rawData"]] <- dataRaw
+  
+  if (any(outlier) | any(is.na(dataRaw$Intensity))) {
+    # outlier
+    nrOutlier <- length(outlier)  
+    linRange <- tibble()
+    if (sum(outlier) > 0) data <- dataRaw[-outlier, ]
+    # NA
+    nrNA <- sum(is.na(dataRaw$Intensity))
+    NApos <- which(is.na(dataRaw$Intensity))
+    linRange <- tibble()
+    data <- data[!is.na(data$Intensity), ]
+    
+  }
+  
+  
+  
+  tbl_lm <- slide(1:(nrow(data) - 2), ~func_lm(tbl = data, .x )) %>% ldply
+  
+  tbl_linear_Range[[metabolite]][["allLinearRanges"]] <- tbl_lm
+  
+  
+  linRange <- func_findLinearRange(tbl = tbl_lm, adjR2, degr, points )
+  linRange <- linRange %>% filter(lengthRange == max(lengthRange))
+  
+  if (any(linRange$Comment == "")) { # found one linear range, calculate slope and R2 for the whole range
+    sum.all <- lm(Intensity ~ Concentration, data = dataRaw[linRange$start:linRange$end,]) %>%
+      summary()
+    alpha.rad <- atan(
+      (dataRaw$Intensity[linRange$end] - dataRaw$Intensity[linRange$start])/
+        (dataRaw$Concentration[linRange$end] - dataRaw$Concentration[linRange$start]))
+    alpha.deg <- 180*alpha.rad/pi
+    
+    
+    linRange$IntensityStart <- dataRaw$Intensity[linRange$start]
+    linRange$IntensityEnd <- dataRaw$Intensity[linRange$end]
+    linRange$ConcenstrationStart <- dataRaw$Concentration[linRange$start]
+    linRange$ConcenstrationEnd <- dataRaw$Concentration[linRange$end]
+    linRange$LinearRangeStart <- linRange$start
+    linRange$LinearRangeEnd <- linRange$end
+    linRange$adjr2 <- sum.all$adj.r.squared
+    linRange$degree <- alpha.deg
+    linRange$maxLinearRange <- linRange$maxLinearRange
+    linRange$maxadjR2 <- linRange$maxadjR2
+    linRange$Comment <- paste0(sum(dataRaw$Comment == "Outlier"), " outliers and ", sum(dataRaw$Comment == "Missing"), " Missings excluded")
+    linRange$PositionOfMissings <- ifelse(any(is.na(dataRaw$Intensity)),paste(dataRaw$DilutionPoint[dataRaw$Comment == "Missing"], collapse = "; "), NA)
+    linRange$PositionOfOutliers <- ifelse(any(dataRaw$Comment %in% "Outlier"),paste(dataRaw$DilutionPoint[dataRaw$Comment == "Outlier"], collapse = "; "), NA)
+    linRange$OutlierInLinearRange <- ifelse(any(dataRaw$Comment %in% "Outlier"),any(between(outlier,linRange$start, linRange$end )),NA)
+    linRange$MissingInLinearRange <- ifelse(any(is.na(dataRaw$Intensity)),any(between(NApos,linRange$start, linRange$end )), NA)
+    linRange$type <- case_when(
+      identical(sort(unique(dataRaw$Comment)), c("","Outlier")) ~ "Outlier",
+      identical(sort(unique(dataRaw$Comment)), c("","Missing")) ~ "Missing",
+      identical(sort(unique(dataRaw$Comment)), c("","Missing","Outlier")) ~ c("Outlier ,Missing"),
+      TRUE ~ "completeCase"
+      )
+    
+    
+  } else {# no linear range found
+    linRange <- tibble(ID = metabolite)
+    
+    linRange$IntensityStart <- NA
+    linRange$IntensityEnd <- NA
+    linRange$ConcenstrationStart <- NA
+    linRange$ConcenstrationEnd <- NA
+    linRange$LinearRangeStart <- NA
+    linRange$LinearRangeEnd <- NA
+    linRange$lengthRange <- NA
+    linRange$adjr2 <- NA
+    maxLinearRange <- NA
+    linRange$degree <- NA
+    linRange$maxadjR2 <- NA
+    linRange$maxLinearRange <- NA
+    linRange$Comment <- "no linear range"
+    linRange$PositionOfMissings <- ifelse(any(is.na(dataRaw$Intensity)),paste(dataRaw$DilutionPoint[dataRaw$Comment == "Missing"]), "")
+    linRange$PositionOfOutliers <- ifelse(any(dataRaw$Comment %in% "Outlier"),paste(dataRaw$DilutionPoint[dataRaw$Comment == "Outlier"]), "")
+    linRange$OutlierInLinearRange <- NA
+    linRange$MissingInLinearRange <- NA
+    linRange$type <- case_when(
+      identical(sort(unique(dataRaw$Comment)), c("","Outlier")) ~ "Outlier",
+      identical(sort(unique(dataRaw$Comment)), c("","Missing")) ~ "Missing",
+      identical(sort(unique(dataRaw$Comment)), c("","Missing","Outlier")) ~ c("Outlier ,Missing"),
+      TRUE ~ "completeCase"
+      )
+    
+  }
+  
+  tbl_linear_Range[[metabolite]][["SummaryLinearRange"]] <- linRange %>% select(ID, IntensityStart, IntensityEnd, ConcenstrationStart, ConcenstrationEnd, LinearRangeStart, LinearRangeEnd, lengthRange, adjr2, degree, maxadjR2,maxLinearRange, Comment, PositionOfOutliers, OutlierInLinearRange, PositionOfMissings, MissingInLinearRange, type)
+  
+  tbl_linear_Range[[metabolite]]$rawData <- 
+    tbl_linear_Range[[metabolite]]$rawData %>% 
+    filter(between(
+      DilutionPoint, 
+      tbl_linear_Range[[metabolite]][["SummaryLinearRange"]]$LinearRangeStart,
+      tbl_linear_Range[[metabolite]][["SummaryLinearRange"]]$LinearRangeEnd)) %>%
+    mutate(Comment = replace(Comment, row_number() == 1, "start"), Comment = replace(Comment, row_number() == n(), "end")) %>% 
+    
+    mutate(Comment = ifelse(Comment == "", "linear", Comment)) %>% 
+    rbind(tbl_linear_Range[[metabolite]]$rawData %>%
+        filter( DilutionPoint < tbl_linear_Range[[metabolite]][["SummaryLinearRange"]]$LinearRangeStart |
+            DilutionPoint > tbl_linear_Range[[metabolite]][["SummaryLinearRange"]]$LinearRangeEnd)) %>% 
+    arrange(DilutionPoint)
+      
+  return(tbl_linear_Range)
+}
+
+# function histogram output
+
+HistQcSummary <- function(datlist = dataWithrangeAll){
+  
+  dataPlot <- lapply(1 : length(datlist), function(x) datlist[[x]][[1]][1]) %>% 
+    unlist(recursive = F, use.names = F) %>% 
+    ldply %>%  
+    distinct()
+  
+  dataPlotsum <- lapply(1 : length(datlist), function(x) datlist[[x]][[1]][3]) %>% 
+    unlist(recursive = F, use.names = F) %>% 
+    ldply %>%  
+    distinct() 
+
+  
+  NAdat <- dataPlot$DilutionPoint[dataPlot$Comment == "Missing"] %>% table()
+  NANr  <- lapply(1:length(unique(dataPlot$DilutionPoint)), function(x) {
+    ifelse(x %in% names(NAdat),yes = NAdat[names(NAdat) == x],no = 0)
+  }) %>%  unlist()
+  
+  Outdat <- dataPlot$DilutionPoint[dataPlot$Comment == "Outlier"] %>% table()
+  OutNr  <- lapply(1:length(unique(dataPlot$DilutionPoint)), function(x) {
+    ifelse(x %in% names(Outdat),yes = Outdat[names(Outdat) == x],no = 0)
+  }) %>%  unlist()
+  
+  ValidDat <- dataPlot$DilutionPoint[dataPlot$Comment %in% c("linear", "start", "end")] %>% table()
+  ValidNr  <- lapply(1:length(unique(dataPlot$DilutionPoint)), function(x) {
+    ifelse(x %in% names(ValidDat),yes = ValidDat[names(ValidDat) == x],no = 0)
+  }) %>%  unlist()
+ 
+  Compdat <- nrow(dataPlotsum)
+  
+  
+  library(gridExtra)
+  
+  summary_dat <- tibble(
+    "Dilution Point" = 1 : length(unique(dataPlot$DilutionPoint)),
+    "Concentration" = unique(dataPlot$Concentration),
+    "Nr of NAs" = NANr,
+    "Nr of Outliers" = OutNr,
+    "Nr of linear points" = ValidNr, 
+    "Nr of non valid Points" = rep(Compdat, length(unique(dataPlot$DilutionPoint))) - ValidNr
+  )
+
+ g <-  summary_dat %>% 
+    gather(key = "Nr", value = "Values", 3:6) %>%
+    #mutate(DP = `Dilution Points`) %>% 
+  
+  ggplot( aes(x = `Dilution Point` , y = Values, fill = Nr )) +
+    geom_bar(width = 0.5, position = position_dodge(), stat = "identity") +
+    theme_bw() +
+    scale_x_continuous(breaks = seq(0, 15, by = 1)) +
+    scale_y_continuous(breaks = seq(0, 12, by = 1))
+    # annotate(geom = "table",
+    #        x = 10,
+    #        y = 0,
+    #        label = list(summary_dat))
+ tbl <- tableGrob(summary_dat, rows=NULL)
+ 
+ grid.arrange(g, tbl,
+             ncol = 1,
+             as.table = TRUE)
+  
+}
+
+PlotLinearRange <- function(datlist, IDs){
+  #plot data with linear range
+  
+  dataPlot <- lapply(1 : length(datlist), function(x) datlist[[x]][[1]][1]) %>% 
+    unlist(recursive = F, use.names = F) %>% 
+    ldply %>%  
+    distinct()
+  
+  dataPlotsum <- lapply(1 : length(datlist), function(x) datlist[[x]][[1]][3]) %>% 
+    unlist(recursive = F, use.names = F) %>% 
+    ldply %>%  
+    distinct() %>% 
+    filter( ID %in% IDs, !is.na(IntensityStart))
+  
+  data_plot <- dataPlot %>% filter( ID %in% IDs) %>% mutate(color = "black", size = 2)
+  
+  data_plot_out <- data_plot[!(data_plot$Comment == "Outlier"), ]
+  
+  data_plot$color[data_plot$Comment %in% c("linear", "start", "end")] <- "green"
+  
+  data_plot$size[data_plot$Comment %in% c("linear", "start", "end")] <- 4
+  
+  
+  maxRange <- data.frame(t(sapply(dataPlotsum$ID, function(x) cbind(strsplit(dataPlotsum[dataPlotsum$ID == x, c("maxLinearRange")], " : ")[[1]][1],strsplit(dataPlotsum[dataPlotsum$ID == x, c("maxLinearRange")], " : ")[[1]][2]))))
+  maxRange <- maxRange %>% mutate(ID = rownames(maxRange), start = as.integer(X1), end = as.integer(X2)) 
+  
+  
+  data_plot <- join(maxRange, data_plot)
+  data_maxRange <- data_plot %>% group_by(ID) %>%  filter(DilutionPoint >= start & DilutionPoint <= end )
+  
+  #data_plot$color[dataWithrange[dataWithrange$ID == meta, c("LinearRangeEnd")]] <- "green"
+  #data_plot$size[dataWithrange[dataWithrange$ID == meta, c("LinearRangeEnd")]] <- 4
+  # data_plot$color[ 
+  #   strsplit(dataPlotsum[dataPlotsum$ID == IDs, c("maxLinearRange")], " : ")[[1]][1] :
+  #     strsplit(dataPlotsum[dataPlotsum$ID == IDs, c("maxLinearRange")], " : ")[[1]][2]] <- "purple"
+  
+  data_plot$color[data_plot$Comment == "Outlier"] <- "red"
+  data_plot$line[data_plot$Comment == "Missing"] <- data_plot$Concentration[data_plot$Comment == "Missing"]
+  
+#reg <- data_plot %>% group_by(ID)  %>% lm(formula = Intensity~poly(Concentration,2))
+
+
+  data_plot %>% group_by(ID) %>% 
+   
+  ggplot( aes(Concentration, Intensity)) + 
+    geom_point(color = data_plot$color, size = data_plot$size) +
+    #geom_point(data = data_maxRange, color = "purple", size = data_maxRange$size) +
+    geom_line() + 
+     
+    # geom_vline(xintercept = data_plot$Concentration[data_plot$Comment == "Missing"], color = "red") +
+    facet_wrap(~ID, scales = "free_y") + 
+    #geom_vline(xintercept = data_plot$Concentration[data_plot$Comment == "Missing"], color = "red") +
+    geom_vline( aes(xintercept = line, color = "red")) +
+    geom_smooth(data = data_plot[data_plot$Comment %in% c("linear", "start", "end"),], method = lm) +
+   # stat_smooth(data = data_plot[data_plot$Comment %in% c("linear", "start", "end"),] %>%  drop_na(), method = "lm", formula = y ~ poly(x,2), aes(Concentration, reg$fitted.values, col = "Order 1")) +
+
+    #geom_smooth(data = data_plot_out[c(dataPlotsum[dataPlotsum$ID %in% IDs, c("LinearRangeStart")] : dataPlotsum[dataPlotsum$ID %in% IDs, c("LinearRangeEnd")]), ],method = lm,) + 
+    theme_bw() #+
+    #scale_x_continuous(breaks = seq(0, 3, by = 0.25))
+  
+}
+
+
+
+
+
+```
+
+## Flowchart
+
+![](img/flowchart_20220317.png)
+
+## Procedere
+
+1.) Preprosessing
+1.1)Prepare Data
+The working data set is generated, including the normalized intensity, centralized dilution point and information about color and point shape for plotting.
+For all functions we use the normalized Intensity (max = 100) and centralized Dilution point.
+
+1.2) Check for outlier
+For detecting outliers, the data needs to be categorized first. Therefor the function 'chooseModel' fits the data with a linear, a logistic and a quadratic regression. The best fitting model is choosen by comparing the correlation of the three models and taking the model with the highest correlation. If the correlation is below a threshold of 0.99 the function 'outliers' calculates the standardized residuals for the choosen model. The point with the highest residual bigger than 2 will be considered and marked as outlier. 
+
+1.3) Check the ends of the dilution series for inconsistency
+According to our assumptions the first dilution should have the lowest intensity and the last dilution should have the highest intensity. The function "trimCurve" checks these assumptions and marks all dilutions which have a higher Intensity than the last dilution or a lower intensity than the first dilution. This approach ensures that we have only dilutions left where the intensity is clearly relatet to the dilution. It is obvious that outliers at first and last position could lead to a "good" signals, therefor the function "outlierDetection" should run first and the outliers should be removed. 
+The function "consecutiveVali" than removes all signals which have less than 5 consecutive dilutions.
+
+2.) Determining boundaries of linear Range
+
+2.1.) For all signals the best fitting model (linear, logistic or quadratic) is choosen using the function "chooseModel". Signals with a correlation above 0.98 are analyzed further.
+
+
+## Prepare Data
+```{r label = "prepare data", echo = TRUE, results = "markup", eval=TRUE}
+
+data_tbl <- read.csv(file.path("..", "data/input/20211217_DataMatrixD_Replicates_Updated.csv"), header = T, check.names = F, blank.lines.skip = TRUE)
+
+processList <- list(dataOrigin = data_tbl)
+
+processList$dataPrep <- data_tbl %>%  filter(Replicate %in% 1) %>% prepareData(dat = ., x = "Dilution", y = "Area", identifier = "Compound")
+
+metabolites <- unique(processList$dataPrep$ID)
+metabolitesRandomSample <- sample(metabolites, 25)
+
+plotSignals(dat = processList$dataPrep %>% filter(ID %in% metabolitesRandomSample), x = "DP", y = "IntensityNorm")
+
+```
+
+## Check for outlier.
+```{r label = "find outlier", echo = TRUE}
+
+dataOut <- lapply(metabolites, function(x) outlierDetection(dat = processList$dataPrep %>% filter(ID %in% x))) %>% unlist(recursive = F)
+
+processList$BestModelPre <- map(dataOut, 1) %>% ldply
+processList$OutlierPre <- map(dataOut, 2) %>% ldply
+processList$dataOut <- map(dataOut, 3) %>% ldply
+
+plotSignals(dat = processList$dataOut %>% filter(ID %in% metabolitesRandomSample), x = "DP", y = "IntensityNorm")
+
+```
+
+## Trim end of ranges
+```{r label = "trim data"}
+
+
+processList$dataTrim <- lapply(metabolites, function(x) {trimEnds(processList$dataOut %>% filter(color != "red", ID %in% x))}) %>% ldply
+processList$dataTrimPlot <- processList$dataTrim %>% bind_rows(., y = processList$dataOut %>% filter(color %in% "red" | is.na(IntensityNorm)))
+
+plotSignals(dat = processList$dataTrimPlot %>% filter(ID %in% metabolitesRandomSample), x = "DP", y = "IntensityNorm")
+
+processList$CheckLength <- lapply(metabolites, function(x) {consecutiveVali(processList$dataTrim %>% filter(ID %in% x))}) %>% ldply
+
+processList$dataTrimConsPlot <- join(processList$dataTrimPlot %>% select(-enoughPoints), processList$CheckLength)
+
+plotSignals(dat = processList$dataTrimConsPlot %>% filter(ID %in% metabolitesRandomSample), x = "DP", y = "IntensityNorm")
+
+
+#trim_out %>% filter(ID %in% "FEAT_104_053__319_21")
+process.list$data.checkLength %>% ldply %>% group_by(enoughPoints) %>% summarize(n = n())
+
+trim_out_length <- process.list$data.checkLength %>% ldply %>% join(., trim_out, by = "ID")
+
+```
+
+## Fit Models
+```{r fit Models, eval = FALSE}
+processList$Preprocessed <- list(dataPreprocessed = processList$dataTrimConsPlot %>%  filter(color %in% "black", enoughPoints %in% TRUE))
+
+metabolites <- unique(processList$Preprocessed$dataPreprocessed$ID)
+#1.) choose Model
+
+dataModel <- lapply(metabolites, function(x) chooseModel(dat = processList$dataPreprocessed %>% filter(ID %in% x))) %>% unlist(recursive = F)
+
+processList$Preprocessed$BestModelDescr <- data.frame(ID = names(map(dataModel, 1)), Model = map(dataModel, 1) %>% unlist(use.names = F), correlation = map(dataModel, 3) %>% unlist(use.names = F))
+processList$Preprocessed$BestModel <- map(dataModel, 2) 
+
+processList$Preprocessed$BestModelDescr$aboveThresh <- processList$Preprocessed$BestModelDescr$correlation > .98
+```
+
+## find linear Range
+```{r find linear Range, eval = FALSE}
+processList$Preprocessed$dataLinearRange <- processList$Preprocessed$dataPreprocessed %>%  filter( ID %in% processList$Preprocessed$BestModelDescr$ID[processList$Preprocessed$BestModelDescr$aboveThresh %in% TRUE])
+
+
+
+ 
+# 
+# 
+# tbl_lm <- slide(1:(nrow(trim_out_length %>% filter(ID %in% "FEAT_71_0861__28_0751")) - 2), ~func_lm(tbl = trim_out_length %>% filter(ID %in% "FEAT_71_0861__28_0751"), .x , explanVar = "DP")) %>% ldply
+# 
+# 
+# 
+# # calculate halfmax intensity of fitted curve
+# met <- unique(trim_out_length$ID)[1]
+# 
+# int50 <- DescTools::Closest(x = trim_out_length$Intensity_norm[trim_out_length$ID %in% met],a = max( fitted(process.list$data.bestModel[[met]]$model))/2, which = TRUE)
+# 
+# #########
+# lines(y = fitted(process.list$data.bestModel[[met]]$model)[int50], x = trim_out_length$DP[trim_out_length$ID %in% met][int50], col = "green", type = "p", cex = 2, pch = 19)
+# 
+# #create linear regression line going through int50
+# linear.range <- lm(fitted(cor.max)[(int50 - 1) : (int50 + 1)] ~ dat$log_conc[(int50 - 1) : (int50 + 1)])
+# abline.intensity <- coef(linear.range)[1] + coef(linear.range)[2]*dat$log_conc
+# 
+# abline(linear.range, col = "red")
+# #abline(h = 0, lty = "dashed")
+# #concentrationAt0 <- (0 - coef(linear.range)[1] )/ coef(linear.range)[2]
+# 
+# # compare regression line with fitted curve, calculate normalized differences, determine linear range start and end
+# 
+# ndx <- which(abs((dat$Intensity - abline.intensity) /max(abs(dat$Intensity - abline.intensity))) < 0.1)
+# 
+# 
+# abline(v = dat$log_conc[ndx[1]], lty = "dashed")
+# abline(v = dat$log_conc[tail(ndx,1)], lty = "dashed")
+
+
+
+
+
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+***
+
+# Session Info 
+
+This is the session information. This might be interesting later on if
+the project should be reanimated after a while. In addition the
+information might be interesting if other are looking at this project.
+
+```{r, echo = FALSE, comment ='', results='markup'}
+sessionInfo()
+```
+
