@@ -1,16 +1,21 @@
 Package: LiMetaDiS
-Title: What the Package Does (One Line, Title Case)
+Title: Assessing Linearity in untargeted metabolomics dilution series
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Janine",
+           family = "Wiebach",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to
-    pick a license
+           email = "Janine.Wiebach@charite.com",
+           comment = c(ORCID = "0000-0002-7416-9859"))
+Description: In a dilution series biological signal should follow a sigmoid
+  curve ("dose response curve"). This behavior can be used for an automated 
+  distinction between biological signals and non biological signals, like noise. 
+  Additionally we want to find the range for which the intensity is related to the 
+  concentration.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
+Suggests: 
+    testthat

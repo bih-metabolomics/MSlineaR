@@ -18,9 +18,11 @@ abstract: This is the abstract text and should describe in some short words what
 ***
 
 ```{r init_markdown, echo = FALSE, message=FALSE}
-source("init.R")
-source("R/prep.R")
-
+#source("init.R")
+#source("R/prep.R")
+library(devtools)
+library(roxygen2)
+load_all()
 
 library(testthat)
 library(assertthat)
