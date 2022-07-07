@@ -2,6 +2,7 @@
 #'
 #' @param dat Data frame with raw data. Mandatory columns are:
 #' - ID,
+#' - IDintern
 #' - Batch,
 #' - Replicate,
 #' - MZ
@@ -32,9 +33,9 @@
 prepareData <- function(dat){
 
     dat <- dat %>%
-    rename(ConcentrationRaw = Concentration, IntensityRaw = Intensity) %>%
+    dplyr::rename(ConcentrationRaw = Concentration, IntensityRaw = Intensity) %>%
     dplyr::group_by(ID) %>%
-    mutate(ConcentrationLog = log(ConcentrationRaw),
+    dplyr::mutate(ConcentrationLog = log(ConcentrationRaw),
            DilutionPoint = row_number(),
            Comment = NA,
            IntensityNorm = IntensityRaw/max(IntensityRaw, na.rm = T)*100,
@@ -43,7 +44,7 @@ prepareData <- function(dat){
     arrange(DilutionPoint) %>%
     ungroup() %>%
     mutate(pch = 19, color = "black") %>%
-    select(IDintern,
+    dplyr::select(IDintern,
            ID,
            IntensityNorm,
            DP,
@@ -54,7 +55,6 @@ prepareData <- function(dat){
            IntensityRaw,
            ConcentrationLog,
            IntensityLog,
-           IntensityRaw,
            DilutionPoint)
 
   return(dat)

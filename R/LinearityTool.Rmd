@@ -27,6 +27,10 @@ load_all()
 library(testthat)
 library(assertthat)
 library(pbapply)
+library(tidyverse)
+library(drc)
+library(plyr)
+library(dplyr)
 opts_chunk$set(fig.width=7, fig.height=7, fig.path='S:/Projects/2022/MSTARS/Janine_linearity_project/results/',
                  #'C:/Users/Wiebachj/OneDrive - Charité - Universitätsmedizin Berlin/Kirwan/sigmodial/sigmodial/scripts/img/',
                echo=FALSE, warning=FALSE, message=FALSE,
@@ -104,7 +108,7 @@ general <- function(columnNames,
   assert_that(all(columnNames %in% colnames(dat)), msg = "missing columns")
   #rename
   processList$dataRaw <- processList$dataOrigin %>% 
-    rename(ID = columnNames[["ID"]],
+    dplyr::rename(ID = columnNames[["ID"]],
            Batch = columnNames[["Batch"]], 
            Replicate = columnNames[["Replicate"]], 
            mz = columnNames[["MZ"]], 
@@ -121,7 +125,7 @@ general <- function(columnNames,
   assert_that(nrow(processList$dataPrep) == nrow(processList$dataRaw))
   
   ## outlier
-  dataOut <- lapply(unique(processList$dataPrep$ID),
+  dataOut <- pblapply(unique(processList$dataPrep$ID),
                     function(x) outlierDetection(dat = processList$dataPrep %>% filter(ID %in% x), 
                                                  numboutlier = 1, res = OutlierResPre, 
                                                  threshCor = minCorFittingModelFOD)) %>%
@@ -150,8 +154,8 @@ general <- function(columnNames,
 processList$dataTrim <- pblapply(unique(processList$dataTrim$ID), function(x) {consecutiveVali(dats = processList$dataTrim %>% filter(ID %in% x), minConsecutives = 5)}) %>% ldply
 assert_that(nrow(processList$dataTrim) == nrow(processList$dataPrep))
 
-discardCompound <- n_distinct(processList$dataTrim %>%  filter(enoughPoints == FALSE) %>% select(ID))
-remainingCompound <- n_distinct(processList$dataTrim %>%  filter(enoughPoints != FALSE) %>% select(ID))
+discardCompound <- n_distinct(processList$dataTrim %>%  filter(enoughPoints == FALSE) %>% dplyr::select(ID))
+remainingCompound <- n_distinct(processList$dataTrim %>%  filter(enoughPoints != FALSE) %>% dplyr::select(ID))
 cat(discardCompound, "Compounds had less than", minConsecutives, "consecutive points and were discarded.")
 
 ##Fitting
@@ -173,8 +177,8 @@ processList$fittingModel <- map(dataModel, 2)
 processList$dataFittingModel <- full_join(processList$dataFittingModel, processList$BestModel, by = "ID")
 assert_that(nrow(processList$dataFittingModel) == remainingCompound * n_dilution )
 
-discardCompoundFitting <- n_distinct(processList$dataFittingModel %>%  filter(aboveMinCor == FALSE) %>% select(ID))
-remainingCompoundFitting <- n_distinct(processList$dataFittingModel %>%  filter(aboveMinCor == TRUE) %>% select(ID))
+discardCompoundFitting <- n_distinct(processList$dataFittingModel %>%  filter(aboveMinCor == FALSE) %>% dplyr::select(ID))
+remainingCompoundFitting <- n_distinct(processList$dataFittingModel %>%  filter(aboveMinCor == TRUE) %>% dplyr::select(ID))
 
 cat(discardCompoundFitting, "Compounds have a low Correlation (less than" ,minCorFittingModel, ") and undergo a second outlier detection." )
 
@@ -209,7 +213,7 @@ processList$fittingModelSOD <- map(dataModel, 2)
 
 processList$dataFittingModelSOD <- full_join(processList$dataFittingModelSOD , processList$BestModelFittingSOD, by = "ID", suffix = c(".first", ".second") )
 
-savedCompounds <- n_distinct(processList$dataFittingModelSOD %>% filter(aboveMinCor.second == TRUE) %>% select(ID))
+savedCompounds <- n_distinct(processList$dataFittingModelSOD %>% filter(aboveMinCor.second == TRUE) %>% dplyr::select(ID))
 cat(savedCompounds, "Compounds have a Correlation above",minCorFittingModel ,"after second outlier detection")
 
 processList$dataFittingModelAll <- bind_rows(processList$dataFittingModel %>%  filter(aboveMinCor == TRUE),
@@ -217,27 +221,29 @@ processList$dataFittingModelAll <- bind_rows(processList$dataFittingModel %>%  f
                                                mutate(Model = Model.second,
                                                       correlation = correlation.second,
                                                       aboveMinCor = aboveMinCor.second) %>% 
-                                               select(-contains(c("first", "second"))), .id = NULL
+                                               dplyr::select(-contains(c("first", "second"))), .id = NULL
                                              )
 processList$dataFittingModelAll <- bind_rows(processList$dataFittingModelAll, processList$dataSOD %>% filter(ID %in% processList$dataFittingModelAll$ID, !IDintern %in% processList$dataFittingModelAll$IDintern))
 
 assert_that(n_distinct(processList$dataFittingModelAll$ID) == remainingCompoundFitting + savedCompounds )
 
-processList$fittingModelAll <- c(processList$fittingModel[names(processList$fittingModel) %in% unlist(distinct(processList$dataFittingModel %>% filter(aboveMinCor == TRUE) %>% select(ID)))],
-                                 processList$fittingModelSOD[names(processList$fittingModelSOD) %in% unlist(distinct(processList$dataFittingModelSOD %>% filter(aboveMinCor.second == TRUE) %>% select(ID)))])
+processList$fittingModelAll <- c(processList$fittingModel[names(processList$fittingModel) %in% unlist(distinct(processList$dataFittingModel %>% filter(aboveMinCor == TRUE) %>% dplyr::select(ID)))],
+                                 processList$fittingModelSOD[names(processList$fittingModelSOD) %in% unlist(distinct(processList$dataFittingModelSOD %>% filter(aboveMinCor.second == TRUE) %>% dplyr::select(ID)))])
 
 ## find linear Range 
 processList$dataLinearRange <- pblapply(unique(processList$dataFittingModelAll$ID), function(x) findLinearRange(dat = processList$dataFittingModelAll %>% filter(ID %in% x, color %in% "black"), modelObject = processList$fittingModelAll[[x]])) %>% ldply
 
 processList$dataLinearRange <- bind_rows(processList$dataLinearRange, processList$dataFittingModelAll %>% filter(ID %in% processList$dataLinearRange$ID, !IDintern %in% processList$dataLinearRange$IDintern))
 
+processList$dataLinearRange <- bind_rows(processList$dataLinearRange, processList$dataTrim %>% filter(!IDintern %in% processList$dataLinearRange$IDintern))
+
+
 # 
 # <!-- plotSignals(dat = processList$Preprocessed$dataLinearRange %>% filter(ID %in% metabolitesRandomSample), x = "DilutionPoint", y = "IntensityNorm") -->
 # 
-# <!-- processList$Summary <- getSummaryList(processList) -->
+processList$Summary <- getSummaryList(processList)
 # <!-- processList$SummaryAll <- getAllList(processList) -->
 # 
-#<!-- func_hist_QC_summary() -->
 
 
 
@@ -381,7 +387,7 @@ outlierDetection <- function(dat, y="IntensityNorm", x="DP", model=c("logistic",
   
   if (dataModel$correlation < threshCor) {
     outlierSum <- outlier(ID = unique(dat$ID),modelObject =  bestModel[[1]][[2]], res, count = numboutlier)
-    if (outlierSum$outlier %in% TRUE) {
+    if (any(outlierSum$outlier %in% TRUE)) {
       dataOutlier$color[outlierSum$outlier_position] <- "red"
       dataOutlier$pch[outlierSum$outlier_position] <- 19
       dataOutlier$Outlier[outlierSum$outlier_position] <- TRUE
@@ -391,7 +397,7 @@ outlierDetection <- function(dat, y="IntensityNorm", x="DP", model=c("logistic",
   }
   
   dataOutlier <- full_join(dataOutlier, 
-                           dat %>% select(-color,-pch),
+                           dat %>% dplyr::select(-color,-pch),
                            by = names(dat)[-which(arr.ind = T,names(dat) %in% c("color", "pch" ))])
   tmp <- list("tmp" = list("Model" = dataModel, "Outlier" = outlierSum, "dataOutlier" = dataOutlier))
   names(tmp) <- unique(dat$ID)
@@ -528,14 +534,14 @@ findLinearRange <- function(dat, x="DP", y = "IntensityNorm", modelObject, res =
 }
 
 #table: ID, Batch, Replicate, mz, RT, LinarRange, LR_IntensityStart, LR_IntensityEnd, LR_ConcentrationStart, LR_ConcentrationEnd, Nr_MissingValue, MissingInLinearRange, Nr_Outlier, OutlierInLinearRange, Comment, type  
-getSummaryListOverview <- function(completeList){
+getSummaryList <- function(completeList){
   #browser()
  dat <- completeList[["dataRaw"]] %>% 
-    select(ID, Batch, Replicate, mz, RT) %>% 
+    dplyr::select(ID, Batch, Replicate, mz, RT) %>% 
     distinct(.)
  
- LR <- completeList[["Preprocessed"]][["dataLinearRange"]] %>% 
-   select(ID, linearRangeStart, linearRangeEnd) %>% 
+ LR <- completeList[["dataLinearRange"]] %>% 
+   dplyr::select(ID, linearRangeStart, linearRangeEnd) %>% 
    distinct(.) %>%
    mutate(LengthLinearRange = linearRangeEnd - linearRangeStart + 1) %>% 
    drop_na(linearRangeStart)
@@ -546,18 +552,18 @@ getSummaryListOverview <- function(completeList){
           LR_ConcentrationEnd = ConcentrationRaw[LR$linearRangeEnd[LR$ID %in% x]],
           LR_IntensityStart = IntensityRaw[LR$linearRangeStart[LR$ID %in% x]],
           LR_IntensityEnd = IntensityRaw[LR$linearRangeEnd[LR$ID %in% x]]) %>% 
-   select(ID, LR_ConcentrationStart, LR_ConcentrationEnd, LR_IntensityStart, LR_IntensityEnd) %>% 
+   dplyr::select(ID, LR_ConcentrationStart, LR_ConcentrationEnd, LR_IntensityStart, LR_IntensityEnd) %>% 
    distinct()
  }) %>% ldply
 
  
   MissingNr <- completeList[["dataRaw"]] %>%
-    select(ID, Intensity) %>% 
+    dplyr::select(ID, Intensity) %>% 
     group_by(ID) %>% 
-    count(is.na(Intensity)) %>%
-    rename(Nr_MissingValue = n) %>%
+    dplyr::count(is.na(Intensity)) %>%
+    dplyr::rename(Nr_MissingValue = n) %>%
     filter(`is.na(Intensity)` == TRUE) %>% 
-    select(ID, Nr_MissingValue)
+    dplyr::select(ID, Nr_MissingValue)
   
   Missing <- lapply(LR$ID, function(x){
     completeList[["dataRaw"]] %>% 
@@ -567,95 +573,99 @@ getSummaryListOverview <- function(completeList){
       distinct()
   }) %>% ldply
   
-  OutlierNr <- completeList[["dataOut"]] %>% 
+  OutlierNr <- completeList[["dataLinearRange"]] %>% 
     filter(Outlier %in% TRUE) %>% 
     group_by(ID) %>% 
-    count(Outlier) %>% 
-    rename(Nr_Outlier = n) %>% 
-    select(ID, Nr_Outlier)
+    dplyr::count(Outlier) %>% 
+    dplyr::rename(Nr_Outlier = n) %>% 
+    dplyr::select(ID, Nr_Outlier)
   
   Outlier <- lapply(LR$ID, function(x){
-    completeList[["dataOut"]] %>%
+    completeList[["dataLinearRange"]] %>%
     filter(ID %in% x) %>%
     filter(row_number() %in% LR$linearRangeStart[LR$ID %in% x]: LR$linearRangeEnd[LR$ID %in% x]) %>% 
-      summarise(ID, "OutlierInLinearRange" = any(Outlier %in% TRUE)) %>% 
+      dplyr::summarise(ID, "OutlierInLinearRange" = any(Outlier %in% TRUE, na.rm = T)) %>% 
       distinct()
-  }) %>% ldply  
+  }) %>% ldply 
+  
       
 all <- join_all(list(dat, LR, LR_limits, MissingNr, Missing, OutlierNr, Outlier), by = "ID")
+#all$OutlierInLinearRange[!is.na(all$Nr_Outlier) & all$Nr_Outlier>0 & is.na(all$OutlierInLinearRange)] <- FALSE
+all$OutlierInLinearRange[is.na(all$Nr_Outlier)] <- NA
+all$MissingInLinearRange[is.na(all$Nr_MissingValue)] <- NA
 
-all <- left_join(x = all, y = completeList$CheckLength, by = "ID" ) %>% 
-  mutate("Comment" = case_when(enoughPoints == TRUE ~ "",
-                               TRUE ~ "notEnoughConsecutivePoints")) %>% 
-  select(-enoughPoints)
-
- all <- all %>% 
-   mutate(
-     Comment = case_when(
-       Nr_MissingValue >= 1 ~ ifelse(Comment != "", paste(Comment, "MissingValue", sep = ","), "MissingValue"),
-       TRUE ~ Comment),
-     Comment = case_when(
-       Nr_Outlier >=1 ~ ifelse(Comment != "", paste(Comment, "Outlier", sep = ","), "Outlier"),
-       TRUE ~ Comment),
-     Comment = case_when(
-       OutlierInLinearRange == TRUE ~ ifelse(Comment != "", paste(Comment, "OutlierInLinearRange", sep = ","), "OutlierInLinearRange"),
-       TRUE ~ Comment),
-     Comment = case_when(
-       LengthLinearRange >=1 & LengthLinearRange <= 4  ~ ifelse(Comment != "", paste(Comment, "notEnoughLinearPoints", sep = ","), "notEnoughLinearPoints"),
-       LengthLinearRange >=5 ~ ifelse(Comment != "", paste(Comment, "linear", sep = ","), "linear"),
-       TRUE ~ Comment)
-   )
- 
- all <- left_join(
-   x = all, 
-   y = rbind(completeList$Preprocessed$BestModelDescr, completeList$Preprocessed$BestModelDescrSecond) %>% 
-     group_by(ID) %>% 
-     arrange(-correlation,.by_group = TRUE) %>% 
-     distinct(ID,.keep_all = TRUE), 
-   by = "ID" ) %>% 
-   mutate("Comment" = case_when(
-     aboveThresh == FALSE & !(Comment %in% "linear") ~ ifelse(Comment != "", paste(Comment, "lowCorrelation", sep = ","), "lowCorrelation"),
-     TRUE ~ Comment)) %>% 
-   select(-c(aboveThresh))
+# all <- left_join(x = all, y = completeList$CheckLength, by = "ID" ) %>% 
+#   mutate("Comment" = case_when(enoughPoints == TRUE ~ "",
+#                                TRUE ~ "notEnoughConsecutivePoints")) %>% 
+#   dplyr::select(-enoughPoints)
+# 
+#  all <- all %>% 
+#    mutate(
+#      Comment = case_when(
+#        Nr_MissingValue >= 1 ~ ifelse(Comment != "", paste(Comment, "MissingValue", sep = ","), "MissingValue"),
+#        TRUE ~ Comment),
+#      Comment = case_when(
+#        Nr_Outlier >=1 ~ ifelse(Comment != "", paste(Comment, "Outlier", sep = ","), "Outlier"),
+#        TRUE ~ Comment),
+#      Comment = case_when(
+#        OutlierInLinearRange == TRUE ~ ifelse(Comment != "", paste(Comment, "OutlierInLinearRange", sep = ","), "OutlierInLinearRange"),
+#        TRUE ~ Comment),
+#      Comment = case_when(
+#        LengthLinearRange >=1 & LengthLinearRange <= 4  ~ ifelse(Comment != "", paste(Comment, "notEnoughLinearPoints", sep = ","), "notEnoughLinearPoints"),
+#        LengthLinearRange >=5 ~ ifelse(Comment != "", paste(Comment, "linear", sep = ","), "linear"),
+#        TRUE ~ Comment)
+#    )
+#  
+#  all <- left_join(
+#    x = all, 
+#    y = rbind(completeList$Preprocessed$BestModelDescr, completeList$Preprocessed$BestModelDescrSecond) %>% 
+#      group_by(ID) %>% 
+#      arrange(-correlation,.by_group = TRUE) %>% 
+#      distinct(ID,.keep_all = TRUE), 
+#    by = "ID" ) %>% 
+#    mutate("Comment" = case_when(
+#      aboveThresh == FALSE & !(Comment %in% "linear") ~ ifelse(Comment != "", paste(Comment, "lowCorrelation", sep = ","), "lowCorrelation"),
+#      TRUE ~ Comment)) %>% 
+#    dplyr::select(-c(aboveThresh))
  
  return(all)
  
 }
 
-getAllList <- function(completeList){
-  
-  dat <- completeList$dataPrep %>% 
-    select(ID, ConcentrationRaw, DilutionPoint, IntensityRaw) %>% 
-    mutate("MissingValue" = is.na(IntensityRaw))
-  
-  dat <- left_join(
-    x = dat,
-    y = rbind(completeList$dataOut, completeList$Preprocessed$dataOutSecond) %>% 
-      select(ID, DilutionPoint, Outlier) %>% 
-      arrange(ID, DilutionPoint, Outlier) %>% 
-      distinct(ID,DilutionPoint, .keep_all = TRUE),
-    by = c("ID", "DilutionPoint")
-  ) %>% 
-    arrange(ID, DilutionPoint)
-  
-  dat <- left_join(
-    x = dat,
-    y = completeList$Preprocessed$dataLinearRange %>% select(ID, DilutionPoint, linearRange),
-    by = c("ID", "DilutionPoint")
-  ) %>% 
-    arrange(ID, DilutionPoint)
-  
-  return(dat)
-  
-}
+# getAllList <- function(completeList){
+#   
+#   dat <- completeList$dataPrep %>% 
+#     dplyr::select(ID, ConcentrationRaw, DilutionPoint, IntensityRaw) %>% 
+#     mutate("MissingValue" = is.na(IntensityRaw))
+#   
+#   dat <- left_join(
+#     x = dat,
+#     y = rbind(completeList$dataOut, completeList$Preprocessed$dataOutSecond) %>% 
+#       dplyr::select(ID, DilutionPoint, Outlier) %>% 
+#       arrange(ID, DilutionPoint, Outlier) %>% 
+#       distinct(ID,DilutionPoint, .keep_all = TRUE),
+#     by = c("ID", "DilutionPoint")
+#   ) %>% 
+#     arrange(ID, DilutionPoint)
+#   
+#   dat <- left_join(
+#     x = dat,
+#     y = completeList$Preprocessed$dataLinearRange %>% dplyr::select(ID, DilutionPoint, linearRange),
+#     by = c("ID", "DilutionPoint")
+#   ) %>% 
+#     arrange(ID, DilutionPoint)
+#   
+#   return(dat)
+#   
+# }
 
 
 
 # function histogram output
 
-func_hist_QC_summary <- function(datList = processList$SummaryAll){
+func_hist_QC_summary <- function(datList = processList$Summary){
   
-  NAdat <- datList$DilutionPoint[datlist$MissingValue == TRUE] %>% table()
+  NAdat <- datList$DilutionPoint[is.na(datList$IntensityRaw)] %>% table()
   NANr  <- lapply(1:length(unique(datList$DilutionPoint)), function(x) {
     ifelse(x %in% names(NAdat),yes = NAdat[names(NAdat) == x],no = 0)
   }) %>%  unlist()
@@ -755,6 +765,7 @@ test <- general(
   
 )
 
+func_hist_QC_summary(test$Summary)
 # processList <- list(dataOrigin = data_tbl)
 # processList$dataRaw <- processList$dataOrigin %>% 
 #   rename(ID = columnNames$ID, Batch = columnNames$Batch, Replicate = columnNames$Replicate, mz = columnNames$MZ, RT = columnNames$RT, Concentration = columnNames$Concentration, Intensity = columnNames$Intensity) %>% 
