@@ -33,7 +33,7 @@
 prepareData <- function(dat){
 
     dat <- dat %>%
-    dplyr::rename(ConcentrationRaw = Concentration, IntensityRaw = Intensity) %>%
+    dplyr::rename(ConcentrationRaw = Concentration, IntensityRaw = IntensityMedian) %>%
     dplyr::group_by(ID) %>%
     dplyr::mutate(ConcentrationLog = log(ConcentrationRaw),
            DilutionPoint = row_number(),

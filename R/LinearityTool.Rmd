@@ -109,14 +109,19 @@ general <- function(columnNames,
   #rename
   processList$dataRaw <- processList$dataOrigin %>% 
     dplyr::rename(ID = columnNames[["ID"]],
-           Batch = columnNames[["Batch"]], 
-           Replicate = columnNames[["Replicate"]], 
+           Replicate = ifelse(test = !is.null(columnNames[["Replicate"]]),yes = columnNames[["Replicate"]], no = "Replicate"), 
            mz = columnNames[["MZ"]], 
            RT = columnNames[["RT"]], 
            Concentration = columnNames[["Concentration"]], 
-           Intensity = columnNames[["Intensity"]]) %>% 
-    filter(Replicate %in% 1) %>% 
-    mutate(IDintern = 1:nrow(.))
+           Intensity = columnNames[["Intensity"]]) %>%
+    dplyr::select(ID, Replicate, mz, RT, Concentration, Intensity)
+    #filter(Replicate %in% 1) %>% 
+    #mutate(IDintern = 1:nrow(.))
+ 
+  if(is.null(columnNames[["Replicate"]])){processList$dataRaw$Replicate = 1} 
+  
+processList$dataRepMed <-  processList$dataRaw %>% dplyr::group_by(ID, Concentration) %>% dplyr::summarize(IntensityMedian = median(Intensity, na.rm = T), RSD = sd(Intensity, na.rm = T)/mean(Intensity, na.rm = T)*100) %>% full_join(., processList$dataRaw %>% dplyr::select(-Replicate, -Intensity) %>% distinct(), by = c("ID", "Concentration"))
+  
   
    n_dilution = n_distinct(processList$dataRaw$Concentration)
   ## normalizing, centralizing
@@ -255,90 +260,7 @@ processList$Summary <- getSummaryList(processList)
   
 }
 
-# prepareData <- function(dat){
-#   
-#   dat <- dat %>% 
-#     rename(ConcentrationRaw = Concentration, IntensityRaw = Intensity) %>% 
-#     dplyr::group_by(ID) %>%  
-#     mutate(ConcentrationLog = log(ConcentrationRaw),
-#            DilutionPoint = row_number(),
-#            Comment = NA, 
-#            IntensityNorm = IntensityRaw/max(IntensityRaw, na.rm = T)*100,
-#            DP = DilutionPoint - mean(DilutionPoint)) %>%
-#     arrange(DilutionPoint) %>% 
-#     ungroup() %>% 
-#     mutate(pch = 19, color = "black") %>% 
-#     select(IDintern,
-#            ID,
-#            IntensityNorm,
-#            DP, 
-#            Comment, 
-#            pch, 
-#            color, 
-#            ConcentrationRaw, 
-#            IntensityRaw, 
-#            ConcentrationLog, 
-#            IntensityRaw, 
-#            DilutionPoint)
-#   
-#   return(dat)
-# }
 
-# chooseModel <- function(dat, 
-#                         y="IntensityNorm", 
-#                         x="DP", 
-#                         model=c("logistic", "linear", "quadratic")){
-#   
-#   dat <- dat %>% drop_na(y)
-#   dat <- dat %>% arrange(DilutionPoint)
-#   
-#   if ("logistic" %in% model) {
-#     logistic <- drm(get(y) ~ get(x), fct = L.3(), data = dat)
-#     cor.logistic <- cor(dat[y], predict(logistic))
-#   } else{cor.logistic <- NA}
-#   
-#   if ("linear" %in% model) {
-#     linear <- lm(get(y) ~ get(x), data = dat)
-#     cor.linear <- cor(dat[y], predict(linear))
-#   } else{cor.linear <- NA}
-#   
-#   
-#   if ("quadratic" %in% model) {
-#     quadratic <- lm(get(y) ~ poly(get(x), 2, raw = TRUE), data = dat)
-#     cor.quadratic <- cor(dat[y], predict(quadratic))
-#   } else{
-#     cor.quadratic <- NA
-#   }
-#   
-#   
-#   # calculate correlation
-#   cor.poly <- c(
-#     "cor.logistic" = cor.logistic,
-#     "cor.linear" = cor.linear,
-#     "cor.quadratic" = cor.quadratic
-#   )
-#   
-#   cor.max <-  names(which(cor.poly == max(cor.poly, na.rm = T)))
-#   
-#   if ("cor.linear" %in% cor.max) {cor.max = "cor.linear"} else if (cor.max %in% c("cor.logistic", "cor.quadratic")) {cor.max = "cor.logistic"}  # if same correlation
-#   model <- get(substr(cor.max,5, 100 ))
-#   
-#   
-#   tmp <- list(
-#     "tmp" = list(
-#       "model.name" = substr(cor.max,5, 100 ), 
-#       "model" = model, 
-#       "cor" = max(cor.poly, na.rm = T)
-#       )
-#     )
-#   
-#   names(tmp) <- unique(dat$ID)
-#  
-#   #SSE <- sum((fitted(cor.max) - dat$Intensity_norm)^2)
-# 
-#   return(tmp)
-#   
-# }
 
 outlier <- function(ID, modelObject, res, count){
 
@@ -686,10 +608,10 @@ func_hist_QC_summary <- function(datList = processList$Summary){
   summary_dat <- tibble(
     "Dilution Point" = 1 : length(unique(datList$DilutionPoint)),
     "Concentration" = unique(datList$ConcentrationRaw),
+    "Nr of points within linear range" = ValidNr, 
+    "Nr of points without linear range" = rep(length(unique(datList$ID)), length(unique(datList$DilutionPoint))) - ValidNr,
     "Nr of NAs" = NANr,
     "Nr of Outliers" = OutNr,
-    "Nr of linear points" = ValidNr, 
-    "Nr of non valid Points" = rep(length(unique(datList$ID)), length(unique(datList$DilutionPoint))) - ValidNr
   )
   
   g <-  summary_dat %>% 
@@ -698,8 +620,9 @@ func_hist_QC_summary <- function(datList = processList$Summary){
     
     ggplot( aes(x = `Dilution Point` , y = Values, fill = Nr )) +
     geom_bar(width = 0.5, position = position_dodge(), stat = "identity") +
+    geom_hline(yintercept = n_distinct(datList %>% filter(`DilutionPoint` == 1)), linetype = "dotted") +
     theme_bw() +
-    scale_x_continuous(breaks = seq(0, 15, by = 1)) #+
+    scale_x_continuous(breaks = seq(1, n_distinct(summary_dat$`Dilution Point`), by = 1),labels = unique(summary_dat$Concentration), name = "Dilution") #+
   #scale_y_continuous(breaks = seq(0, 12, by = 1))
   # annotate(geom = "table",
   #        x = 10,
@@ -748,7 +671,7 @@ The function "consecutiveVali" than removes all signals which have less than 5 c
 data_tbl <- read.csv(file.path("..", "data/input/20211217_DataMatrixD_Replicates_Updated.csv"), header = T, check.names = F, blank.lines.skip = TRUE)
 
 # Args: pathes, column names, minimal consecutive points in linear range, minimal fitting correlation 
-# required columns in csv: ID, Batch, Replicate, MZ, RT, Concentration, Intensity
+# required columns in csv: ID, Replicate, MZ, RT, Concentration, Intensity
 # toDO: what to do with more replicates
 test <- general(
   
@@ -766,16 +689,11 @@ test <- general(
 )
 
 func_hist_QC_summary(test$Summary)
-# processList <- list(dataOrigin = data_tbl)
-# processList$dataRaw <- processList$dataOrigin %>% 
-#   rename(ID = columnNames$ID, Batch = columnNames$Batch, Replicate = columnNames$Replicate, mz = columnNames$MZ, RT = columnNames$RT, Concentration = columnNames$Concentration, Intensity = columnNames$Intensity) %>% 
-#   filter(Replicate %in% 1)
-# 
-# processList$dataPrep <- processList$dataRaw  %>% prepareData(dat = .)
 
 metabolites <- unique(processList$dataPrep$ID)
 metabolitesRandomSample <- sample(metabolites, 25)
 
+#plot
 plotSignals(dat = processList$dataPrep %>% filter(ID %in% metabolitesRandomSample), x = "DP", y = "IntensityNorm")
 
 
