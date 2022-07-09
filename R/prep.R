@@ -55,7 +55,8 @@ prepareData <- function(dat){
            IntensityRaw,
            ConcentrationLog,
            IntensityLog,
-           DilutionPoint)
+           DilutionPoint,
+           RSD)
 
   return(dat)
 }
