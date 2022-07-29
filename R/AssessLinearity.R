@@ -38,10 +38,10 @@ AssessLinearity <- function(columnNames,
   #filter(Replicate %in% 1) %>%
   #mutate(IDintern = 1:nrow(.))
 
-  cat(paste0("Data set with ", n_distinct(processList$dataRaw$ID) ," Compounds, ",
+  message("Data set with ", n_distinct(processList$dataRaw$ID) ," Compounds, ",
              n_distinct(processList$dataRaw$Replicate)," Replicate(s) and ",
              n_distinct(processList$dataRaw$Concentration),
-             " Concentration / Dilutions\n--------------------------------------------------------\n"))
+             " Concentration / Dilutions\n--------------------------------------------------------\n")
 
 
   if(is.null(columnNames[["Replicate"]])){
