@@ -94,99 +94,99 @@ Returns ID with a logical vector.
 
 
 
-outlier <- function(ID, modelObject, res, count){
+# outlier <- function(ID, modelObject, res, count){
+# 
+#   residual.all <- abs(residuals(modelObject)/sd(residuals(modelObject)))
+#   residual <- sort(residual.all,decreasing = T)
+#   if ( count > length(residual.all)) count = length(residual.all)
+#   residual <- residual[1:count]
+#   residual <- residual[residual > res]
+#   
+#   if(length(residual) > 0) {
+#     rs <- ldply(residual, function(x){
+#       data.frame(
+#       "ID" = ID,
+#       "outlier" = TRUE,
+#       "outlier_position" = which(residual.all == x)
+#       )
+#     })
+#     #   data.frame(
+#     #   "ID" = ID,
+#     #   "outlier" = TRUE,
+#     #   "outlier_position" = which(residual == max(residual))
+#     # )
+#   } else {
+#     rs <- data.frame(
+#       "ID" = ID,
+#       "outlier" = FALSE,
+#       "outlier_position" = NA
+#     )
+#   }
+#   
+#   return(rs)
+# }
+# 
+# outlierDetection <- function(dat, y="IntensityNorm", x="DP", model=c("logistic", "linear", "quadratic"), res=2, threshCor=0.99, numboutlier = 1){
+#   #browser()
+#   dat <- dat %>% arrange(DilutionPoint)
+#   dataOutlier <- dat %>% drop_na(y)
+#   dataOutlier$Outlier <- NA
+#   bestModel <- chooseModel(dat, y, x, model)
+#   
+#   dataModel <- data.frame(
+#     "ID" = names(bestModel),
+#     "ModelFit" = map(bestModel, 1) %>%  unlist(use.names = F),
+#     "correlation" = map(bestModel, 3) %>%  unlist(use.names = F)
+#   )
+#   
+#   if (dataModel$correlation < threshCor) {
+#     outlierSum <- outlier(ID = unique(dat$ID),modelObject =  bestModel[[1]][[2]], res, count = numboutlier)
+#     if (any(outlierSum$outlier %in% TRUE)) {
+#       dataOutlier$color[outlierSum$outlier_position] <- "red"
+#       dataOutlier$pch[outlierSum$outlier_position] <- 19
+#       dataOutlier$Outlier[outlierSum$outlier_position] <- TRUE
+#     }
+#   } else{
+#     outlierSum <- outlier(ID = unique(dat$ID),modelObject =  bestModel[[1]][[2]], res = 100, count = numboutlier)
+#   }
+#   
+#   dataOutlier <- full_join(dataOutlier, 
+#                            dat %>% dplyr::select(-color,-pch),
+#                            by = names(dat)[-which(arr.ind = T,names(dat) %in% c("color", "pch" ))])
+#   tmp <- list("tmp" = list("Model" = dataModel, "Outlier" = outlierSum, "dataOutlier" = dataOutlier))
+#   names(tmp) <- unique(dat$ID)
+#   return(tmp) 
+#   
+# }
 
-  residual.all <- abs(residuals(modelObject)/sd(residuals(modelObject)))
-  residual <- sort(residual.all,decreasing = T)
-  if ( count > length(residual.all)) count = length(residual.all)
-  residual <- residual[1:count]
-  residual <- residual[residual > res]
-  
-  if(length(residual) > 0) {
-    rs <- ldply(residual, function(x){
-      data.frame(
-      "ID" = ID,
-      "outlier" = TRUE,
-      "outlier_position" = which(residual.all == x)
-      )
-    })
-    #   data.frame(
-    #   "ID" = ID,
-    #   "outlier" = TRUE,
-    #   "outlier_position" = which(residual == max(residual))
-    # )
-  } else {
-    rs <- data.frame(
-      "ID" = ID,
-      "outlier" = FALSE,
-      "outlier_position" = NA
-    )
-  }
-  
-  return(rs)
-}
-
-outlierDetection <- function(dat, y="IntensityNorm", x="DP", model=c("logistic", "linear", "quadratic"), res=2, threshCor=0.99, numboutlier = 1){
-  #browser()
-  dat <- dat %>% arrange(DilutionPoint)
-  dataOutlier <- dat %>% drop_na(y)
-  dataOutlier$Outlier <- NA
-  bestModel <- chooseModel(dat, y, x, model)
-  
-  dataModel <- data.frame(
-    "ID" = names(bestModel),
-    "ModelFit" = map(bestModel, 1) %>%  unlist(use.names = F),
-    "correlation" = map(bestModel, 3) %>%  unlist(use.names = F)
-  )
-  
-  if (dataModel$correlation < threshCor) {
-    outlierSum <- outlier(ID = unique(dat$ID),modelObject =  bestModel[[1]][[2]], res, count = numboutlier)
-    if (any(outlierSum$outlier %in% TRUE)) {
-      dataOutlier$color[outlierSum$outlier_position] <- "red"
-      dataOutlier$pch[outlierSum$outlier_position] <- 19
-      dataOutlier$Outlier[outlierSum$outlier_position] <- TRUE
-    }
-  } else{
-    outlierSum <- outlier(ID = unique(dat$ID),modelObject =  bestModel[[1]][[2]], res = 100, count = numboutlier)
-  }
-  
-  dataOutlier <- full_join(dataOutlier, 
-                           dat %>% dplyr::select(-color,-pch),
-                           by = names(dat)[-which(arr.ind = T,names(dat) %in% c("color", "pch" ))])
-  tmp <- list("tmp" = list("Model" = dataModel, "Outlier" = outlierSum, "dataOutlier" = dataOutlier))
-  names(tmp) <- unique(dat$ID)
-  return(tmp) 
-  
-}
-
-trimEnds <- function(dats, y="IntensityNorm", x="DP", thresh=0){
-  dat <- dats %>% drop_na(y) %>% filter(color != "red") %>% arrange(DilutionPoint)
-  #browser()
-  if (last(dat[[y]]) != max(dat[[y]])) {  
-    dat.reduced.max <- dat %>% 
-      filter(get(y) >= last(get(y)) - thresh) %>% 
-      mutate(Comment = "bigger") 
-    dat.reduced.max$Comment[nrow(dat.reduced.max)] <- "last"
-  } else {dat.reduced.max <- dat}
-    
-  if (dat[[y]][1] != min(dat[[y]])){
-    dat.reduced.min <- dat %>% 
-      filter(get(y) <= get(y)[1] + thresh) %>% 
-      mutate(Comment = "smaller") 
-    dat.reduced.min$Comment[1] <- "first"
-  } else {dat.reduced.min <- dat}
-    
-    tmp <- full_join(dat.reduced.max,dat.reduced.min, 
-                     by = names(dat)[-which(arr.ind = T,names(dat) == "Comment" )]) %>%
-      unite(Comment, c("Comment.x","Comment.y"), remove = TRUE, na.rm = TRUE)
-    
-    tmp$color[str_detect(tmp$Comment, "bigger|smaller|last|first")] <-  "grey"
-    tmp$pch[str_detect(tmp$Comment, "bigger|smaller|last|first")] <- 19
-    if(any((!dats$IDintern %in% tmp$IDintern))){
-      tmp <-  full_join( dats %>% filter(!IDintern %in% tmp$IDintern), tmp, by = names(dat)[names(dats) %in% names(tmp)])}
-    
-    return(tmp)
-}
+# trimEnds <- function(dats, y="IntensityNorm", x="DP", thresh=0){
+#   dat <- dats %>% drop_na(y) %>% filter(color != "red") %>% arrange(DilutionPoint)
+#   #browser()
+#   if (last(dat[[y]]) != max(dat[[y]])) {  
+#     dat.reduced.max <- dat %>% 
+#       filter(get(y) >= last(get(y)) - thresh) %>% 
+#       mutate(Comment = "bigger") 
+#     dat.reduced.max$Comment[nrow(dat.reduced.max)] <- "last"
+#   } else {dat.reduced.max <- dat}
+#     
+#   if (dat[[y]][1] != min(dat[[y]])){
+#     dat.reduced.min <- dat %>% 
+#       filter(get(y) <= get(y)[1] + thresh) %>% 
+#       mutate(Comment = "smaller") 
+#     dat.reduced.min$Comment[1] <- "first"
+#   } else {dat.reduced.min <- dat}
+#     
+#     tmp <- full_join(dat.reduced.max,dat.reduced.min, 
+#                      by = names(dat)[-which(arr.ind = T,names(dat) == "Comment" )]) %>%
+#       unite(Comment, c("Comment.x","Comment.y"), remove = TRUE, na.rm = TRUE)
+#     
+#     tmp$color[str_detect(tmp$Comment, "bigger|smaller|last|first")] <-  "grey"
+#     tmp$pch[str_detect(tmp$Comment, "bigger|smaller|last|first")] <- 19
+#     if(any((!dats$IDintern %in% tmp$IDintern))){
+#       tmp <-  full_join( dats %>% filter(!IDintern %in% tmp$IDintern), tmp, by = names(dat)[names(dats) %in% names(tmp)])}
+#     
+#     return(tmp)
+# }
 
 consecutiveVali <- function(dats, minConsecutives=5, y="IntensityNorm"){
   
