@@ -11,9 +11,6 @@ print_log_reg(fit, kable_lgl = FALSE)
 
 \item{kable_lgl}{}
 }
-\value{
-
-}
 \description{
 Wrapper function for log reg
 }

@@ -10,6 +10,7 @@ prepareData(dat)
 \item{dat}{Data frame with raw data. Mandatory columns are:
 \itemize{
 \item ID,
+\item IDintern
 \item Batch,
 \item Replicate,
 \item MZ
@@ -38,7 +39,4 @@ Data frame with columns:
 }
 \description{
 Prepare raw data
-}
-\examples{
-
 }

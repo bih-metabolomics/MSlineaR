@@ -14,12 +14,6 @@ chooseModel(
 \arguments{
 \item{model}{}
 }
-\value{
-
-}
 \description{
 Title
-}
-\examples{
-
 }
