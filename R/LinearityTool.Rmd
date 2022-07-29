@@ -292,106 +292,106 @@ Returns ID with a logical vector.
 # }
 
 #table: ID, Batch, Replicate, mz, RT, LinarRange, LR_IntensityStart, LR_IntensityEnd, LR_ConcentrationStart, LR_ConcentrationEnd, Nr_MissingValue, MissingInLinearRange, Nr_Outlier, OutlierInLinearRange, Comment, type  
-getSummaryList <- function(completeList){
-  #browser()
-  dat <- completeList[["dataRepMed"]] %>%
-    dplyr::ungroup() %>% 
-    dplyr::select(ID, mz, RT) %>% 
-    distinct(.)
- 
- LR <- completeList[["dataLinearRange"]] %>% 
-   dplyr::select(ID, linearRangeStart, linearRangeEnd) %>% 
-   distinct(.) %>%
-   mutate(LengthLinearRange = linearRangeEnd - linearRangeStart + 1) %>% 
-   drop_na(linearRangeStart)
- 
- LR_limits <-  lapply(LR$ID, function(x) {completeList[["dataPrep"]] %>% 
-   filter(ID %in% x) %>% 
-   mutate(LR_ConcentrationStart = ConcentrationRaw[LR$linearRangeStart[LR$ID %in% x]],
-          LR_ConcentrationEnd = ConcentrationRaw[LR$linearRangeEnd[LR$ID %in% x]],
-          LR_IntensityStart = IntensityRaw[LR$linearRangeStart[LR$ID %in% x]],
-          LR_IntensityEnd = IntensityRaw[LR$linearRangeEnd[LR$ID %in% x]]) %>% 
-   dplyr::select(ID, LR_ConcentrationStart, LR_ConcentrationEnd, LR_IntensityStart, LR_IntensityEnd) %>% 
-   distinct()
- }) %>% ldply
-
- 
-  MissingNr <- completeList[["dataRepMed"]] %>%
-    dplyr::ungroup() %>% 
-    dplyr::select(ID, IntensityMedian) %>% 
-    group_by(ID) %>% 
-    dplyr::count(is.na(IntensityMedian)) %>%
-    dplyr::rename(Nr_MissingValue = n) %>%
-    filter(`is.na(IntensityMedian)` == TRUE) %>% 
-    dplyr::select(ID, Nr_MissingValue)
-  
-  Missing <- lapply(LR$ID, function(x){
-    completeList[["dataRaw"]] %>% 
-      filter(ID %in% x) %>% 
-      filter(row_number() %in% LR$linearRangeStart[LR$ID %in% x]: LR$linearRangeEnd[LR$ID %in% x]) %>% 
-      summarise(ID, "MissingInLinearRange" = is.na(Intensity)) %>% 
-      distinct()
-  }) %>% ldply
-  
-  OutlierNr <- completeList[["dataLinearRange"]] %>% 
-    filter(Outlier %in% TRUE) %>% 
-    group_by(ID) %>% 
-    dplyr::count(Outlier) %>% 
-    dplyr::rename(Nr_Outlier = n) %>% 
-    dplyr::select(ID, Nr_Outlier)
-  
-  Outlier <- lapply(LR$ID, function(x){
-    completeList[["dataLinearRange"]] %>%
-    filter(ID %in% x) %>%
-    filter(row_number() %in% LR$linearRangeStart[LR$ID %in% x]: LR$linearRangeEnd[LR$ID %in% x]) %>% 
-      dplyr::summarise(ID, "OutlierInLinearRange" = any(Outlier %in% TRUE, na.rm = T)) %>% 
-      distinct()
-  }) %>% ldply 
-  
-      
-all <- join_all(list(dat, LR, LR_limits, MissingNr, Missing, OutlierNr, Outlier), by = "ID")
-#all$OutlierInLinearRange[!is.na(all$Nr_Outlier) & all$Nr_Outlier>0 & is.na(all$OutlierInLinearRange)] <- FALSE
-all$OutlierInLinearRange[is.na(all$Nr_Outlier)] <- NA
-all$MissingInLinearRange[is.na(all$Nr_MissingValue)] <- NA
-
-all <- all %>% distinct()
-# all <- left_join(x = all, y = completeList$CheckLength, by = "ID" ) %>% 
-#   mutate("Comment" = case_when(enoughPoints == TRUE ~ "",
-#                                TRUE ~ "notEnoughConsecutivePoints")) %>% 
-#   dplyr::select(-enoughPoints)
-# 
-#  all <- all %>% 
-#    mutate(
-#      Comment = case_when(
-#        Nr_MissingValue >= 1 ~ ifelse(Comment != "", paste(Comment, "MissingValue", sep = ","), "MissingValue"),
-#        TRUE ~ Comment),
-#      Comment = case_when(
-#        Nr_Outlier >=1 ~ ifelse(Comment != "", paste(Comment, "Outlier", sep = ","), "Outlier"),
-#        TRUE ~ Comment),
-#      Comment = case_when(
-#        OutlierInLinearRange == TRUE ~ ifelse(Comment != "", paste(Comment, "OutlierInLinearRange", sep = ","), "OutlierInLinearRange"),
-#        TRUE ~ Comment),
-#      Comment = case_when(
-#        LengthLinearRange >=1 & LengthLinearRange <= 4  ~ ifelse(Comment != "", paste(Comment, "notEnoughLinearPoints", sep = ","), "notEnoughLinearPoints"),
-#        LengthLinearRange >=5 ~ ifelse(Comment != "", paste(Comment, "linear", sep = ","), "linear"),
-#        TRUE ~ Comment)
-#    )
+# getSummaryList <- function(completeList){
+#   #browser()
+#   dat <- completeList[["dataRepMed"]] %>%
+#     dplyr::ungroup() %>% 
+#     dplyr::select(ID, mz, RT) %>% 
+#     distinct(.)
 #  
-#  all <- left_join(
-#    x = all, 
-#    y = rbind(completeList$Preprocessed$BestModelDescr, completeList$Preprocessed$BestModelDescrSecond) %>% 
-#      group_by(ID) %>% 
-#      arrange(-correlation,.by_group = TRUE) %>% 
-#      distinct(ID,.keep_all = TRUE), 
-#    by = "ID" ) %>% 
-#    mutate("Comment" = case_when(
-#      aboveThresh == FALSE & !(Comment %in% "linear") ~ ifelse(Comment != "", paste(Comment, "lowCorrelation", sep = ","), "lowCorrelation"),
-#      TRUE ~ Comment)) %>% 
-#    dplyr::select(-c(aboveThresh))
- 
- return(all)
- 
-}
+#  LR <- completeList[["dataLinearRange"]] %>% 
+#    dplyr::select(ID, linearRangeStart, linearRangeEnd) %>% 
+#    distinct(.) %>%
+#    mutate(LengthLinearRange = linearRangeEnd - linearRangeStart + 1) %>% 
+#    drop_na(linearRangeStart)
+#  
+#  LR_limits <-  lapply(LR$ID, function(x) {completeList[["dataPrep"]] %>% 
+#    filter(ID %in% x) %>% 
+#    mutate(LR_ConcentrationStart = ConcentrationRaw[LR$linearRangeStart[LR$ID %in% x]],
+#           LR_ConcentrationEnd = ConcentrationRaw[LR$linearRangeEnd[LR$ID %in% x]],
+#           LR_IntensityStart = IntensityRaw[LR$linearRangeStart[LR$ID %in% x]],
+#           LR_IntensityEnd = IntensityRaw[LR$linearRangeEnd[LR$ID %in% x]]) %>% 
+#    dplyr::select(ID, LR_ConcentrationStart, LR_ConcentrationEnd, LR_IntensityStart, LR_IntensityEnd) %>% 
+#    distinct()
+#  }) %>% ldply
+# 
+#  
+#   MissingNr <- completeList[["dataRepMed"]] %>%
+#     dplyr::ungroup() %>% 
+#     dplyr::select(ID, IntensityMedian) %>% 
+#     group_by(ID) %>% 
+#     dplyr::count(is.na(IntensityMedian)) %>%
+#     dplyr::rename(Nr_MissingValue = n) %>%
+#     filter(`is.na(IntensityMedian)` == TRUE) %>% 
+#     dplyr::select(ID, Nr_MissingValue)
+#   
+#   Missing <- lapply(LR$ID, function(x){
+#     completeList[["dataRaw"]] %>% 
+#       filter(ID %in% x) %>% 
+#       filter(row_number() %in% LR$linearRangeStart[LR$ID %in% x]: LR$linearRangeEnd[LR$ID %in% x]) %>% 
+#       summarise(ID, "MissingInLinearRange" = is.na(Intensity)) %>% 
+#       distinct()
+#   }) %>% ldply
+#   
+#   OutlierNr <- completeList[["dataLinearRange"]] %>% 
+#     filter(Outlier %in% TRUE) %>% 
+#     group_by(ID) %>% 
+#     dplyr::count(Outlier) %>% 
+#     dplyr::rename(Nr_Outlier = n) %>% 
+#     dplyr::select(ID, Nr_Outlier)
+#   
+#   Outlier <- lapply(LR$ID, function(x){
+#     completeList[["dataLinearRange"]] %>%
+#     filter(ID %in% x) %>%
+#     filter(row_number() %in% LR$linearRangeStart[LR$ID %in% x]: LR$linearRangeEnd[LR$ID %in% x]) %>% 
+#       dplyr::summarise(ID, "OutlierInLinearRange" = any(Outlier %in% TRUE, na.rm = T)) %>% 
+#       distinct()
+#   }) %>% ldply 
+#   
+#       
+# all <- join_all(list(dat, LR, LR_limits, MissingNr, Missing, OutlierNr, Outlier), by = "ID")
+# #all$OutlierInLinearRange[!is.na(all$Nr_Outlier) & all$Nr_Outlier>0 & is.na(all$OutlierInLinearRange)] <- FALSE
+# all$OutlierInLinearRange[is.na(all$Nr_Outlier)] <- NA
+# all$MissingInLinearRange[is.na(all$Nr_MissingValue)] <- NA
+# 
+# all <- all %>% distinct()
+# # all <- left_join(x = all, y = completeList$CheckLength, by = "ID" ) %>% 
+# #   mutate("Comment" = case_when(enoughPoints == TRUE ~ "",
+# #                                TRUE ~ "notEnoughConsecutivePoints")) %>% 
+# #   dplyr::select(-enoughPoints)
+# # 
+# #  all <- all %>% 
+# #    mutate(
+# #      Comment = case_when(
+# #        Nr_MissingValue >= 1 ~ ifelse(Comment != "", paste(Comment, "MissingValue", sep = ","), "MissingValue"),
+# #        TRUE ~ Comment),
+# #      Comment = case_when(
+# #        Nr_Outlier >=1 ~ ifelse(Comment != "", paste(Comment, "Outlier", sep = ","), "Outlier"),
+# #        TRUE ~ Comment),
+# #      Comment = case_when(
+# #        OutlierInLinearRange == TRUE ~ ifelse(Comment != "", paste(Comment, "OutlierInLinearRange", sep = ","), "OutlierInLinearRange"),
+# #        TRUE ~ Comment),
+# #      Comment = case_when(
+# #        LengthLinearRange >=1 & LengthLinearRange <= 4  ~ ifelse(Comment != "", paste(Comment, "notEnoughLinearPoints", sep = ","), "notEnoughLinearPoints"),
+# #        LengthLinearRange >=5 ~ ifelse(Comment != "", paste(Comment, "linear", sep = ","), "linear"),
+# #        TRUE ~ Comment)
+# #    )
+# #  
+# #  all <- left_join(
+# #    x = all, 
+# #    y = rbind(completeList$Preprocessed$BestModelDescr, completeList$Preprocessed$BestModelDescrSecond) %>% 
+# #      group_by(ID) %>% 
+# #      arrange(-correlation,.by_group = TRUE) %>% 
+# #      distinct(ID,.keep_all = TRUE), 
+# #    by = "ID" ) %>% 
+# #    mutate("Comment" = case_when(
+# #      aboveThresh == FALSE & !(Comment %in% "linear") ~ ifelse(Comment != "", paste(Comment, "lowCorrelation", sep = ","), "lowCorrelation"),
+# #      TRUE ~ Comment)) %>% 
+# #    dplyr::select(-c(aboveThresh))
+#  
+#  return(all)
+#  
+# }
 
 # getAllList <- function(completeList){
 #   
