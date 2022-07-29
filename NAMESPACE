@@ -3,6 +3,7 @@
 export(AssessLinearity)
 export(buildInference)
 export(chooseModel)
+export(consecutiveVali)
 export(dir0)
 export(gli)
 export(mk_dir)
