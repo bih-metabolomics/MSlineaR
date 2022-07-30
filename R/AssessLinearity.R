@@ -47,7 +47,7 @@ AssessLinearity <- function(columnNames,
   if(is.null(columnNames[["Replicate"]])){
     processList$dataRaw$Replicate = 1
   } else{
-    cat(paste0("calculating median and RSD of  ",n_distinct(processList$dataRaw$Replicate) ," replicates per Compound\n--------------------------------------------------------\n"))
+    message("calculating median and RSD of  ",n_distinct(processList$dataRaw$Replicate) ," replicates per Compound\n--------------------------------------------------------\n")
   }
 
   processList$dataRepMed <-  processList$dataRaw %>%
@@ -64,27 +64,49 @@ AssessLinearity <- function(columnNames,
     dplyr:: filter(sum(check) >= minConsecutives) |>
     dplyr::select(-check)
 
-  cat(paste0("Removed compounds with less than ", minConsecutives, "values.\n
+  message("Removed compounds with less than ", minConsecutives, "values.\n
            Data set with ", n_distinct(processList$dataRepMed$ID) ," Compounds, ",
              n_distinct(processList$dataRepMed$Replicate)," Replicate(s) and ",
              n_distinct(processList$dataRepMed$Concentration),
-             " Concentration / Dilutions\n--------------------------------------------------------\n"))
+             " Concentration / Dilutions\n--------------------------------------------------------\n")
 
 
   n_dilution = n_distinct(processList$dataRepMed$Concentration)
   ## normalizing, centralizing
-  cat(paste0("log transforming and normalising\n--------------------------------------------------------\n"))
+  message("normalising data\n--------------------------------------------------------\n")
   processList$dataPrep <- processList$dataRepMed  %>% prepareData(dat = .)
 
   assert_that(nrow(processList$dataPrep) == nrow(processList$dataRepMed))
 
   ## outlier
 
-  cat(paste0("First Outlier Detection\n"))
-  dataOut <- pblapply(unique(processList$dataPrep$ID),
-                      function(x) outlierDetection(dat = processList$dataPrep %>% filter(ID %in% x),
+  message("First Outlier Detection\n")
+
+    dataOut <- pblapply(1:length(unique(processList$dataPrep$ID)),
+                      function(x) {
+                        #message("oldi: ", oldi)
+                        oldi <- floor((x-1)/length(unique(processList$dataPrep$ID))*100)
+                        newi <- floor(x/length(unique(processList$dataPrep$ID))*100)
+                        #message("newi: ", newi)
+                        if(newi > oldi) {
+                          message(newi,"%-,", appendLF = FALSE)
+                        }
+
+                        outlierDetection(dat = processList$dataPrep %>% filter(ID %in% unique(processList$dataPrep$ID)[x]),
                                                    numboutlier = 1, res = OutlierResPre,
-                                                   threshCor = minCorFittingModelFOD)) %>%
+                                                   threshCor = minCorFittingModelFOD)
+
+                        # #message("oldi: ", oldi)
+                        # oldi <- floor((x-1)/length(unique(processList$dataPrep$ID))*100)
+                        # newi <- floor(x/length(unique(processList$dataPrep$ID))*100)
+                        # #message("newi: ", newi)
+                        # if(newi > oldi) {
+                        #   message(newi,"%-,", appendLF = FALSE)
+                        # }
+
+
+
+                        } ) %>%
     unlist(recursive = F)
 
   assert_that(length(dataOut) == length(unique(processList$dataPrep$ID)))
@@ -99,33 +121,59 @@ AssessLinearity <- function(columnNames,
   processList$dataFOD <- map(dataOut, 3) %>% ldply(.id = NULL)
   assert_that(nrow(processList$dataFOD) == nrow(processList$dataPrep))
 
-  cat(paste0("For ",n_distinct(processList$dataFOD %>%  filter(Outlier == TRUE) %>% dplyr::select(ID))," Compounds were an Outlier found\n"))
+  message("For ",n_distinct(processList$dataFOD %>%  dplyr::filter(Outlier %in% TRUE) %>% dplyr::select(ID))," Compounds were an Outlier found\n")
 
   ## trim
-  processList$dataTrim <- pblapply(unique(processList$dataFOD$ID),
-                                   function(x) trimEnds(dats = processList$dataFOD %>%
-                                                          filter(ID %in% x))) %>%
+  processList$dataTrim <- pblapply(1:length(unique(processList$dataFOD$ID)),
+                                   function(x) {
+                                     oldi <- floor((x-1)/length(unique(processList$dataFOD$ID))*100)
+                                     newi <- floor(x/length(unique(processList$dataFOD$ID))*100)
+                                     if(newi > oldi) {
+                                       message(newi,"%-,", appendLF = FALSE)
+                                     }
+                                     trimEnds(dats = processList$dataFOD %>%
+                                                          filter(ID %in% unique(processList$dataFOD$ID)[x]))
+
+                                     }) %>%
     ldply(.id = NULL)
   assert_that(nrow(processList$dataTrim) == nrow(processList$dataPrep))
 
   # check length of consecutive points
-  processList$dataTrim <- pblapply(unique(processList$dataTrim$ID), function(x) {consecutiveVali(dats = processList$dataTrim %>% filter(ID %in% x), minConsecutives = 5)}) %>% ldply
+  processList$dataTrim <- pblapply(1:length(unique(processList$dataTrim$ID)), function(x) {
+    oldi <- floor((x-1)/length(unique(processList$dataTrim$ID))*100)
+    newi <- floor(x/length(unique(processList$dataTrim$ID))*100)
+    if(newi > oldi) {
+      message(newi,"%-,", appendLF = FALSE)
+    }
+    consecutiveVali(dats = processList$dataTrim %>% filter(ID %in% unique(processList$dataTrim$ID)[x]), minConsecutives = 5)
+
+    }) %>% ldply
   assert_that(nrow(processList$dataTrim) == nrow(processList$dataPrep))
 
   discardCompound <- n_distinct(processList$dataTrim %>%  filter(enoughPoints == FALSE) %>% dplyr::select(ID))
   remainingCompound <- n_distinct(processList$dataTrim %>%  filter(enoughPoints != FALSE) %>% dplyr::select(ID))
-  cat(discardCompound, "Compounds had less than", minConsecutives, "consecutive points and were discarded.\n--------------------------------------------------------\n")
-  cat(paste0("Data set with ", remainingCompound, " Compounds.\n--------------------------------------------------------\n"))
+  message(discardCompound, "Compounds had less than", minConsecutives, "consecutive points and were discarded.\n--------------------------------------------------------\n")
+  message(paste0("Data set with ", remainingCompound, " Compounds.\n--------------------------------------------------------\n"))
 
   ##Fitting
 
   #1.) choose Model according to correlation threshold
 
-  cat("Fitting linear, logistic and quadratic regression\n")
+  message("Fitting linear, logistic and quadratic regression\n")
 
   processList$dataFittingModel <- processList$dataTrim %>% filter(enoughPoints %in% TRUE)
 
-  dataModel <- pblapply(unique(processList$dataFittingModel$ID), function(x) chooseModel(dat = processList$dataFittingModel %>% filter(ID %in% x, color %in% "black" ))) %>% unlist(recursive = F)
+  dataModel <- pblapply(1:length(unique(processList$dataFittingModel$ID)), function(x){
+    oldi <- floor((x-1)/length(unique(processList$dataFittingModel$ID))*100)
+    newi <- floor(x/length(unique(processList$dataFittingModel$ID))*100)
+    if(newi > oldi) {
+      message(newi,"%-,", appendLF = FALSE)
+    }
+    chooseModel(dat = processList$dataFittingModel %>% filter(ID %in% unique(processList$dataFittingModel$ID)[x], color %in% "black" ))
+
+  }
+  ) %>% unlist(recursive = F)
+
 
   processList$BestModel <- tibble(
     ID = names(map(dataModel, 1)),
@@ -141,13 +189,22 @@ AssessLinearity <- function(columnNames,
   discardCompoundFitting <- n_distinct(processList$dataFittingModel %>%  filter(aboveMinCor == FALSE) %>% dplyr::select(ID))
   remainingCompoundFitting <- n_distinct(processList$dataFittingModel %>%  filter(aboveMinCor == TRUE) %>% dplyr::select(ID))
 
-  cat(discardCompoundFitting, "Compounds have a low R^2 (less than" ,minCorFittingModel, ") and undergo a second outlier detection.\n" )
+  message(discardCompoundFitting, " Compounds have a low R^2 (less than " ,minCorFittingModel, ") and undergo a second outlier detection.\n" )
 
   #2.) Second Outlier Detection
   dataSOD <- processList$dataFittingModel %>% filter(aboveMinCor == FALSE)
   assert_that(nrow(dataSOD) == discardCompoundFitting * n_dilution)
 
-  dataOutSec <- pblapply(unique(dataSOD$ID), function(x) outlierDetection(dat = dataSOD %>% filter(ID %in% x), numboutlier = n_dilution)) %>% unlist(recursive = F)
+  dataOutSec <- pblapply(1:length(unique(dataSOD$ID)), function(x){
+    oldi <- floor((x-1)/length(unique(unique(dataSOD$ID)))*100)
+    newi <- floor(x/length(unique(unique(dataSOD$ID)))*100)
+    if(newi > oldi) {
+      message(newi,"%-,", appendLF = FALSE)
+    }
+    outlierDetection(dat = dataSOD %>% filter(ID %in% unique(dataSOD$ID)[x]), numboutlier = n_dilution)
+
+
+    }) %>% unlist(recursive = F)
   assert_that(length(dataOutSec) == discardCompoundFitting)
 
 
@@ -163,7 +220,14 @@ AssessLinearity <- function(columnNames,
 
   #1.) choose Model
 
-  dataModel <- pblapply(unique(processList$dataFittingModelSOD$ID), function(x) chooseModel(dat = processList$dataFittingModelSOD %>% filter(ID %in% x))) %>% unlist(recursive = F)
+  dataModel <- pblapply(1:length(unique(processList$dataFittingModelSOD$ID)), function(x){
+    oldi <- floor((x-1)/length(unique(processList$dataFittingModelSOD$ID))*100)
+    newi <- floor(x/length(unique(processList$dataFittingModelSOD$ID))*100)
+    if(newi > oldi) {
+      message(newi,"%-,", appendLF = FALSE)
+    }
+    chooseModel(dat = processList$dataFittingModelSOD %>% filter(ID %in% unique(processList$dataFittingModelSOD$ID)[x]))
+    }) %>% unlist(recursive = F)
 
   processList$BestModelFittingSOD <- tibble(
     ID = names(map(dataModel, 1)),
@@ -175,7 +239,7 @@ AssessLinearity <- function(columnNames,
   processList$dataFittingModelSOD <- full_join(processList$dataFittingModelSOD , processList$BestModelFittingSOD, by = "ID", suffix = c(".first", ".second") )
 
   savedCompounds <- n_distinct(processList$dataFittingModelSOD %>% filter(aboveMinCor.second == TRUE) %>% dplyr::select(ID))
-  cat(savedCompounds," of ", discardCompoundFitting,"Compounds have a R^2 above",minCorFittingModel ,"after second outlier detection\n--------------------------------------------------------\n")
+  message(savedCompounds," of ", discardCompoundFitting," Compounds have a R^2 above",minCorFittingModel ," after second outlier detection\n--------------------------------------------------------\n")
 
   processList$dataFittingModelAll <- bind_rows(processList$dataFittingModel %>%  filter(aboveMinCor == TRUE),
                                                processList$dataFittingModelSOD %>%  filter(aboveMinCor.second == TRUE) %>%
@@ -188,24 +252,35 @@ AssessLinearity <- function(columnNames,
 
   assert_that(n_distinct(processList$dataFittingModelAll$ID) == remainingCompoundFitting + savedCompounds )
 
-  cat(paste0("Data set with ", n_distinct(processList$dataFittingModelAll$ID), " Compounds with a R^2 above ",minCorFittingModel,"\n--------------------------------------------------------\n"))
+  message("Data set with ", n_distinct(processList$dataFittingModelAll$ID), " Compounds with a R^2 above ",minCorFittingModel,"\n--------------------------------------------------------\n")
 
   processList$fittingModelAll <- c(processList$fittingModel[names(processList$fittingModel) %in% unlist(distinct(processList$dataFittingModel %>% filter(aboveMinCor == TRUE) %>% dplyr::select(ID)))],
                                    processList$fittingModelSOD[names(processList$fittingModelSOD) %in% unlist(distinct(processList$dataFittingModelSOD %>% filter(aboveMinCor.second == TRUE) %>% dplyr::select(ID)))])
 
   ## find linear Range
-  cat("Determining linear range\n--------------------------------------------------------\n")
-  processList$dataLinearRange <- pblapply(unique(processList$dataFittingModelAll$ID), function(x) findLinearRange(dat = processList$dataFittingModelAll %>% filter(ID %in% x, color %in% "black"), modelObject = processList$fittingModelAll[[x]])) %>% ldply
+  message("Determining linear range\n--------------------------------------------------------\n")
+  processList$dataLinearRange <- pblapply(1:length(unique(processList$dataFittingModelAll$ID)), function(x) {
+    oldi <- floor((x-1)/length(unique(processList$dataFittingModelAll$ID))*100)
+    newi <- floor(x/length(unique(processList$dataFittingModelAll$ID))*100)
+    if(newi > oldi) {
+      message(newi,"%-,", appendLF = FALSE)
+    }
+    findLinearRange(dat = processList$dataFittingModelAll %>% filter(ID %in% unique(processList$dataFittingModelAll$ID)[x], color %in% "black"), modelObject = processList$fittingModelAll[[x]])
+
+
+    }
+                                          ) %>% ldply
 
   processList$dataLinearRange <- bind_rows(processList$dataLinearRange, processList$dataFittingModelAll %>% filter(ID %in% processList$dataLinearRange$ID, !IDintern %in% processList$dataLinearRange$IDintern))
 
   processList$dataLinearRange <- bind_rows(processList$dataLinearRange, processList$dataTrim %>% filter(!IDintern %in% processList$dataLinearRange$IDintern))
 
-  cat("For ", n_distinct(processList$dataLinearRange %>% filter(linearRange == TRUE) %>% dplyr::select(ID)), "Compounds were a linear Range found.\n--------------------------------------------------------\n")
+  message("For ", n_distinct(processList$dataLinearRange %>% filter(linearRange == TRUE) %>% dplyr::select(ID)), " Compounds were a linear Range found.\n--------------------------------------------------------\n")
 
   #
   # <!-- plotSignals(dat = processList$Preprocessed$dataLinearRange %>% filter(ID %in% metabolitesRandomSample), x = "DilutionPoint", y = "IntensityNorm") -->
   #
+  message("summarize all informations in one list\n--------------------------------------------------------\n")
   processList$Summary <- getSummaryList(processList)
   # <!-- processList$SummaryAll <- getAllList(processList) -->
   #
