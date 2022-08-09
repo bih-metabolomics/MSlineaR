@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-outlier <- function(ID, modelObject, res, count){
+outlier <- function(dat, modelObject, res, count){
 
   residual.all <- abs(residuals(modelObject)/sd(residuals(modelObject)))
   residual <- sort(residual.all,decreasing = T)
@@ -17,29 +17,14 @@ outlier <- function(ID, modelObject, res, count){
   residual <- residual[1:count]
   residual <- residual[residual > res]
 
-  if(length(residual) > 0) {
-    rs <- ldply(residual, function(x){
-      data.frame(
-        "ID" = ID,
-        "outlier" = TRUE,
-        "outlier_position" = which(residual.all == x)
-      )
-    })
-    #   data.frame(
-    #   "ID" = ID,
-    #   "outlier" = TRUE,
-    #   "outlier_position" = which(residual == max(residual))
-    # )
-  } else {
-    rs <- data.frame(
-      "ID" = ID,
-      "outlier" = FALSE,
-      "outlier_position" = NA
-    )
-  }
 
-  return(rs)
+  dat$outlier = residual.all %in% residual
+  #"outlier_position" = which(residual.all %in% residual),
+  dat$residuals = residual.all
+
+  return(dat)
 }
+
 
 #' Title
 #'
@@ -55,35 +40,34 @@ outlier <- function(ID, modelObject, res, count){
 #' @export
 #'
 #' @examples
-outlierDetection <- function(dat, y="IntensityNorm", x="DP", model=c("logistic", "linear", "quadratic"), res=2, threshCor=0.99, numboutlier = 1){
+outlierDetection <- function(dat, y="IntensityNorm", x="DilutionPoint", model=c("logistic", "linear", "quadratic"), res=2, threshCor=0.99, numboutlier = 1){
   #browser()
   dat <- dat %>% arrange(DilutionPoint)
-  dataOutlier <- dat %>% drop_na(y)
-  dataOutlier$Outlier <- NA
-  bestModel <- chooseModel(dat, y, x, model)
+  dataOutlier <- dat %>% drop_na(all_of(y))
+  #dataOutlier$Outlier <- NA
+  bestModel <- chooseModel(dat, all_of(y), x, model)
 
-  dataModel <- data.frame(
-    "ID" = names(bestModel),
+  dataModel <- tibble(
+    "groupIndices" = as.integer(names(bestModel)),
+    #"ID" = names(bestModel),
     "ModelFit" = map(bestModel, 1) %>%  unlist(use.names = F),
-    "correlation" = map(bestModel, 3) %>%  unlist(use.names = F)
+    "correlationModel" = map(bestModel, 3) %>%  unlist(use.names = F)
   )
 
-  if (dataModel$correlation < threshCor) {
-    outlierSum <- outlier(ID = unique(dat$ID),modelObject =  bestModel[[1]][[2]], res, count = numboutlier)
-    if (any(outlierSum$outlier %in% TRUE)) {
-      dataOutlier$color[outlierSum$outlier_position] <- "red"
-      dataOutlier$pch[outlierSum$outlier_position] <- 19
-      dataOutlier$Outlier[outlierSum$outlier_position] <- TRUE
+  if (dataModel$correlationModel < threshCor) {
+    dataOutlier <- outlier(dataOutlier,modelObject =  bestModel[[1]][[2]], res, count = numboutlier)
+    if (any(dataOutlier$outlier %in% TRUE)) {
+      dataOutlier$color[dataOutlier$outlier %in% TRUE] <- "red"
+      dataOutlier$pch[dataOutlier$outlier %in% TRUE] <- 19
+      dataOutlier$Comment[dataOutlier$outlier %in% TRUE] <- "outlier"
     }
   } else{
-    outlierSum <- outlier(ID = unique(dat$ID),modelObject =  bestModel[[1]][[2]], res = 100, count = numboutlier)
+    dataOutlier <- outlier(dataOutlier , modelObject =  bestModel[[1]][[2]], res = 100, count = numboutlier)
   }
 
-  dataOutlier <- full_join(dataOutlier,
-                           dat %>% dplyr::select(-color,-pch),
-                           by = names(dat)[-which(arr.ind = T,names(dat) %in% c("color", "pch" ))])
-  tmp <- list("tmp" = list("Model" = dataModel, "Outlier" = outlierSum, "dataOutlier" = dataOutlier))
-  names(tmp) <- unique(dat$ID)
-  return(tmp)
+  Outlier <- full_join(dataOutlier, dataModel, by = "groupIndices") |> dplyr::select(IDintern, groupIndices,Comment,outlier,pch, color, residuals, ModelFit, correlationModel )
+
+
+  return(Outlier)
 
 }

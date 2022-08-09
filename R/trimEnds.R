@@ -9,31 +9,34 @@
 #' @export
 #'
 #' @examples
-trimEnds <- function(dats, y="IntensityNorm", x="DP", thresh=0){
-  dat <- dats %>% drop_na(y) %>% filter(color != "red") %>% arrange(DilutionPoint)
+trimEnds <- function(dats, y="IntensityNorm", x="DilutionPoint", thresh=0){
+  dat <- dats %>% drop_na(all_of(y)) %>% filter(outlierFOD %in% FALSE) %>% arrange(DilutionPoint) |>  dplyr::select(groupIndices, IDintern, all_of(x), all_of(y), Comment, color, pch)
   #browser()
-  if (last(dat[[y]]) != max(dat[[y]])) {
+  if (last(dat[[all_of(y)]]) != max(dat[[all_of(y)]])) {
     dat.reduced.max <- dat %>%
-      filter(get(y) >= last(get(y)) - thresh) %>%
-      mutate(Comment = "bigger")
-    dat.reduced.max$Comment[nrow(dat.reduced.max)] <- "last"
+      filter(get(all_of(y)) >= last(get(all_of(y))) - thresh) %>%
+      mutate(Comment = "trim:>lastPoint")
+    dat.reduced.max$Comment[nrow(dat.reduced.max)] <- "trim:>lastPoint"
   } else {dat.reduced.max <- dat}
 
-  if (dat[[y]][1] != min(dat[[y]])){
+  if (dat[[all_of(y)]][1] != min(dat[[all_of(y)]])){
     dat.reduced.min <- dat %>%
-      filter(get(y) <= get(y)[1] + thresh) %>%
-      mutate(Comment = "smaller")
-    dat.reduced.min$Comment[1] <- "first"
+      filter(get(all_of(y)) <= get(all_of(y))[1] + thresh) %>%
+      mutate(Comment = "trim:<firstPoint")
+    dat.reduced.min$Comment[1] <- "trim:firstPoint"
   } else {dat.reduced.min <- dat}
 
-  tmp <- full_join(dat.reduced.max,dat.reduced.min,
-                   by = names(dat)[-which(arr.ind = T,names(dat) == "Comment" )]) %>%
-    unite(Comment, c("Comment.x","Comment.y"), remove = TRUE, na.rm = TRUE)
+  tmp <-  full_join(x = dat.reduced.min,
+                    y = dat.reduced.max,
+                    by = colnames(dat.reduced.max)[colnames(dat.reduced.max) != "Comment"],
+                    suffix = c(".x", ".y")) |>
+    unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE)
 
-  tmp$color[str_detect(tmp$Comment, "bigger|smaller|last|first")] <-  "grey"
-  tmp$pch[str_detect(tmp$Comment, "bigger|smaller|last|first")] <- 19
+  tmp$color[str_detect(tmp$Comment, "trim:>lastPoint|trim:<firstPoint|trim:>lastPoint|trim:firstPoint")] <-  "grey"
+  tmp$pch[str_detect(tmp$Comment, "trim:>lastPoint|trim:<firstPoint|trim:>lastPoint|trim:firstPoint")] <- 19
   if(any((!dats$IDintern %in% tmp$IDintern))){
-    tmp <-  full_join( dats %>% filter(!IDintern %in% tmp$IDintern), tmp, by = names(dat)[names(dats) %in% names(tmp)])}
+    tmp <-  bind_rows( dats %>% filter(!IDintern %in% tmp$IDintern) |> dplyr::select(groupIndices, IDintern, Comment, color, pch),
+                       tmp)}
 
-  return(tmp)
+  return(tmp |> dplyr::select(-all_of(x), -all_of(y)))
 }

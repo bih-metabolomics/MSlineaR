@@ -4,7 +4,7 @@
 \alias{findLinearRange}
 \title{Title}
 \usage{
-findLinearRange(dat, x = "DP", y = "IntensityNorm", modelObject, res = 0.1)
+findLinearRange(dat, x = "DP", y = "IntensityNorm", modelObject, res = 0.2)
 }
 \arguments{
 \item{res}{}

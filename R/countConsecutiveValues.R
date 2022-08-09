@@ -10,7 +10,7 @@
 #' @examples
 consecutiveVali <- function(dats, minConsecutives=5, y="IntensityNorm"){
 
-  dat <- dats %>% arrange(DilutionPoint)
+  dat <- dats %>% arrange(DilutionPoint) |> dplyr::select(groupIndices, IDintern, DilutionPoint, all_of(y), Comment, color)
   if(any(is.na(dat[[y]]))){
 
     #remove NAs at start and end
@@ -25,12 +25,12 @@ consecutiveVali <- function(dats, minConsecutives=5, y="IntensityNorm"){
   }
 
 
-  valid.dat <- dat %>% filter(! Comment %in% c("bigger", "smaller", "last", "first"))
+  valid.dat <- dat %>% filter(! str_detect(dat$Comment,c("trim:>lastPoint|trim:<firstPoint|trim:lastPoint|trim:firstPoint")))
   cons <- rle(diff(valid.dat$DilutionPoint) == 1)
 
-  tmp <- data.frame("ID" = unique(dat$ID), "enoughPoints" = any(cons$lengths >= (minConsecutives-1) & cons$values == TRUE & sum(dat$color %in% "black") >= minConsecutives))
-
-  tmp <- full_join(dats, tmp, by = "ID")
+  tmp <- tibble("groupIndices" = unique(dat$groupIndices),
+                "Comment" = if(!any(cons$lengths >= (minConsecutives-1) & cons$values == TRUE & sum(dat$color %in% "black") >= minConsecutives)) "notEnoughPoints",
+                "enoughPoints" = any(cons$lengths >= (minConsecutives-1) & cons$values == TRUE & sum(dat$color %in% "black") >= minConsecutives))
 
   return(tmp)
 }

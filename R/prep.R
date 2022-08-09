@@ -33,30 +33,24 @@
 prepareData <- function(dat){
 
     dat <- dat %>%
-    dplyr::rename(ConcentrationRaw = Concentration, IntensityRaw = IntensityMedian) %>%
-    dplyr::group_by(ID) %>%
-    dplyr::mutate(ConcentrationLog = log(ConcentrationRaw),
+    dplyr::rename(ConcentrationRaw = Concentration, IntensityRaw = Intensity) %>%
+    dplyr::group_by(ID, Replicate) %>%
+    dplyr::mutate(
            DilutionPoint = row_number(),
            Comment = NA,
            IntensityNorm = IntensityRaw/max(IntensityRaw, na.rm = T)*100,
-           IntensityLog = log(IntensityRaw),
            DP = DilutionPoint - mean(DilutionPoint)) %>%
     arrange(DilutionPoint) %>%
     ungroup() %>%
     mutate(pch = 19, color = "black") %>%
     dplyr::select(IDintern,
-           ID,
            IntensityNorm,
+           DilutionPoint,
            DP,
            Comment,
            pch,
-           color,
-           ConcentrationRaw,
-           IntensityRaw,
-           ConcentrationLog,
-           IntensityLog,
-           DilutionPoint,
-           RSD)
+           color
+          )
 
   return(dat)
 }

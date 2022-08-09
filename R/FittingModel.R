@@ -12,26 +12,26 @@
 #'
 chooseModel <- function(dat,
                         y="IntensityNorm",
-                        x="DP",
+                        x="DilutionPoint",
                         model=c("logistic", "linear", "quadratic")){
 
-  dat <- dat %>% drop_na(y)
+  dat <- dat %>% drop_na(all_of(y))
   dat <- dat %>% arrange(DilutionPoint)
 
   if ("logistic" %in% model) {
-    logistic <- drm(get(y) ~ get(x), fct = L.3(), data = dat)
-    cor.logistic <- cor(dat[y], predict(logistic))
+    logistic <- drc::drm(get(all_of(y)) ~ get(x), fct = L.3(), data = dat)
+    cor.logistic <- cor(dat[all_of(y)], predict(logistic))
   } else{cor.logistic <- NA}
 
   if ("linear" %in% model) {
-    linear <- lm(get(y) ~ get(x), data = dat)
-    cor.linear <- cor(dat[y], predict(linear))
+    linear <- lm(get(all_of(y)) ~ get(x), data = dat)
+    cor.linear <- cor(dat[all_of(y)], predict(linear))
   } else{cor.linear <- NA}
 
 
   if ("quadratic" %in% model) {
-    quadratic <- lm(get(y) ~ poly(get(x), 2, raw = TRUE), data = dat)
-    cor.quadratic <- cor(dat[y], predict(quadratic))
+    quadratic <- lm(get(all_of(y)) ~ poly(get(x), 2, raw = TRUE), data = dat)
+    cor.quadratic <- cor(dat[all_of(y)], predict(quadratic))
   } else{
     cor.quadratic <- NA
   }
@@ -58,7 +58,7 @@ chooseModel <- function(dat,
     )
   )
 
-  names(tmp) <- unique(dat$ID)
+  names(tmp) <- unique(dat$groupIndices)
 
   #SSE <- sum((fitted(cor.max) - dat$Intensity_norm)^2)
 

@@ -8,62 +8,61 @@
 #' @examples
 getSummaryList <- function(completeList){
   #browser()
-  dat <- completeList[["dataRepMed"]] %>%
+  dat <- completeList %>%
     dplyr::ungroup() %>%
-    dplyr::select(ID, mz, RT) %>%
+    dplyr::select(groupIndices,ID, mz, RT, Replicate) %>%
     distinct(.)
 
-  LR <- completeList[["dataLinearRange"]] %>%
-    dplyr::select(ID, linearRangeStart, linearRangeEnd) %>%
+  LR <- completeList %>%
+    dplyr::select(groupIndices, linearRangeStart, linearRangeEnd, linearRange, enoughPointsWithinLinearRange) %>%
     distinct(.) %>%
-    mutate(LengthLinearRange = linearRangeEnd - linearRangeStart + 1) %>%
     drop_na(linearRangeStart)
 
-  LR_limits <-  lapply(LR$ID, function(x) {completeList[["dataPrep"]] %>%
-      filter(ID %in% x) %>%
-      mutate(LR_ConcentrationStart = ConcentrationRaw[LR$linearRangeStart[LR$ID %in% x]],
-             LR_ConcentrationEnd = ConcentrationRaw[LR$linearRangeEnd[LR$ID %in% x]],
-             LR_IntensityStart = IntensityRaw[LR$linearRangeStart[LR$ID %in% x]],
-             LR_IntensityEnd = IntensityRaw[LR$linearRangeEnd[LR$ID %in% x]]) %>%
-      dplyr::select(ID, LR_ConcentrationStart, LR_ConcentrationEnd, LR_IntensityStart, LR_IntensityEnd) %>%
+  LR_limits <-  map(LR$groupIndices, .f = function(x) {completeList %>%
+      filter(groupIndices %in% x) %>%
+      mutate(LR_ConcentrationStart = Concentration[LR$linearRangeStart[LR$groupIndices %in% x]],
+             LR_ConcentrationEnd = Concentration[LR$linearRangeEnd[LR$groupIndices %in% x]],
+             LR_IntensityStart = Intensity[LR$linearRangeStart[LR$groupIndices %in% x]],
+             LR_IntensityEnd = Intensity[LR$linearRangeEnd[LR$groupIndices %in% x]]) %>%
+      dplyr::select(groupIndices, LR_ConcentrationStart, LR_ConcentrationEnd, LR_IntensityStart, LR_IntensityEnd) %>%
       distinct()
   }) %>% ldply
 
 
-  MissingNr <- completeList[["dataRepMed"]] %>%
+  MissingNr <- completeList %>%
     dplyr::ungroup() %>%
-    dplyr::select(ID, IntensityMedian) %>%
-    group_by(ID) %>%
-    dplyr::count(is.na(IntensityMedian)) %>%
+    dplyr::select(groupIndices, Intensity) %>%
+    group_by(groupIndices) %>%
+    dplyr::count(is.na(Intensity)) %>%
     dplyr::rename(Nr_MissingValue = n) %>%
-    filter(`is.na(IntensityMedian)` == TRUE) %>%
-    dplyr::select(ID, Nr_MissingValue)
+    filter(`is.na(Intensity)` == TRUE) %>%
+    dplyr::select(groupIndices, Nr_MissingValue)
 
-  Missing <- lapply(LR$ID, function(x){
-    completeList[["dataRaw"]] %>%
-      filter(ID %in% x) %>%
-      filter(row_number() %in% LR$linearRangeStart[LR$ID %in% x]: LR$linearRangeEnd[LR$ID %in% x]) %>%
-      summarise(ID, "MissingInLinearRange" = is.na(Intensity)) %>%
+  Missing <- map(LR$groupIndices, function(x){
+    completeList %>%
+      filter(groupIndices %in% x) %>%
+      filter(row_number() %in% LR$linearRangeStart[LR$groupIndices %in% x]: LR$linearRangeEnd[LR$groupIndices %in% x]) %>%
+      summarise(groupIndices, "MissingInLinearRange" = is.na(Intensity)) %>%
       distinct()
   }) %>% ldply
 
-  OutlierNr <- completeList[["dataLinearRange"]] %>%
-    filter(Outlier %in% TRUE) %>%
-    group_by(ID) %>%
-    dplyr::count(Outlier) %>%
+  OutlierNr <- completeList %>%
+    filter(outlier %in% TRUE) %>%
+    group_by(groupIndices) %>%
+    dplyr::count(outlier) %>%
     dplyr::rename(Nr_Outlier = n) %>%
-    dplyr::select(ID, Nr_Outlier)
+    dplyr::select(groupIndices, Nr_Outlier)
 
-  Outlier <- lapply(LR$ID, function(x){
-    completeList[["dataLinearRange"]] %>%
-      filter(ID %in% x) %>%
-      filter(row_number() %in% LR$linearRangeStart[LR$ID %in% x]: LR$linearRangeEnd[LR$ID %in% x]) %>%
-      dplyr::summarise(ID, "OutlierInLinearRange" = any(Outlier %in% TRUE, na.rm = T)) %>%
+  Outlier <- map(LR$groupIndices, function(x){
+    completeList %>%
+      filter(groupIndices %in% x) %>%
+      filter(row_number() %in% LR$linearRangeStart[LR$groupIndices %in% x]: LR$linearRangeEnd[LR$groupIndices %in% x]) %>%
+      dplyr::summarise(groupIndices, "OutlierInLinearRange" = any(outlier %in% TRUE, na.rm = T)) %>%
       distinct()
   }) %>% ldply
 
 
-  all <- join_all(list(dat, LR, LR_limits, MissingNr, Missing, OutlierNr, Outlier), by = "ID")
+  all <- join_all(list(dat, LR, LR_limits, MissingNr, Missing, OutlierNr, Outlier), by = "groupIndices")
   #all$OutlierInLinearRange[!is.na(all$Nr_Outlier) & all$Nr_Outlier>0 & is.na(all$OutlierInLinearRange)] <- FALSE
   all$OutlierInLinearRange[is.na(all$Nr_Outlier)] <- NA
   all$MissingInLinearRange[is.na(all$Nr_MissingValue)] <- NA
