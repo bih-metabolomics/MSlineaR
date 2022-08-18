@@ -25,7 +25,7 @@ consecutiveVali <- function(dats, minConsecutives=5, y="IntensityNorm"){
   }
 
 
-  valid.dat <- dat %>% filter(! str_detect(dat$Comment,c("trim:>lastPoint|trim:<firstPoint|trim:lastPoint|trim:firstPoint")))
+  valid.dat <- dat %>% filter(color %in% "black")
   cons <- rle(diff(valid.dat$DilutionPoint) == 1)
 
   tmp <- tibble("groupIndices" = unique(dat$groupIndices),

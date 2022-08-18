@@ -40,12 +40,15 @@ outlier <- function(dat, modelObject, res, count){
 #' @export
 #'
 #' @examples
-outlierDetection <- function(dat, y="IntensityNorm", x="DilutionPoint", model=c("logistic", "linear", "quadratic"), res=2, threshCor=0.99, numboutlier = 1){
+outlierDetection <- function(dat, y="IntensityNorm", x="DilutionPoint",
+                             model=c("logistic", "linear", "quadratic"), res=2,
+                             threshCor=0.99, numboutlier = 1){
   #browser()
-  dat <- dat %>% arrange(DilutionPoint)
+  #dat <- as_tibble(dat) #%>% arrange(DilutionPoint)
+  setorder(dat,DilutionPoint)
   dataOutlier <- dat %>% drop_na(all_of(y))
   #dataOutlier$Outlier <- NA
-  bestModel <- chooseModel(dat, all_of(y), x, model)
+  bestModel <- chooseModel(dat, all_of(y), all_of(x), model)
 
   dataModel <- tibble(
     "groupIndices" = as.integer(names(bestModel)),
@@ -59,7 +62,8 @@ outlierDetection <- function(dat, y="IntensityNorm", x="DilutionPoint", model=c(
     if (any(dataOutlier$outlier %in% TRUE)) {
       dataOutlier$color[dataOutlier$outlier %in% TRUE] <- "red"
       dataOutlier$pch[dataOutlier$outlier %in% TRUE] <- 19
-      dataOutlier$Comment[dataOutlier$outlier %in% TRUE] <- "outlier"
+      dataOutlier$Comment[dataOutlier$outlier %in% TRUE & !(dataOutlier$Comment %in% c(NA, NULL, "", " "))] <- paste0(dataOutlier$Comment[dataOutlier$outlier %in% TRUE & !(dataOutlier$Comment %in% c(NA, NULL, "", " "))], "_outlier")
+      dataOutlier$Comment[dataOutlier$outlier %in% TRUE & dataOutlier$Comment %in% c(NA, NULL, "", " ")] <- "outlier"
     }
   } else{
     dataOutlier <- outlier(dataOutlier , modelObject =  bestModel[[1]][[2]], res = 100, count = numboutlier)

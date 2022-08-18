@@ -17,10 +17,15 @@ AssessLinearity <- function(columnNames,
                             OutlierResPre = 2,
                             minCorFittingModelFOD = 0.99,
                             minCorFittingModel = 0.99,
-                            minConsecutives=5
+                            minConsecutives=5,
+                            calcFor = c("Replicates", "Median", "both"),
+                            Concentration = "Concentration",
+                            Intensity = "Intensity"
+
 ){
   #progressbar
-  pboptions(type = "timer", char = "-")
+  pboptions(type = "timer", char = "[=-]", style = 5)
+  #pb <- timerProgressBar(min = 0, max = grpn, width = 50, char = "[=-]", style = 5)
 
   progressr::handlers(global = TRUE)
   progressr::handlers(
@@ -30,7 +35,7 @@ AssessLinearity <- function(columnNames,
       complete = "+"
     ))
 
-  if(nCore > 1){
+  #if(nCore > 1){
 
 
     #handlers(global = TRUE)
@@ -39,179 +44,182 @@ AssessLinearity <- function(columnNames,
       p <- progressr::progressor(along = xs)
       y <- furrr::future_map(xs, function(x) {
         p(sprintf("x=%g", x))
-        groupInd <- unique(inputData$groupIndices)[x]
-        inputData = filter(inputData, groupIndices %in% groupInd)
-        func(inputData, ...)
+        func(setDT(inputData)[groupIndices %in% unique(groupIndices)[x]], ...)
+        #groupInd <- unique(inputData$groupIndices)[x]
+        #inputData = filter(inputData, groupIndices %in% groupInd)
+        #inputData[groupIndices %in% x, func(.SD, ...)]
+        #func(inputData, ...)
       }, .progress = F)
 
     }
 
-  } else{
-  my_fcn <- function(xs, func, inputData, ...) {
+  # } else{
+  my_fcn2 <- function(xs, func, inputData, ...) {
     p <- progressr::progressor(along = xs)
     y <- map(xs, function(x) {
       p(sprintf("x=%g", x))
-      groupInd <- unique(inputData$groupIndices)[x]
-      inputData = filter(inputData, groupIndices %in% groupInd)
-      func(inputData, ...)
+      #inputData[groupIndices %in% x, func(.SD, ...)]
+      func(setDT(inputData)[groupIndices %in% unique(groupIndices)[x]], ...)
+      #groupInd <- unique(inputData$groupIndices)[x]
+      #inputData = filter(inputData, groupIndices %in% groupInd)
+      #func(inputData, ...)
     })
   }
-  }
+  # }
 
 
   # Args: column names,file, residuals for outlier detection, minimal consecutive points in linear range, minimal fitting correlation
-processList <- list( dataOrigin = tibble(dat) |>
-                       dplyr::arrange(get(columnNames[["ID"]]), get(columnNames[["Replicate"]]), get(columnNames[["Concentration"]])  ) |>
-                       dplyr::mutate(IDintern = paste0("o",1:nrow(dat))))
+  dataOrigin <- data.table(dat)
 
+  if(!"Replicate" %in% names(columnNames)){
+    columnNames["Replicate"] = "Replicate"
+    dataOrigin[, Replicate:= "1"]
+    }
 
-  assert_that(all(columnNames %in% colnames(dat)), msg = "missing columns")
+  setorderv(data.table(dataOrigin), c(columnNames[["ID"]], columnNames[["Replicate"]], columnNames[["Concentration"]]))
+  dataOrigin[,IDintern:= paste0("s",1:.N)]
+
+  #rm(dat)
+
+  assert_that(all(columnNames %in% colnames(dataOrigin)), msg = "missing columns")
 
   #rename
+  processing <- copy(dataOrigin)
+  setnames(x = processing, old = columnNames[sort(names(columnNames))], new = c("Concentration", "ID", "Intensity", "mz", "Replicate", "rt"))
+  processing <- processing[ , `:=`(Replicate=as.character(Replicate))][ , .(IDintern, ID, Replicate, mz, rt, Concentration, Intensity)]
 
-  processList$processing <- processList$dataOrigin %>%
-    dplyr::rename(ID = columnNames[["ID"]],
-                  Replicate = ifelse(test = !is.null(columnNames[["Replicate"]]),yes = columnNames[["Replicate"]], no = "Replicate"),
-                  mz = columnNames[["MZ"]],
-                  RT = columnNames[["RT"]],
-                  Concentration = columnNames[["Concentration"]],
-                  Intensity = columnNames[["Intensity"]]) %>%
-    dplyr::mutate(Replicate = ifelse(is.na(Replicate), "o1", as.character(Replicate)),
-                  RSD = NA) |>
-    dplyr::select(IDintern, ID, Replicate, mz, RT, Concentration, Intensity, RSD)
+  nCompounds = uniqueN(processing, by = c("ID"))
+  nReplicates = uniqueN(processing, by = c("Replicate"))
+  nDilutions = uniqueN(processing, by = c("Concentration"))
+  nFeatures = uniqueN(processing, by = c("ID", "Replicate"))
+  nPeaks = uniqueN(processing, by = c("IDintern"))
 
-
-
-  #filter(Replicate %in% 1) %>%
-  #mutate(IDintern = 1:nrow(.))
-
-  message("Data set with ", n_distinct(processList$processing$ID) ," Compounds, ",
-             n_distinct(processList$processing$Replicate)," Replicate(s) and ",
-             n_distinct(processList$processing$Concentration),
-             " Concentration / Dilutions\n--------------------------------------------------------\n")
+  message("Data set with ", nCompounds  ," Compounds, ",
+          nReplicates," Replicate(s) and ",
+          nDilutions, " Concentration / Dilutions -> ",
+          format.default(nFeatures, big.mark = ",", scientific = F), " Features.",
+          "\n--------------------------------------------------------\n")
 
 
-  if(!is.null(columnNames[["Replicate"]]) & n_distinct(processList$processing$Replicate) >=2){
+  if(calcFor %in% c("both", "Median") & nReplicates >=2){
 
-    message("calculating median and RSD of  ",n_distinct(processList$processing$Replicate) ," replicates per Compound\n--------------------------------------------------------\n")
+    message("calculating median and RSD of  ",nReplicates ," replicates per Compound\n--------------------------------------------------------\n")
+    grpn = uniqueN(processing, by = c("ID", "Concentration"))
+    combinedBatches <- copy(processing)
+    combinedBatches[, IDintern := NULL][, `:=`(RSD =  sd(Intensity, na.rm = T)/mean(Intensity, na.rm = T)*100,
+                                               Intensity = median(Intensity, na.rm = T),
+                                               Replicate = "all"), by = .(ID, Concentration)]
+    combinedBatches <-unique(combinedBatches)
+    combinedBatches[,IDintern:= paste0("c",1:.N)]
+    if(calcFor == "both"){
+      processing <- dplyr::full_join(x = processing, y =  combinedBatches, by = intersect(names(combinedBatches), names(processing)))
+    } else{
+      processing <- combinedBatches
+    }
+rm("combinedBatches")
 
+  }
+# drop Compounds with values less than minConsecutives
+  processing <- dplyr::left_join(processing[!is.na(Intensity), .N, by=.(ID, Replicate)][ N >= minConsecutives][ , N:= NULL ], processing , by = c("ID", "Replicate"))
 
-  combinedBatches <-  processList$processing %>%
-    dplyr::select(-IDintern) |>
-    dplyr::group_by(ID, Concentration) %>%
-    dplyr::mutate(
-      RSD = sd(Intensity, na.rm = T)/mean(Intensity, na.rm = T)*100,
-      Intensity = median(Intensity, na.rm = T),
-      Replicate = "all") %>%
-    distinct() |>
-    ungroup() |>
-    dplyr::mutate(IDintern = paste0("c",1:(n_distinct(processList$processing$ID)* n_distinct(processList$processing$Concentration))))
+  nCompoundsNew <- uniqueN(processing, by = c("ID"))
+  nReplicatesNew <- uniqueN(processing, by = c("Replicate"))
+  nFeaturesNew <- uniqueN(processing, by = c("ID", "Replicate"))
 
-  processList$processing <- dplyr::full_join(x = processList$processing, y =  combinedBatches, by = c("IDintern", "ID", "Replicate", "mz", "RT", "Concentration", "Intensity", "RSD"))
+  message("Removed ",nCompounds - nCompoundsNew," Compounds with less than ", minConsecutives, " values.
+          New Data set with ", nCompoundsNew ," Compounds and ",nReplicatesNew , " Replicates -> ",nFeaturesNew," Features \n--------------------------------------------------------\n")
 
-
-}
-  processList$processing <- processList$processing |>
-    dplyr:: group_by(ID, Replicate) |>
-    dplyr:: mutate( check = (!is.na(Intensity))) |>
-    dplyr:: filter(sum(check) >= minConsecutives) |>
-    dplyr::select(-check)
-
-  rawCompounds <- n_distinct(processList$processing |>
-                               dplyr:: group_by(ID, Replicate) |>
-                               n_groups())
-  nReplications <- n_distinct(processList$processing$Replicate)
-  message("Removed compounds with less than ", minConsecutives, " values.\n
-           Data set with ", n_distinct(processList$processing$ID) ," Compounds\n--------------------------------------------------------\n")
-
-  n_dilution = n_distinct(processList$processing$Concentration)
   ## normalizing, centralizing
   message("normalising data\n--------------------------------------------------------\n")
-  dataPrep <-   processList$processing   |>  prepareData()
-  processList$processing <- full_join(x = dataPrep, y = processList$processing, by = "IDintern") |>
-    nest(plotRawData = c(pch, color)) |>
-    group_by(ID, Replicate) |>
-    dplyr::mutate(groupIndices = cur_group_id()) |> ungroup()
-  #splitting per batch
 
-  #processList$processing <- processList$processing |> group_by(groupIn) #|> group_split()
+  setorderv(processing, c("ID", "Replicate", "Concentration" ))
+
+  processing[ , ':=' (Comment = NA, pch = fcase(!is.na(Intensity), 19), color = fcase(!is.na(Intensity), "black"))]
+  processing[ , ':=' (IntensityNorm = Intensity/max(Intensity, na.rm = T)*100,
+                      DilutionPoint = 1:.N,
+                      groupIndices = .GRP) ,by = c("ID", "Replicate")]
+
+
+  dataPrep <- processing
+
+  processing <- processing[, .(groupIndices, IDintern, Intensity, Concentration, IntensityNorm, DilutionPoint, Comment, pch, color)]
 
   #assert_that(nrow(processList$processing) == rawCompounds*n_dilution*nReplications)
 
   ##for testing
-  processList$processing <- processList$processing |> filter(groupIndices %in% 1:50)
+  #processList$processing <- processList$processing |> filter(groupIndices %in% 1:50)
 
 
   ## outlier
 
   message("First Outlier Detection\n")
 
+  #pblapply(1:uniqueN(processing, by = "groupIndices"), function(i) processing[groupIndices %in% i, outlierDetection(.SD)]) |> ldply()
+
   if(nCore > 1) plan(multisession, workers = nCore)
-   dataOut <- my_fcn(xs = 1 : n_distinct(processList$processing$groupIndices),
-                     inputData = processList$processing |>  unnest(cols = c(plotRawData)) |>  ungroup() |> group_by(groupIndices),
+   dataFOD <- my_fcn(xs = 1 : n_distinct(processing$groupIndices),
+                     inputData = processing,
+                     x = Concentration,
+                     y = Intensity,
                      func = outlierDetection,
                      numboutlier = 1,
                      res = OutlierResPre,
                      threshCor = minCorFittingModelFOD) |>
-     ldply(.id = NULL) |>
-     as_tibble() |>
-     dplyr::rename(outlierFOD = outlier) |>
-     nest(plotFirstOutlierDetection = c(pch, color, residuals, ModelFit, correlationModel))
+     ldply(.id = NULL)
+
+   plan(sequential)
+   setDT(dataFOD)[outlier %in% TRUE, Comment := str_replace(Comment, "outlier$", "outlierFOD")]
+   #assert_that(n_distinct(dataFOD$groupIndices) == n_distinct(processing$groupIndices))
+   processing[, Comment := as.character(Comment)][IDintern %in% dataFOD$IDintern, ':=' (Comment = dataFOD$Comment,
+                                                    color = dataFOD$color,
+                                                    pch = dataFOD$pch,
+                                                    outlierFOD = dataFOD$outlier), on = "IDintern"]
 
 
-  plan(sequential)
-
-  assert_that(n_distinct(dataOut$groupIndices) == n_distinct(processList$processing$groupIndices))
-
-  processList$processing <- left_join(processList$processing, dataOut, by = c("IDintern", "groupIndices"), suffix = c(".x", ".y")) |>
-    unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE)
-
-  message("For ",n_distinct(processList$processing |> dplyr::filter(outlierFOD %in% TRUE) %>% dplyr::select(groupIndices))," Compounds an Outlier were found\n")
+  message("For ",n_distinct(processing |> dplyr::filter(outlierFOD %in% TRUE) %>% dplyr::select(groupIndices))," Compounds an Outlier were found\n")
 
   ## trim
   message("Trim data: first Dilution should have the smallest Intensity and last point should have the biggest.")
 
   if(nCore > 1) plan(multisession, workers = nCore)
-  dataTrim <- my_fcn(xs = 1 : n_distinct(processList$processing$groupIndices),
-                    inputData = processList$processing |> unnest(cols = plotFirstOutlierDetection),
-                    func = trimEnds) |>
-    ldply(.id = NULL) |>
-    as_tibble() |>
-    nest(plotTrimData = c(pch, color))
+  dataTrim <- my_fcn(xs = 1 : n_distinct(processing$groupIndices),
+                    inputData = processing,
+                    func = trimEnds,
+                    x = Concentration,
+                    y = Intensity) |>
+    ldply(.id = NULL)
 
   plan(sequential)
 
-  assert_that(n_distinct(dataTrim$groupIndices) == n_distinct(processList$processing$groupIndices))
+  #assert_that(n_distinct(dataTrim$groupIndices) == n_distinct(processing$groupIndices))
 
-  processList$processing <- left_join(processList$processing, dataTrim, by = c("IDintern", "groupIndices"), suffix = c(".x", ".y")) |>
-    unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE)
-
-
+  processing[, Comment := as.character(Comment)][IDintern %in% dataTrim$IDintern, ':=' (Comment = dataTrim$Comment,
+                                                                                       color = dataTrim$color,
+                                                                                       pch = dataTrim$pch,
+                                                                                       outlierFOD = dataTrim$outlierFOD,
+                                                                                       trim = dataTrim$trim), on = "IDintern"]
 
   # check length of consecutive points
   message("check length of consecutive points")
 
-  if(nCore > 1) plan(multisession, workers = nCore)
-  dataCons <- my_fcn(xs = 1 : n_distinct(processList$processing$groupIndices),
-                     inputData = processList$processing |> unnest(cols = plotTrimData),
-                     func = consecutiveVali,
-                     minConsecutives = minConsecutives
-                     ) |>
-    ldply(.id = NULL) |>
-    as_tibble()
+  dataCons <- processing[color == "black", .N, by=.(groupIndices)]
+  dataCons[, enoughPeaks:= N >= minConsecutives][enoughPeaks %in% F, Comment := "notEnoughPeaks"]
 
-  plan(sequential)
+   #assert_that(n_distinct(dataCons$groupIndices) == n_distinct(processing$groupIndices))
 
-  assert_that(n_distinct(dataCons$groupIndices) == n_distinct(processList$processing$groupIndices))
+  processing[groupIndices %in% dataCons$groupIndices,
+               enoughPeaks := rep(dataCons$enoughPeaks, each = 9)]
 
-  processList$processing <- left_join(processList$processing, dataCons, by = c("groupIndices"), suffix = c(".x", ".y")) |>
-    unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE)
+  processing[ , Comment := as.character(Comment)][groupIndices %in% dataCons$groupIndices & (!Comment %in% c(NA, NULL, "", " ")), Comment := paste(Comment,dataCons$Comment, sep = "_")]
+  processing[ , Comment := as.character(Comment)][groupIndices %in% dataCons$groupIndices & enoughPeaks %in% FALSE & (Comment %in% c(NA, NULL, "", " ")), Comment := "notEnoughPeaks"]
 
 
-  discardCompound <- n_distinct(processList$processing %>%  filter(enoughPoints == FALSE) %>% dplyr::select(groupIndices))
-  remainingCompound <- n_distinct(processList$processing %>%  filter(enoughPoints != FALSE) %>% dplyr::select(groupIndices))
-  message(discardCompound, " Compounds had less than ", minConsecutives, " consecutive points and were discarded.\n--------------------------------------------------------\n")
-  message(paste0("Data set with ", remainingCompound, " Compounds.\n--------------------------------------------------------\n"))
+
+
+  discardCompound <- n_distinct(processing %>%  filter(enoughPeaks == FALSE) %>% dplyr::select(groupIndices))
+  remainingCompound <- n_distinct(processing %>%  filter(enoughPeaks != FALSE) %>% dplyr::select(groupIndices))
+  message(discardCompound, " Compounds had less than ", minConsecutives, " Peaks and were discarded.\n--------------------------------------------------------\n")
+  message("Data set with ", remainingCompound, " Compounds.\n--------------------------------------------------------\n")
 
   ##Fitting
 
@@ -219,24 +227,32 @@ processList <- list( dataOrigin = tibble(dat) |>
 
   message("Fitting linear, logistic and quadratic regression\n")
 
-  if(nCore > 1) plan(multisession, workers = nCore)
-  dataModel <- my_fcn(xs = 1 : n_distinct(processList$processing |> unnest(cols = plotTrimData) |> filter(enoughPoints %in% TRUE, color %in% "black") |> dplyr::select(groupIndices)),
-                     inputData = processList$processing |> unnest(cols = plotTrimData) |> filter(enoughPoints %in% TRUE, color %in% "black"),
-                     func = chooseModel
+  #if(nCore > 1) plan(multisession, workers = nCore)
+  dataModel <- my_fcn2(xs = 1 : n_distinct(processing |> filter(enoughPeaks %in% TRUE, color %in% "black") |> dplyr::select(groupIndices)),
+                     inputData = processing |> filter(enoughPeaks %in% TRUE, color %in% "black"),
+                     func = chooseModel,
+                     x = Concentration,
+                     y = Intensity
+
   ) %>% unlist(recursive = F)
 
-  plan(sequential)
+  #plan(sequential)
 
+gc()
 
   dataModel <- tibble(
     groupIndices = as.integer(names(map(dataModel, 1))),
     Model = map(dataModel, 1) %>% unlist(use.names = F),
     correlation = map(dataModel, 3) %>% unlist(use.names = F),
     aboveMinCor = correlation > minCorFittingModel,
-    fittingModel = map(dataModel, 2)) |>
-    nest(ChooseModel = -groupIndices)
+    fittingModel = map(dataModel, 2))
+  #  nest(ChooseModel = -groupIndices)
 
-  processList$processing <- left_join(processList$processing, dataModel, by = c("groupIndices"), suffix = c(".x", ".y"))# |>
+  setDT(dataModel)
+
+  processing[groupIndices %in% dataModel$groupIndices,
+             aboveCorFit := rep(dataModel$aboveMinCor, each = 9)]
+  #processing <- left_join(processList$processing, dataModel, by = c("groupIndices"), suffix = c(".x", ".y"))# |>
     #unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE)
 
 
@@ -244,140 +260,160 @@ processList <- list( dataOrigin = tibble(dat) |>
 
   #assert_that(nrow(processList$dataFittingModel) == remainingCompound * n_dilution )
 
-  discardCompoundFitting <- n_distinct(processList$processing %>% unnest(cols = ChooseModel) |>  filter(aboveMinCor == FALSE) %>% dplyr::select(groupIndices))
-  remainingCompoundFitting <- n_distinct(processList$processing %>% unnest(cols = ChooseModel) |>  filter(aboveMinCor == TRUE) %>% dplyr::select(groupIndices))
+  discardCompoundFitting <- n_distinct(dataModel |>  filter(aboveMinCor == FALSE) %>% dplyr::select(groupIndices))
+  remainingCompoundFitting <- n_distinct(dataModel |>  filter(aboveMinCor == TRUE) %>% dplyr::select(groupIndices))
 
   message(discardCompoundFitting, " Compounds have a low R^2 (less than " ,minCorFittingModel, ") and undergo a second outlier detection.\n" )
 
   #2.) Second Outlier Detection
-  dataSOD <- processList$processing %>% unnest(cols = c(ChooseModel)) |>  filter(aboveMinCor == FALSE)
-  assert_that(nrow(dataSOD) == discardCompoundFitting * n_dilution)
 
-  if(nCore > 1) plan(multisession, workers = nCore)
-  dataOutSec <- my_fcn(xs = 1 : n_distinct(dataSOD$groupIndices),
-                    inputData = dataSOD |>  unnest(cols = c(plotTrimData)) |>  filter(color %in% "black") |> ungroup() |> group_by(groupIndices),
+
+  #if(nCore > 1) plan(multisession, workers = nCore)
+  dataSOD <- my_fcn2(xs = 1 : n_distinct(processing|> filter(aboveCorFit == FALSE) |> dplyr::select(groupIndices)),
+                    inputData = processing |> filter(aboveCorFit == FALSE),
                     func = outlierDetection,
-                    numboutlier = n_dilution) |>
-    ldply(.id = NULL) |>
-    as_tibble() |>
-    dplyr::rename(outlierSOD = outlier) |>
-    nest(plotSecondOutlierDetection = c(pch, color, residuals, ModelFit, correlationModel))
+                    x = Concentration,
+                    y = Intensity,
+                    numboutlier = nDilutions
+                    ) |>
+    ldply(.id = NULL)
+
+  #plan(sequential)
+  dataSOD <- setDT(dataSOD)[outlier %in% TRUE, Comment := str_replace(Comment, "outlier$", "outlierSOD")]
+  #assert_that(n_distinct(dataSOD$groupIndices) == n_distinct(processing$groupIndices))
+  processing[, Comment := as.character(Comment)][IDintern %in% dataSOD[dataSOD$outlier %in% TRUE, IDintern],
+                                                 ':=' (Comment = dataSOD[dataSOD$outlier %in% TRUE,Comment],
+                                                       color = dataSOD[dataSOD$outlier %in% TRUE,color],
+                                                       pch = dataSOD[dataSOD$outlier %in% TRUE,pch],
+                                                       outlierSOD = dataSOD[dataSOD$outlier %in% TRUE,outlier]), on = "IDintern"]
 
 
-  plan(sequential)
-
-  assert_that(n_distinct(dataOutSec$groupIndices) == discardCompoundFitting)
-
-  processList$processing <- left_join(processList$processing, dataOutSec, by = c("IDintern", "groupIndices"), suffix = c(".x", ".y")) |>
-    unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE)
+  message("For ",n_distinct(dataSOD |> dplyr::filter(outlier %in% TRUE) %>% dplyr::select(groupIndices))," Compounds an Outlier were found\n")
 
 
-  # 3.) choose model second time
+  # assert_that(n_distinct(dataOutSec$groupIndices) == discardCompoundFitting)
 
-  dataFittingModelSOD <-  processList$processing %>%  unnest(cols = plotSecondOutlierDetection) |> filter(color %in% "black")
 
-  #1.) choose Model
+  # 3. check length of consecutive points
+  message("check length of consecutive points after second outlier detection")
 
-  if(nCore > 1) plan(multisession, workers = nCore)
-  dataModel <- my_fcn(xs = 1 : n_distinct(dataFittingModelSOD$groupIndices),
-                      inputData = dataFittingModelSOD,
-                      func = chooseModel
+  dataConsSOD <- processing[groupIndices %in% processing[outlierSOD %in% TRUE, groupIndices] & color %in% "black", .N, by=.(groupIndices)]
+  dataConsSOD[, enoughPeaks:= N >= minConsecutives][enoughPeaks %in% F, Comment := "notEnoughPeaksSOD"]
+
+  #assert_that(n_distinct(dataCons$groupIndices) == n_distinct(processing$groupIndices))
+
+  processing[groupIndices %in% dataConsSOD[enoughPeaks %in% FALSE, groupIndices],
+             enoughPeaks := rep(FALSE, each = 9)]
+
+  dataConsSOD <- setDT(dataConsSOD)[, Comment := str_replace(Comment, "notEnoughPeaks", "notEnoughPeaksSOD")]
+
+  processing[ , Comment := as.character(Comment)][groupIndices %in% dataConsSOD[enoughPeaks %in% FALSE, groupIndices] & (!Comment %in% c(NA, NULL, "", " ")), Comment := paste(Comment,dataConsSOD[enoughPeaks %in% FALSE, Comment], sep = "_")]
+  processing[ , Comment := as.character(Comment)][groupIndices %in% dataConsSOD[enoughPeaks %in% FALSE, groupIndices] & (Comment %in% c(NA, NULL, "", " ")), Comment := "notEnoughPeaksSOD"]
+
+  discardCompoundSOD <- n_distinct(dataConsSOD %>%  filter(enoughPeaks == FALSE) %>% dplyr::select(groupIndices))
+  remainingCompoundSOD <- n_distinct(dataConsSOD %>%  filter(enoughPeaks != FALSE) %>% dplyr::select(groupIndices))
+  message(discardCompound, " Compounds had less than ", minConsecutives, " Peaks and were discarded.\n--------------------------------------------------------\n")
+  message(paste0("Data set with ", remainingCompound + remainingCompoundSOD, " Compounds.\n--------------------------------------------------------\n"))
+
+  # 4.) choose model second time
+
+
+  message("Fitting linear, logistic and quadratic regression after second outlierDetection\n")
+
+  #if(nCore > 1) plan(multisession, workers = nCore)
+  dataModelSOD<- my_fcn2(xs = 1 : n_distinct(dataConsSOD[enoughPeaks %in% TRUE, groupIndices]),
+                       inputData = processing[groupIndices %in% processing[outlierSOD %in% TRUE & enoughPeaks %in% TRUE, groupIndices] & color %in% "black"],
+                       func = chooseModel,
+                       x = Concentration,
+                       y = Intensity
+
   ) %>% unlist(recursive = F)
 
-  plan(sequential)
 
-
-  dataModel <- tibble(
-    groupIndices = as.integer(names(map(dataModel, 1))),
-    Model = map(dataModel, 1) %>% unlist(use.names = F),
-    correlation = map(dataModel, 3) %>% unlist(use.names = F),
+  dataModelSOD<- tibble(
+    groupIndices = as.integer(names(map(dataModelSOD, 1))),
+    Model = map(dataModelSOD, 1) %>% unlist(use.names = F),
+    correlation = map(dataModelSOD, 3) %>% unlist(use.names = F),
     aboveMinCor = correlation > minCorFittingModel,
-    fittingModel = map(dataModel, 2)) |>
-    nest(ChooseModelSOD = -groupIndices)
+    fittingModel = map(dataModelSOD, 2))
 
-  processList$processing <- left_join(processList$processing, dataModel, by = c("groupIndices"), suffix = c(".x", ".y"))# |>
- #
-  discardCompoundFitting <- n_distinct(processList$processing %>% unnest(cols = ChooseModelSOD) |>  filter(aboveMinCor == FALSE) %>% dplyr::select(groupIndices))
+  dataModelSOD <- setDT(dataModelSOD)
 
-  savedCompounds <- n_distinct(processList$processing |> unnest(cols = ChooseModelSOD)  |>  filter(aboveMinCor == TRUE) %>% dplyr::select(groupIndices))
+  processing[groupIndices %in% dataModelSOD[aboveMinCor %in% TRUE, groupIndices],
+             aboveCorFit := rep(dataModelSOD[aboveMinCor %in% TRUE, aboveMinCor], each = 9)]
+
+
+
+  discardCompoundFitting <- n_distinct(processing |>  filter(aboveCorFit == FALSE) %>% dplyr::select(groupIndices))
+  savedCompounds <- n_distinct(processing |> filter(aboveCorFit == TRUE, enoughPeaks %in% TRUE) %>% dplyr::select(groupIndices))
   message(savedCompounds," of ", discardCompoundFitting," Compounds have a R^2 above ",minCorFittingModel ," after second outlier detection\n--------------------------------------------------------\n")
 
-  # combine data for both outlierdetections
-  combinedOutlier <- processList$processing |>
-    unnest(cols = c(ChooseModel, ChooseModelSOD), keep_empty = T, names_sep = "_") |>
-    mutate(aboveMinCor = ChooseModel_aboveMinCor ==TRUE | ChooseModelSOD_aboveMinCor ==TRUE) |>
-    dplyr::select(IDintern, groupIndices, aboveMinCor)
+  # combine data for both outlier detections
+  dataModelCombined <- copy(dataModel)
+  dataModelCombined <- dataModelCombined[groupIndices %in% dataModelSOD[aboveMinCor %in% TRUE, groupIndices],
+            ':=' (Model = dataModelSOD[aboveMinCor %in% TRUE, Model],
+                  correlation = dataModelSOD[aboveMinCor %in% TRUE, correlation],
+                  aboveMinCor = dataModelSOD[aboveMinCor %in% TRUE, aboveMinCor],
+                  fittingModel = dataModelSOD[aboveMinCor %in% TRUE, fittingModel])]
 
-  processList$processing <- left_join(processList$processing, combinedOutlier, by = c("IDintern", "groupIndices"), suffix = c(".x", ".y"))# |>
+  #assert_that(n_distinct(processList$processing |> filter(aboveMinCor %in% TRUE) |> dplyr::select(groupIndices)) == remainingCompoundFitting + savedCompounds )
 
-  combinedOutlier <- processList$processing |>
-    unnest(cols = c(ChooseModel, ChooseModelSOD), keep_empty = T, names_sep = "_") |>
-    dplyr::select(IDintern, groupIndices, ChooseModel_aboveMinCor, ChooseModelSOD_aboveMinCor,
-                  aboveMinCor, ChooseModel_fittingModel, ChooseModelSOD_fittingModel)|>
-    filter(aboveMinCor %in% TRUE) |>
-    mutate(check = unlist(map(1:nrow(processList$processing |> filter(aboveMinCor %in% TRUE)), ~!is.null(unlist(ChooseModelSOD_fittingModel)[x])))) |>
-    mutate(fittingModel = ifelse(test = check %in% TRUE,
-                                  yes = ChooseModelSOD_fittingModel,
-                                   no = ChooseModel_fittingModel)) |>
-    dplyr::select(IDintern, groupIndices, fittingModel)
-
-  processList$processing <- left_join(processList$processing, combinedOutlier, by = c("IDintern", "groupIndices"), suffix = c(".x", ".y"))# |>
-
-
-  combinedOutlierplotData <- processList$processing |>
-    dplyr::select(IDintern, groupIndices, plotTrimData, plotSecondOutlierDetection, outlierSOD, outlierFOD) |>
-    unnest(cols = c(plotTrimData, plotSecondOutlierDetection),names_sep = "_", keep_empty = T) |>
-    mutate(color = ifelse(test = is.na(plotSecondOutlierDetection_color), yes = plotTrimData_color, no = plotSecondOutlierDetection_color),
-           pch = ifelse(test = is.na(plotSecondOutlierDetection_pch), yes = plotTrimData_pch, no = plotSecondOutlierDetection_pch),
-           outlier = ifelse(test = outlierSOD %in% TRUE, yes = outlierSOD, no = outlierFOD)) |>
-
-    nest(plotDataOutlier = c(color, pch)) |>
-    dplyr::select(IDintern, groupIndices, outlier, plotDataOutlier)
-
-  processList$processing <- left_join(processList$processing, combinedOutlierplotData, by = c("IDintern", "groupIndices"), suffix = c(".x", ".y"))# |>
-
-
-
-  assert_that(n_distinct(processList$processing |> filter(aboveMinCor %in% TRUE) |> dplyr::select(groupIndices)) == remainingCompoundFitting + savedCompounds )
-
-  message("Data set with ", n_distinct(processList$processing |> filter(aboveMinCor %in% TRUE) |> dplyr::select(groupIndices)), " Compounds with a R^2 above ",minCorFittingModel,"\n--------------------------------------------------------\n")
+  message("Data set with ", n_distinct(processing |> filter(aboveCorFit %in% TRUE) |> dplyr::select(groupIndices)), " Compounds with a R^2 above ",minCorFittingModel,"\n--------------------------------------------------------\n")
 
   ## find linear Range
   message("Determining linear range\n--------------------------------------------------------\n")
 
-  if(nCore > 1) plan(multisession, workers = nCore)
-  dataLinearRange <- my_fcn(xs = 1 : n_distinct(processList$processing |> filter(aboveMinCor %in% TRUE) |> dplyr::select(groupIndices)),
-                       inputData = processList$processing |>
-                         filter(aboveMinCor %in% TRUE)|>
-                         dplyr::select(IDintern, groupIndices,IntensityNorm, DilutionPoint, fittingModel, plotDataOutlier) |>
-                         unnest(cols = plotDataOutlier) |>
-                         filter(color %in% "black"),
-                       func = findLinearRange,
-                       modelObject = "fittingModel",
-                       minConsecutives = minConsecutives) |>
-    ldply(.id = NULL) |>
-    as_tibble()  |>
-    nest(plotLinearRange = c(pch, color, modelFit, ablineFit, ablineRes))
+  processing[groupIndices %in% dataModelCombined$groupIndices, fittingModel := rep(dataModelCombined$fittingModel, each = 9)]
+
+  #if(nCore > 1) plan(multisession, workers = nCore)
+  dataLinearRange <- my_fcn2(xs = 1 : n_distinct(processing|> filter(aboveCorFit %in% TRUE) |> dplyr::select(groupIndices)),
+                    inputData = processing |> filter(aboveCorFit %in% TRUE, color %in% "black"),
+                    func = findLinearRange,
+                    x = Concentration,
+                    y = Intensity,
+                    modelObject = "fittingModel",
+                    minConsecutives = minConsecutives
+  ) |>
+    ldply(.id = NULL)
+
+  #plan(sequential)
 
 
-  plan(sequential)
 
-  processList$processing <- left_join(processList$processing, dataLinearRange, by = c("IDintern", "groupIndices"), suffix = c(".x", ".y")) |>
+
+ processinglinear <- left_join(processing[IDintern %in% dataLinearRange$IDintern, -c("pch", "color", "fittingModel")], dataLinearRange, by = c("IDintern", "groupIndices"), suffix = c(".x", ".y")) |>
     unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE)
+processing <- processing |> dplyr::select(-fittingModel)
+processing <- full_join(processing[!IDintern %in% processinglinear$IDintern], processinglinear, by = colnames(processing))
 
-  assert_that(n_distinct(processList$processing$groupIndices) == rawCompounds)
 
-  message("For ", n_distinct(processList$processing %>% filter(IslinearRange == TRUE & enoughPointsWithinLinearRange == TRUE) %>% dplyr::select(groupIndices)), " Compounds were a linear Range with a minimum of " ,minConsecutives ," Points found.\n--------------------------------------------------------\n")
+  #assert_that(n_distinct(processList$processing$groupIndices) == rawCompounds)
+
+  message("For ", n_distinct(processing %>% filter(IslinearRange == TRUE & enoughPointsWithinLinearRange == TRUE) %>% dplyr::select(groupIndices)), " Compounds a linear Range with a minimum of " ,minConsecutives ," Points were found.\n--------------------------------------------------------\n")
 
   #
   # <!-- plotSignals(dat = processList$Preprocessed$dataLinearRange %>% filter(ID %in% metabolitesRandomSample), x = "DilutionPoint", y = "IntensityNorm") -->
   #
   message("summarize all informations in one list\n--------------------------------------------------------\n")
 
-  processList$Summary <- getSummaryList(processList$processing)
+  processing <- full_join(processing, dataPrep |> dplyr::select(ID, Replicate, IDintern, mz, rt), by = "IDintern")
+  setorder(processing, DilutionPoint)
+  dataSummary <- getSummaryList(processing)
   # <!-- processList$SummaryAll <- getAllList(processList) -->
   #
 
+  processList <- list("dataOrigin_1" = dataOrigin,
+                      "dataPrep_2" = dataPrep,
+                      "dataFOD_3" = dataFOD,
+                      "dataTrim_4" = dataTrim,
+                      "dataCons_5" = dataCons,
+                      "dataModel_6" = dataModel,
+                      "dataSOD_7" = dataSOD,
+                      "dataConsSOD_8" = dataConsSOD,
+                      "dataModelSOD_9" = dataModelSOD,
+                      "dataLinearRange_10" = dataLinearRange,
+                      "summaryPeaks" = processing,
+                      "summaryFeature" = dataSummary)
   return(processList)
 
 }

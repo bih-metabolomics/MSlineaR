@@ -15,23 +15,22 @@ chooseModel <- function(dat,
                         x="DilutionPoint",
                         model=c("logistic", "linear", "quadratic")){
 
-  dat <- dat %>% drop_na(all_of(y))
-  dat <- dat %>% arrange(DilutionPoint)
+  dat <- setorder(dat,DilutionPoint)[!is.na(get(all_of(y)))]
 
   if ("logistic" %in% model) {
-    logistic <- drc::drm(get(all_of(y)) ~ get(x), fct = L.3(), data = dat)
-    cor.logistic <- cor(dat[all_of(y)], predict(logistic))
+    logistic <- drc::drm(get(all_of(y)) ~ get(x), fct = drc::L.3(), data = dat)
+    cor.logistic <- cor(dat[[all_of(y)]], predict(logistic))
   } else{cor.logistic <- NA}
 
   if ("linear" %in% model) {
     linear <- lm(get(all_of(y)) ~ get(x), data = dat)
-    cor.linear <- cor(dat[all_of(y)], predict(linear))
+    cor.linear <- cor(dat[[all_of(y)]], predict(linear))
   } else{cor.linear <- NA}
 
 
   if ("quadratic" %in% model) {
     quadratic <- lm(get(all_of(y)) ~ poly(get(x), 2, raw = TRUE), data = dat)
-    cor.quadratic <- cor(dat[all_of(y)], predict(quadratic))
+    cor.quadratic <- cor(dat[[all_of(y)]], predict(quadratic))
   } else{
     cor.quadratic <- NA
   }
@@ -43,17 +42,18 @@ chooseModel <- function(dat,
     "cor.linear" = cor.linear,
     "cor.quadratic" = cor.quadratic
   )
-
   cor.max <-  names(which(cor.poly == max(cor.poly, na.rm = T)))
+  #rm(list = c("logistic", "linear", "quadratic")[!c("logistic", "linear", "quadratic") %in% substr(cor.max,5, 100 )])
+
 
   if ("cor.linear" %in% cor.max) {cor.max = "cor.linear"} else if (cor.max %in% c("cor.logistic", "cor.quadratic")) {cor.max = "cor.logistic"}  # if same correlation
-  model <- get(substr(cor.max,5, 100 ))
+  Model <- get(substr(cor.max,5, 100 ))
 
 
   tmp <- list(
     "tmp" = list(
       "model.name" = substr(cor.max,5, 100 ),
-      "model" = model,
+      "model" = Model,
       "cor" = max(cor.poly, na.rm = T)
     )
   )
@@ -61,7 +61,9 @@ chooseModel <- function(dat,
   names(tmp) <- unique(dat$groupIndices)
 
   #SSE <- sum((fitted(cor.max) - dat$Intensity_norm)^2)
-
   return(tmp)
+
+  rm(list = c("dat","cor.max", "Model", "cor.poly", "logistic", "linear" ))
+  gc()
 
 }

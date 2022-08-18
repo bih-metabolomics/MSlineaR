@@ -10,33 +10,44 @@
 #'
 #' @examples
 trimEnds <- function(dats, y="IntensityNorm", x="DilutionPoint", thresh=0){
-  dat <- dats %>% drop_na(all_of(y)) %>% filter(outlierFOD %in% FALSE) %>% arrange(DilutionPoint) |>  dplyr::select(groupIndices, IDintern, all_of(x), all_of(y), Comment, color, pch)
+  dats[ , Comment := as.character(Comment)]
+  dat <- setorder(dats,DilutionPoint)[!is.na(get(y)) & outlierFOD %in% FALSE]
+  dat[ , Comment := as.character(Comment)]
+
+
   #browser()
   if (last(dat[[all_of(y)]]) != max(dat[[all_of(y)]])) {
-    dat.reduced.max <- dat %>%
-      filter(get(all_of(y)) >= last(get(all_of(y))) - thresh) %>%
-      mutate(Comment = "trim:>lastPoint")
-    dat.reduced.max$Comment[nrow(dat.reduced.max)] <- "trim:>lastPoint"
-  } else {dat.reduced.max <- dat}
+    dat.reduced.max <- copy(dat)[
+      , Comment := as.character(Comment)][
+        get(all_of(y)) >= last(get(all_of(y))) - thresh,
+        ':=' (color = "grey", trim = TRUE,
+              Comment = "trim: >lastPoint")]
+    dat.reduced.max[nrow(dat.reduced.max),
+                    Comment := str_replace(Comment, "trim: >lastPoint", "trim: lastPoint")]
+
+  } else {dat.reduced.max <- dat[, trim := NA]}
 
   if (dat[[all_of(y)]][1] != min(dat[[all_of(y)]])){
-    dat.reduced.min <- dat %>%
-      filter(get(all_of(y)) <= get(all_of(y))[1] + thresh) %>%
-      mutate(Comment = "trim:<firstPoint")
-    dat.reduced.min$Comment[1] <- "trim:firstPoint"
-  } else {dat.reduced.min <- dat}
 
-  tmp <-  full_join(x = dat.reduced.min,
-                    y = dat.reduced.max,
+    dat.reduced.min <- copy(dat)[
+      , Comment := as.character(Comment)][get(all_of(y)) <= get(all_of(y))[1] + thresh,
+                            ':=' (color = "grey", trim = TRUE,
+                                  Comment = "trim: <firstPoint")]
+    dat.reduced.min[1, Comment := str_replace(Comment, "trim: <firstPoint", "trim: firstPoint")]
+
+    } else {dat.reduced.min <- dat[, trim := NA]}
+
+  tmp <-  full_join(x = dat.reduced.min[trim %in% TRUE],
+                    y = dat.reduced.max[trim %in% TRUE],
                     by = colnames(dat.reduced.max)[colnames(dat.reduced.max) != "Comment"],
                     suffix = c(".x", ".y")) |>
-    unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE)
+    unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE, sep = " / ")
+  setorder(tmp,DilutionPoint)
+  setorder(dats,DilutionPoint)
+  dats[ , Comment := as.character(Comment)][IDintern %in% tmp$IDintern & (!Comment %in% c(NA, NULL, "", " ")), Comment := paste(Comment,tmp$Comment, sep = "_")]
+  dats[ , Comment := as.character(Comment)][IDintern %in% tmp$IDintern & (Comment %in% c(NA, NULL, "", " ")), Comment := tmp$Comment]
+  dats[IDintern %in% tmp$IDintern, ':=' (pch = tmp$pch, color = tmp$color, trim = ifelse(is.null(tmp$trim), NA, tmp$trim))]
 
-  tmp$color[str_detect(tmp$Comment, "trim:>lastPoint|trim:<firstPoint|trim:>lastPoint|trim:firstPoint")] <-  "grey"
-  tmp$pch[str_detect(tmp$Comment, "trim:>lastPoint|trim:<firstPoint|trim:>lastPoint|trim:firstPoint")] <- 19
-  if(any((!dats$IDintern %in% tmp$IDintern))){
-    tmp <-  bind_rows( dats %>% filter(!IDintern %in% tmp$IDintern) |> dplyr::select(groupIndices, IDintern, Comment, color, pch),
-                       tmp)}
 
-  return(tmp |> dplyr::select(-all_of(x), -all_of(y)))
+  return(dats)
 }
