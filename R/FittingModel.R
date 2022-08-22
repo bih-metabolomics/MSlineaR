@@ -11,8 +11,8 @@
 #' @examples
 #'
 chooseModel <- function(dat,
-                        y="IntensityNorm",
-                        x="DilutionPoint",
+                        y="Intensity",
+                        x="Concentration",
                         model=c("logistic", "linear", "quadratic")){
 
   dat <- setorder(dat,DilutionPoint)[!is.na(get(all_of(y)))]
@@ -48,6 +48,9 @@ chooseModel <- function(dat,
 
   if ("cor.linear" %in% cor.max) {cor.max = "cor.linear"} else if (cor.max %in% c("cor.logistic", "cor.quadratic")) {cor.max = "cor.logistic"}  # if same correlation
   Model <- get(substr(cor.max,5, 100 ))
+
+  Model = list("fit" = fitted(Model), "coefficients" = coef(Model), "residuals" = residuals(Model))
+
 
 
   tmp <- list(

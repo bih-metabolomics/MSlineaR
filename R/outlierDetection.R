@@ -11,7 +11,7 @@
 #' @examples
 outlier <- function(dat, modelObject, res, count){
 
-  residual.all <- abs(residuals(modelObject)/sd(residuals(modelObject)))
+  residual.all <- abs(modelObject$residuals/sd(modelObject$residuals))
   residual <- sort(residual.all,decreasing = T)
   if ( count > length(residual.all)) count = length(residual.all)
   residual <- residual[1:count]
@@ -40,7 +40,7 @@ outlier <- function(dat, modelObject, res, count){
 #' @export
 #'
 #' @examples
-outlierDetection <- function(dat, y="IntensityNorm", x="DilutionPoint",
+outlierDetection <- function(dat, y= Intensity, x= Concentration,
                              model=c("logistic", "linear", "quadratic"), res=2,
                              threshCor=0.99, numboutlier = 1){
   #browser()

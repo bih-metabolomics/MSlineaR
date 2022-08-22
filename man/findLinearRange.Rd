@@ -4,7 +4,14 @@
 \alias{findLinearRange}
 \title{Title}
 \usage{
-findLinearRange(dat, x = "DP", y = "IntensityNorm", modelObject, res = 0.2)
+findLinearRange(
+  dat,
+  x = "DilutionPoint",
+  y = "IntensityNorm",
+  modelObject,
+  res = 0.2,
+  minConsecutives
+)
 }
 \arguments{
 \item{res}{}

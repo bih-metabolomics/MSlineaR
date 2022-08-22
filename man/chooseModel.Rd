@@ -7,7 +7,7 @@
 chooseModel(
   dat,
   y = "IntensityNorm",
-  x = "DP",
+  x = "DilutionPoint",
   model = c("logistic", "linear", "quadratic")
 )
 }

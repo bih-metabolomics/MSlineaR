@@ -16,25 +16,26 @@ findLinearRange <- function(dat, x="DilutionPoint", y = "IntensityNorm", modelOb
   setorder(dat,DilutionPoint)
   dat <- dat[color %in% "black"]
   modelObject <- unique(dat[[modelObject]])
-  int50 <- DescTools::Closest(x = dat[[y]] ,a = max( fitted(modelObject[[1]]))/2, which = TRUE, na.rm = T)
+  modelObject <- unlist(modelObject, recursive = F)
+  int50 <- DescTools::Closest(x = dat[[y]] ,a = max(modelObject$fit)/2, which = TRUE, na.rm = T)
 
   dat$color[int50] <-  "green"
   dat$pch[int50] <- 19
 
   #create linear regression line going through int50
-  linearRange <- lm(fitted(modelObject[[1]])[(int50 - 1) : (int50 + 1)] ~ dat[[x]][(int50 - 1) : (int50 + 1)])
+  linearRange <- lm(modelObject$fit[(int50 - 1) : (int50 + 1)] ~ dat[[x]][(int50 - 1) : (int50 + 1)])
   ablineIntensity <- coef(linearRange)[1] + coef(linearRange)[2]*dat[[x]]
-
+rm(linearRange)
   #ndx <- which(abs((dat[[y]] - ablineIntensity) /max(abs(dat[[y]] - ablineIntensity))) < res)
-  consNDX <- rle(abs((dat[[y]] - ablineIntensity) /max(abs(dat[[y]] - ablineIntensity))) < res)
+  consNDX <- rle(round(abs((dat[[y]] - ablineIntensity) /max(abs(dat[[y]] - ablineIntensity))), digits = 2) <= res)
 
   consNDX$position <- cumsum(consNDX$length)
 
-  if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= 3)){
+  if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= 3) & any(consNDX$position[consNDX$values %in% TRUE] >= int50)){
 
   TRUEpos <- Position(function(fi) fi >= int50, consNDX$position[consNDX$values %in% TRUE], right = TRUE)
   maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE
-                                   ][TRUEpos] - consNDX$length[consNDX$values %in% TRUE][TRUEpos]) : consNDX$position[consNDX$values %in% TRUE][TRUEpos]
+                                   ][TRUEpos] - consNDX$length[consNDX$values %in% TRUE][TRUEpos] +1) : consNDX$position[consNDX$values %in% TRUE][TRUEpos]
 maxTrueRange <- maxTrueRange[maxTrueRange!=0]
  # if(length(consNDX$length[which(consNDX$values %in% TRUE)]))
 
@@ -51,7 +52,7 @@ maxTrueRange <- maxTrueRange[maxTrueRange!=0]
       enoughPointsWithinLinearRange = linearRange >= minConsecutives,
       color = dat$color,
       pch = dat$pch,
-      modelFit = fitted(modelObject[[1]]),
+      modelFit = modelObject$fit,
       ablineFit = ablineIntensity,
       ablineRes = abs((dat[[y]] - ablineIntensity) /max(abs(dat[[y]] - ablineIntensity))),
       Comment = "linearRange found"
@@ -70,7 +71,7 @@ maxTrueRange <- maxTrueRange[maxTrueRange!=0]
       enoughPointsWithinLinearRange = NA,
       color = dat$color,
       pch = dat$pch,
-      modelFit = fitted(modelObject[[1]]),
+      modelFit = modelObject$fit,
       ablineFit = ablineIntensity,
       ablineRes = abs((dat[[y]] - ablineIntensity) /max(abs(dat[[y]] - ablineIntensity))),
       Comment = "no linearRange found"

@@ -7,7 +7,7 @@
 outlierDetection(
   dat,
   y = "IntensityNorm",
-  x = "DP",
+  x = "DilutionPoint",
   model = c("logistic", "linear", "quadratic"),
   res = 2,
   threshCor = 0.99,

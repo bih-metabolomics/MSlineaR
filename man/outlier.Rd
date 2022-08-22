@@ -4,7 +4,7 @@
 \alias{outlier}
 \title{Title}
 \usage{
-outlier(ID, modelObject, res, count)
+outlier(dat, modelObject, res, count)
 }
 \arguments{
 \item{count}{}

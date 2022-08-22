@@ -7,10 +7,14 @@
 AssessLinearity(
   columnNames,
   dat,
+  nCore = 4,
   OutlierResPre = 2,
   minCorFittingModelFOD = 0.99,
   minCorFittingModel = 0.99,
-  minConsecutives = 5
+  minConsecutives = 5,
+  calcFor = c("Replicates", "Median", "both"),
+  Concentration = "Concentration",
+  Intensity = "Intensity"
 )
 }
 \arguments{

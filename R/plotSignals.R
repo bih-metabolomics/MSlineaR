@@ -8,7 +8,7 @@
 #' @export
 #'
 #' @examples
-plotSignals <- function(dat, x="DilutionPoint", y = "IntensityNorm"){
+plotSignals <- function(dat, x="Concentration", y = "IntensityNorm"){
   #browser()
   facetNames = paste(dat$groupIndices, dat$Replicate, dat$mz, sep = "_")
   names(facetNames) = dat$groupIndices

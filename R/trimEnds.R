@@ -11,7 +11,7 @@
 #' @examples
 trimEnds <- function(dats, y="IntensityNorm", x="DilutionPoint", thresh=0){
   dats[ , Comment := as.character(Comment)]
-  dat <- setorder(dats,DilutionPoint)[!is.na(get(y)) & outlierFOD %in% FALSE]
+  dat <- setorder(dats,DilutionPoint)[!is.na(get(y)) & !outlierFOD %in% TRUE]
   dat[ , Comment := as.character(Comment)]
 
 

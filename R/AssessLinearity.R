@@ -94,10 +94,10 @@ AssessLinearity <- function(columnNames,
   nFeatures = uniqueN(processing, by = c("ID", "Replicate"))
   nPeaks = uniqueN(processing, by = c("IDintern"))
 
-  message("Data set with ", nCompounds  ," Compounds, ",
+  message("Data set with ", nCompounds  ," molecular Features, ",
           nReplicates," Replicate(s) and ",
           nDilutions, " Concentration / Dilutions -> ",
-          format.default(nFeatures, big.mark = ",", scientific = F), " Features.",
+          format.default(nFeatures, big.mark = ",", scientific = F), " Feature dilution series.",
           "\n--------------------------------------------------------\n")
 
 
@@ -126,15 +126,15 @@ rm("combinedBatches")
   nReplicatesNew <- uniqueN(processing, by = c("Replicate"))
   nFeaturesNew <- uniqueN(processing, by = c("ID", "Replicate"))
 
-  message("Removed ",nCompounds - nCompoundsNew," Compounds with less than ", minConsecutives, " values.
-          New Data set with ", nCompoundsNew ," Compounds and ",nReplicatesNew , " Replicates -> ",nFeaturesNew," Features \n--------------------------------------------------------\n")
+  message("Removed ",nCompounds - nCompoundsNew," molecular Features with less than ", minConsecutives, " points.
+          New Data set with ", nCompoundsNew ," molecular Features and ",nReplicatesNew , " Replicates -> ",nFeaturesNew," Feature dilution series \n--------------------------------------------------------\n")
 
   ## normalizing, centralizing
-  message("normalising data\n--------------------------------------------------------\n")
+  #message("normalising data\n--------------------------------------------------------\n")
 
   setorderv(processing, c("ID", "Replicate", "Concentration" ))
 
-  processing[ , ':=' (Comment = NA, pch = fcase(!is.na(Intensity), 19), color = fcase(!is.na(Intensity), "black"))]
+  processing[ , ':=' (Comment = NA, pch = fcase(!is.na(all_of(Intensity)), 19), color = fcase(!is.na(Intensity), "black"))]
   processing[ , ':=' (IntensityNorm = Intensity/max(Intensity, na.rm = T)*100,
                       DilutionPoint = 1:.N,
                       groupIndices = .GRP) ,by = c("ID", "Replicate")]
@@ -201,6 +201,8 @@ rm("combinedBatches")
 
   # check length of consecutive points
   message("check length of consecutive points")
+TrimFeatures = n_distinct(dataTrim |> dplyr::filter(!color %in% "black") %>% dplyr::select(groupIndices))
+message(TrimFeatures, "Features were removed after trimming the data")
 
   dataCons <- processing[color == "black", .N, by=.(groupIndices)]
   dataCons[, enoughPeaks:= N >= minConsecutives][enoughPeaks %in% F, Comment := "notEnoughPeaks"]
@@ -216,8 +218,8 @@ rm("combinedBatches")
 
 
 
-  discardCompound <- n_distinct(processing %>%  filter(enoughPeaks == FALSE) %>% dplyr::select(groupIndices))
-  remainingCompound <- n_distinct(processing %>%  filter(enoughPeaks != FALSE) %>% dplyr::select(groupIndices))
+  discardCompound <- n_distinct(processing %>%  filter(enoughPeaks == FALSE, !color %in% "black") %>% dplyr::select(groupIndices))
+  remainingCompound <- n_distinct(processing %>%  filter(enoughPeaks == TRUE, color %in% "black") %>% dplyr::select(groupIndices))
   message(discardCompound, " Compounds had less than ", minConsecutives, " Peaks and were discarded.\n--------------------------------------------------------\n")
   message("Data set with ", remainingCompound, " Compounds.\n--------------------------------------------------------\n")
 
@@ -227,18 +229,18 @@ rm("combinedBatches")
 
   message("Fitting linear, logistic and quadratic regression\n")
 
-  #if(nCore > 1) plan(multisession, workers = nCore)
-  dataModel <- my_fcn2(xs = 1 : n_distinct(processing |> filter(enoughPeaks %in% TRUE, color %in% "black") |> dplyr::select(groupIndices)),
-                     inputData = processing |> filter(enoughPeaks %in% TRUE, color %in% "black"),
+  if(nCore > 1) plan(multisession, workers = nCore)
+  dataModel <- my_fcn(xs = 1 : n_distinct(processing |> filter(enoughPeaks %in% TRUE, color %in% "black") |> dplyr::select(groupIndices)),
+                     inputData = processing[enoughPeaks %in% TRUE &  color %in% "black"],
                      func = chooseModel,
                      x = Concentration,
                      y = Intensity
 
   ) %>% unlist(recursive = F)
 
-  #plan(sequential)
+  plan(sequential)
 
-gc()
+#gc()
 
   dataModel <- tibble(
     groupIndices = as.integer(names(map(dataModel, 1))),
@@ -268,8 +270,8 @@ gc()
   #2.) Second Outlier Detection
 
 
-  #if(nCore > 1) plan(multisession, workers = nCore)
-  dataSOD <- my_fcn2(xs = 1 : n_distinct(processing|> filter(aboveCorFit == FALSE) |> dplyr::select(groupIndices)),
+  if(nCore > 1) plan(multisession, workers = nCore)
+  dataSOD <- my_fcn(xs = 1 : n_distinct(processing|> filter(aboveCorFit == FALSE) |> dplyr::select(groupIndices)),
                     inputData = processing |> filter(aboveCorFit == FALSE),
                     func = outlierDetection,
                     x = Concentration,
@@ -278,7 +280,7 @@ gc()
                     ) |>
     ldply(.id = NULL)
 
-  #plan(sequential)
+  plan(sequential)
   dataSOD <- setDT(dataSOD)[outlier %in% TRUE, Comment := str_replace(Comment, "outlier$", "outlierSOD")]
   #assert_that(n_distinct(dataSOD$groupIndices) == n_distinct(processing$groupIndices))
   processing[, Comment := as.character(Comment)][IDintern %in% dataSOD[dataSOD$outlier %in% TRUE, IDintern],
@@ -312,15 +314,16 @@ gc()
 
   discardCompoundSOD <- n_distinct(dataConsSOD %>%  filter(enoughPeaks == FALSE) %>% dplyr::select(groupIndices))
   remainingCompoundSOD <- n_distinct(dataConsSOD %>%  filter(enoughPeaks != FALSE) %>% dplyr::select(groupIndices))
-  message(discardCompound, " Compounds had less than ", minConsecutives, " Peaks and were discarded.\n--------------------------------------------------------\n")
-  message(paste0("Data set with ", remainingCompound + remainingCompoundSOD, " Compounds.\n--------------------------------------------------------\n"))
+  message(discardCompound, " features had less than ", minConsecutives, " Peaks and were discarded.\n--------------------------------------------------------\n")
+  message(paste0("Data set with ", remainingCompound + remainingCompoundSOD, " Features.\n--------------------------------------------------------\n"))
 
   # 4.) choose model second time
 
 
   message("Fitting linear, logistic and quadratic regression after second outlierDetection\n")
+if(n_distinct(dataConsSOD[enoughPeaks %in% TRUE, groupIndices])> 0){
 
-  #if(nCore > 1) plan(multisession, workers = nCore)
+  if(nCore > 1) plan(multisession, workers = nCore)
   dataModelSOD<- my_fcn2(xs = 1 : n_distinct(dataConsSOD[enoughPeaks %in% TRUE, groupIndices]),
                        inputData = processing[groupIndices %in% processing[outlierSOD %in% TRUE & enoughPeaks %in% TRUE, groupIndices] & color %in% "black"],
                        func = chooseModel,
@@ -342,19 +345,22 @@ gc()
   processing[groupIndices %in% dataModelSOD[aboveMinCor %in% TRUE, groupIndices],
              aboveCorFit := rep(dataModelSOD[aboveMinCor %in% TRUE, aboveMinCor], each = 9)]
 
-
+}
 
   discardCompoundFitting <- n_distinct(processing |>  filter(aboveCorFit == FALSE) %>% dplyr::select(groupIndices))
   savedCompounds <- n_distinct(processing |> filter(aboveCorFit == TRUE, enoughPeaks %in% TRUE) %>% dplyr::select(groupIndices))
-  message(savedCompounds," of ", discardCompoundFitting," Compounds have a R^2 above ",minCorFittingModel ," after second outlier detection\n--------------------------------------------------------\n")
+  message(savedCompounds," of ", discardCompoundFitting," Features have a R^2 above ",minCorFittingModel ," after second outlier detection\n--------------------------------------------------------\n")
 
   # combine data for both outlier detections
   dataModelCombined <- copy(dataModel)
+  if(n_distinct(dataConsSOD[enoughPeaks %in% TRUE, groupIndices])> 0){
+
   dataModelCombined <- dataModelCombined[groupIndices %in% dataModelSOD[aboveMinCor %in% TRUE, groupIndices],
             ':=' (Model = dataModelSOD[aboveMinCor %in% TRUE, Model],
                   correlation = dataModelSOD[aboveMinCor %in% TRUE, correlation],
                   aboveMinCor = dataModelSOD[aboveMinCor %in% TRUE, aboveMinCor],
                   fittingModel = dataModelSOD[aboveMinCor %in% TRUE, fittingModel])]
+  }
 
   #assert_that(n_distinct(processList$processing |> filter(aboveMinCor %in% TRUE) |> dplyr::select(groupIndices)) == remainingCompoundFitting + savedCompounds )
 
@@ -365,8 +371,8 @@ gc()
 
   processing[groupIndices %in% dataModelCombined$groupIndices, fittingModel := rep(dataModelCombined$fittingModel, each = 9)]
 
-  #if(nCore > 1) plan(multisession, workers = nCore)
-  dataLinearRange <- my_fcn2(xs = 1 : n_distinct(processing|> filter(aboveCorFit %in% TRUE) |> dplyr::select(groupIndices)),
+  if(nCore > 1) plan(multisession, workers = nCore)
+  dataLinearRange <- my_fcn(xs = 1 : n_distinct(processing|> filter(aboveCorFit %in% TRUE) |> dplyr::select(groupIndices)),
                     inputData = processing |> filter(aboveCorFit %in% TRUE, color %in% "black"),
                     func = findLinearRange,
                     x = Concentration,
@@ -376,7 +382,7 @@ gc()
   ) |>
     ldply(.id = NULL)
 
-  #plan(sequential)
+  plan(sequential)
 
 
 
@@ -389,7 +395,7 @@ processing <- full_join(processing[!IDintern %in% processinglinear$IDintern], pr
 
   #assert_that(n_distinct(processList$processing$groupIndices) == rawCompounds)
 
-  message("For ", n_distinct(processing %>% filter(IslinearRange == TRUE & enoughPointsWithinLinearRange == TRUE) %>% dplyr::select(groupIndices)), " Compounds a linear Range with a minimum of " ,minConsecutives ," Points were found.\n--------------------------------------------------------\n")
+  message("For ", n_distinct(processing %>% filter(IslinearRange == TRUE & enoughPointsWithinLinearRange == TRUE) %>% dplyr::select(groupIndices)), " Features a linear Range with a minimum of " ,minConsecutives ," Points were found.\n--------------------------------------------------------\n")
 
   #
   # <!-- plotSignals(dat = processList$Preprocessed$dataLinearRange %>% filter(ID %in% metabolitesRandomSample), x = "DilutionPoint", y = "IntensityNorm") -->
@@ -412,8 +418,8 @@ processing <- full_join(processing[!IDintern %in% processinglinear$IDintern], pr
                       "dataConsSOD_8" = dataConsSOD,
                       "dataModelSOD_9" = dataModelSOD,
                       "dataLinearRange_10" = dataLinearRange,
-                      "summaryPeaks" = processing,
-                      "summaryFeature" = dataSummary)
+                      "summaryFFDS" = processing,
+                      "summaryFDS" = dataSummary)
   return(processList)
 
 }
