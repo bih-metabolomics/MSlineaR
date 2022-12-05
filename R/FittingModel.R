@@ -46,7 +46,7 @@ chooseModel <- function(dat,
   #rm(list = c("logistic", "linear", "quadratic")[!c("logistic", "linear", "quadratic") %in% substr(cor.max,5, 100 )])
 
 
-  if ("cor.linear" %in% cor.max) {cor.max = "cor.linear"} else if (cor.max %in% c("cor.logistic", "cor.quadratic")) {cor.max = "cor.logistic"}  # if same correlation
+  if ("cor.linear" %in% cor.max) {cor.max = "cor.linear"} else if (all(c("cor.logistic", "cor.quadratic") %in% cor.max)) {cor.max = "cor.logistic"}  # if same correlation
   Model <- get(substr(cor.max,5, 100 ))
 
   Model = list("fit" = fitted(Model), "coefficients" = coef(Model), "residuals" = residuals(Model))

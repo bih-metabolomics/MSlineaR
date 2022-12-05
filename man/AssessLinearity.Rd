@@ -2,7 +2,7 @@
 % Please edit documentation in R/AssessLinearity.R
 \name{AssessLinearity}
 \alias{AssessLinearity}
-\title{Title}
+\title{Ti#' Title}
 \usage{
 AssessLinearity(
   columnNames,
@@ -14,12 +14,16 @@ AssessLinearity(
   minConsecutives = 5,
   calcFor = c("Replicates", "Median", "both"),
   Concentration = "Concentration",
-  Intensity = "Intensity"
+  Intensity = "Intensity",
+  res = 10,
+  listIgnore = NULL,
+  levelnoise = 0,
+  ...
 )
 }
 \arguments{
 \item{minConsecutives}{}
 }
 \description{
-Title
+Ti#' Title
 }

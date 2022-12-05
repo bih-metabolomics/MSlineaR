@@ -6,8 +6,8 @@
 \usage{
 chooseModel(
   dat,
-  y = "IntensityNorm",
-  x = "DilutionPoint",
+  y = "Intensity",
+  x = "Concentration",
   model = c("logistic", "linear", "quadratic")
 )
 }

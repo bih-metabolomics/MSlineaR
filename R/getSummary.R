@@ -9,7 +9,7 @@
 getSummaryList <- function(completeList){
   #browser()
 
-  dat <- setorder(na.last = T, completeList[ , .(groupIndices,mz, rt, Replicate, Comment)], Comment) |> distinct(.keep_all = T, groupIndices,mz, rt, Replicate)
+  dat <- setorder(na.last = T, completeList[ , .(ID, groupIndices,Replicate, Comment)], Comment) |> distinct(.keep_all = T, groupIndices,Replicate)
 
   LR <- unique(completeList[!is.na(linearRangeStart) , .(groupIndices, linearRangeStart, linearRangeEnd, linearRange, enoughPointsWithinLinearRange)])
 

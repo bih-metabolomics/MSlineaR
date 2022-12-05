@@ -6,8 +6,8 @@
 \usage{
 outlierDetection(
   dat,
-  y = "IntensityNorm",
-  x = "DilutionPoint",
+  y = Intensity,
+  x = Concentration,
   model = c("logistic", "linear", "quadratic"),
   res = 2,
   threshCor = 0.99,

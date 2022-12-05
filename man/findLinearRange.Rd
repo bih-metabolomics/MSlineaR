@@ -9,7 +9,7 @@ findLinearRange(
   x = "DilutionPoint",
   y = "IntensityNorm",
   modelObject,
-  res = 0.2,
+  res = 2,
   minConsecutives
 )
 }

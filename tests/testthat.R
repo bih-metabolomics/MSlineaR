@@ -1,4 +1,4 @@
 library(testthat)
-library(LiMetaDiS)
+library(MSlineaR)
 
-test_check("LiMetaDiS")
+test_check("MSlineaR")

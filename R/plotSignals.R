@@ -8,9 +8,9 @@
 #' @export
 #'
 #' @examples
-plotSignals <- function(dat, x="Concentration", y = "IntensityNorm"){
+plotSignals <- function(dat, x="Concentration", y = "Intensity", Replicate = "Batch", nrcol = 2){
   #browser()
-  facetNames = paste(dat$groupIndices, dat$Replicate, dat$mz, sep = "_")
+  facetNames = paste(dat$groupIndices, dat[[Replicate]], dat$mz, sep = "_")
   names(facetNames) = dat$groupIndices
   g <- dat %>%
     ggplot(aes(get(x), get(y))) +
@@ -22,7 +22,7 @@ plotSignals <- function(dat, x="Concentration", y = "IntensityNorm"){
     theme(panel.grid = element_blank()) +
     labs(x = x, y = y) +
     scale_x_continuous(labels = c(min(dat[[x]]): max(dat[[x]])), breaks = seq(min(dat[[x]]), max(dat[[x]]))) +
-    facet_wrap(~groupIndices,  ncol = 5,
+    facet_wrap(~groupIndices,  ncol = nrcol,scales = "free_y",
                labeller = labeller(groupIndices = facetNames))
 
   if (any(is.na(dat[[y]]))){
@@ -48,15 +48,21 @@ plotSignals <- function(dat, x="Concentration", y = "IntensityNorm"){
     if (any(!is.na(dat$IslinearRange))){
       datsub <- dat |>
         dplyr::group_by(groupIndices) |>
-        dplyr::mutate( start = DilutionPoint %in% linearRangeStart) |>
-        dplyr::mutate( end = DilutionPoint %in% unique(linearRangeEnd))
+        dplyr::mutate( start = DilutionPoint %in% linearRangeStart,
+                       end = DilutionPoint %in% unique(linearRangeEnd),
+                       startpos = DilutionPoint %in% min(DilutionPoint[IsPositivAssociated %in% TRUE]),
+                       endpos = DilutionPoint %in% max(DilutionPoint[IsPositivAssociated %in% TRUE]))
 
       g <- g +
         geom_vline(data = datsub |> group_by(groupIndices) |> filter(start %in% TRUE), aes(xintercept = .data[[x]]), linetype = "dashed") +
         geom_vline(data = datsub |> group_by(groupIndices) |> filter(end %in% TRUE), aes(xintercept = .data[[x]]), linetype = "dashed") +
         geom_line(aes(x = get(x), y = ablineFit), col = "orange") +
-        geom_line(aes(x = get(x), y = modelFit), col = "blue") +
-        ylim(0,max(dat[[y]]) + 20)
+        geom_vline(data = datsub |> group_by(groupIndices)|> filter(startpos %in% TRUE), aes(xintercept = .data[[x]]), linetype = "dotted", col = "darkgrey") +
+        geom_vline(data = datsub |> group_by(groupIndices)|> filter(endpos %in% TRUE), aes(xintercept = .data[[x]]), linetype = "dotted", col = "darkgrey") #+
+        #xlim(0, max(dat[[x]]))
+
+        #geom_line(aes(x = get(x), y = modelFit), col = "blue") +
+        #ylim(0,max(dat[[y]]) + 20)
 
     }
   }

@@ -4,7 +4,13 @@
 \alias{plotSignals}
 \title{Title}
 \usage{
-plotSignals(dat, x = "DilutionPoint", y = "IntensityNorm")
+plotSignals(
+  dat,
+  x = "Concentration",
+  y = "Intensity",
+  Replicate = "Batch",
+  nrcol = 2
+)
 }
 \arguments{
 \item{y}{}

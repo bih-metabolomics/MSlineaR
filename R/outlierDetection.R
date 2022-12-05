@@ -58,7 +58,7 @@ outlierDetection <- function(dat, y= Intensity, x= Concentration,
   )
 
   if (dataModel$correlationModel < threshCor) {
-    dataOutlier <- outlier(dataOutlier,modelObject =  bestModel[[1]][[2]], res, count = numboutlier)
+    dataOutlier <- outlier(dat = dataOutlier,modelObject =  bestModel[[1]][[2]], res = res, count = numboutlier)
     if (any(dataOutlier$outlier %in% TRUE)) {
       dataOutlier$color[dataOutlier$outlier %in% TRUE] <- "red"
       dataOutlier$pch[dataOutlier$outlier %in% TRUE] <- 19

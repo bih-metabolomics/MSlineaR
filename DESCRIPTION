@@ -1,4 +1,4 @@
-Package: LiMetaDiS
+Package: MSlineaR
 Title: Assessing Linearity in untargeted metabolomics dilution series
 Version: 0.0.0.9000
 Authors@R: 
@@ -19,3 +19,62 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.0
 Suggests: 
     testthat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
