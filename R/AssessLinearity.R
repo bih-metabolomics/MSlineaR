@@ -1,30 +1,28 @@
 #' Title
 #'
-#' @param columnNames
-#' @param dat
-#' @param OutlierResPre
-#' @param minCorFittingModelFOD
-#' @param minCorFittingModel
-#' @param minConsecutives
-#'
+#' @param COLNAMES
+#' @param DAT
+#' @param NCORE number of cores to use for parallelization. Default value is 1
+#' @param MIN_FEATURE minimum number of features within a dilution or concentration series to be considered as linear range
+#' @param LOG_TRANSFORM should the data be log transformed? Default is TRUE.
 #' @return
 #' @export
 #'
 #' @examples
-AssessLinearity <- function(columnNames,
-                            dat,
-                            nCore = 4,
-                            OutlierResPre = 2,
-                            minCorFittingModelFOD = 0.99,
-                            minCorFittingModel = 0.99,
-                            minConsecutives = 5,
-                            calcFor = c("Replicates", "Median", "both"),
-                            Concentration = "Concentration",
-                            Intensity = "Intensity",
-                            res = 10,
-                            listIgnore = NULL,
-                            levelnoise = 0, # 5*4E8,
+AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
+                                         #Batch = "Batch",
+                                         REPLICATE = "Batch",
+                                         X = "Concentration",
+                                         Y =   "area.raw"),
+                            DAT,
+                            nCORE = 1,
+                            MIN_FEATURE = 5,
+                            LOG_TRANSFORM = TRUE,
+                            #calcFor = c("Replicates", "Median", "both"),
+
+                            #listIgnore = NULL,
                             ...) {
+
   source(file = "R/countConsecutiveValues.R")
   source(file = "R/findLinearRange.R")
   source(file = "R/FittingModel.R")
@@ -47,7 +45,7 @@ AssessLinearity <- function(columnNames,
     )
   )
 
-  # if(nCore > 1){
+  # if(nCORE > 1){
 
 
   # handlers(global = TRUE)
@@ -77,45 +75,45 @@ AssessLinearity <- function(columnNames,
   }
   # }
 
-  dataOrigin <- data.table(dat)
+  dataOrigin <- data.table(DAT)
 
-  if (!"Replicate" %in% names(columnNames)) {
-    columnNames["Replicate"] <- "Replicate"
-    dataOrigin[, Replicate := "1"]
+  if (!"REPLICATE" %in% names(COLNAMES)) {
+    COLNAMES["REPLICATE"] <- "REPLICATE"
+    dataOrigin[, REPLICATE := "1"]
   }
 
   # Args: column names,file, residuals for outlier detection, minimal consecutive points in linear range, minimal fitting correlation
-  set(dataOrigin, j = columnNames[["Replicate"]], value = as.character(dataOrigin[[columnNames[["Replicate"]]]]))
-  set(dataOrigin, j = columnNames[["Intensity"]], value = as.numeric(dataOrigin[[columnNames[["Intensity"]]]]))
+  set(dataOrigin, j = COLNAMES[["REPLICATE"]], value = as.character(dataOrigin[[COLNAMES[["REPLICATE"]]]]))
+  set(dataOrigin, j = COLNAMES[["Intensity"]], value = as.numeric(dataOrigin[[COLNAMES[["Intensity"]]]]))
 
 
 
 
 
 
-  setorderv(data.table(dataOrigin), c(columnNames[["ID"]], columnNames[["Replicate"]], columnNames[["Concentration"]]))
+  setorderv(data.table(dataOrigin), c(COLNAMES[["ID"]], COLNAMES[["REPLICATE"]], COLNAMES[["X"]]))
   dataOrigin[, IDintern := paste0("s", 1:.N)]
 
-  # rm(dat)
+  # rm(DAT)
 
-  assert_that(all(columnNames %in% colnames(dataOrigin)), msg = "missing columns")
+  assert_that(all(COLNAMES %in% colnames(dataOrigin)), msg = "missing columns")
 
 
   # rename
-  ifelse(!is.null(listIgnore), processing <- dataOrigin[!columnNames[["ID"]] %in% listIgnore[columnNames[["ID"]]]], processing <- copy(dataOrigin))
-  setnames(x = processing, old = columnNames[sort(names(columnNames))], new = c("Concentration", "ID", "Intensity", "Replicate"))
-  processing <- processing[, `:=`(Replicate = as.character(Replicate))][, .(IDintern, ID, Replicate, Concentration, Intensity)]
+  ifelse(!is.null(listIgnore), processing <- dataOrigin[!COLNAMES[["ID"]] %in% listIgnore[COLNAMES[["ID"]]]], processing <- copy(dataOrigin))
+  setnames(x = processing, old = COLNAMES[sort(names(COLNAMES))], new = c("X", "ID", "Intensity", "REPLICATE"))
+  processing <- processing[, `:=`(REPLICATE = as.character(REPLICATE))][, .(IDintern, ID, REPLICATE, X, Intensity)]
 
   nCompounds <- uniqueN(processing, by = c("ID"))
-  nReplicates <- uniqueN(processing, by = c("Replicate"))
-  nDilutions <- uniqueN(processing[, DilutionPoint := 1:.N, by = c("ID", "Replicate")], by = c("DilutionPoint"))
-  nFeatures <- uniqueN(processing, by = c("ID", "Replicate"))
+  nReplicates <- uniqueN(processing, by = c("REPLICATE"))
+  nDilutions <- uniqueN(processing[, DilutionPoint := 1:.N, by = c("ID", "REPLICATE")], by = c("DilutionPoint"))
+  nFeatures <- uniqueN(processing, by = c("ID", "REPLICATE"))
   nPeaks <- uniqueN(processing, by = c("IDintern"))
 
   message(
     "Data set with ", nCompounds, " molecular Features, ",
-    nReplicates, " Replicate(s) and ",
-    nDilutions, " Concentration / Dilutions -> ",
+    nReplicates, " REPLICATE(s) and ",
+    nDilutions, " X / Dilutions -> ",
     format.default(nFeatures, big.mark = ",", scientific = F), " Feature dilution series.",
     "\n--------------------------------------------------------\n"
   )
@@ -123,13 +121,13 @@ AssessLinearity <- function(columnNames,
 
   if (calcFor %in% c("both", "Median") & nReplicates >= 2) {
     message("calculating median and RSD of  ", nReplicates, " replicates per Compound\n--------------------------------------------------------\n")
-    grpn <- uniqueN(processing, by = c("ID", "Concentration"))
+    grpn <- uniqueN(processing, by = c("ID", "X"))
     combinedBatches <- copy(processing)
     combinedBatches[, IDintern := NULL][, `:=`(
       RSD = sd(Intensity, na.rm = T) / mean(Intensity, na.rm = T) * 100,
       Intensity = median(Intensity, na.rm = T),
-      Replicate = "all"
-    ), by = .(ID, Concentration)]
+      REPLICATE = "all"
+    ), by = .(ID, X)]
     combinedBatches <- unique(combinedBatches)
     combinedBatches[, IDintern := paste0("c", 1:.N)]
     if (calcFor == "both") {
@@ -143,31 +141,31 @@ AssessLinearity <- function(columnNames,
   ## normalizing, centralizing, log transforming
   # message("normalising data\n--------------------------------------------------------\n")
 
-  setorderv(processing, c("ID", "Replicate", "Concentration"))
+  setorderv(processing, c("ID", "REPLICATE", "X"))
 
   processing[, ":="(Comment = NA, pch = fcase(!is.na(all_of(Intensity)), 19), color = fcase(!is.na(Intensity), "black"))]
   processing[, ":="(IntensityNorm = Intensity / max(Intensity, na.rm = T) * 100,
     IntensityLog = log(Intensity),
-    ConcentrationLog = log(Concentration),
+    ConcentrationLog = log(X),
     DilutionPoint = 1:.N,
-    groupIndices = .GRP), by = c("ID", "Replicate")]
+    groupIndices = .GRP), by = c("ID", "REPLICATE")]
 
 
-  dropNA <- processing[, N := sum(!is.na(Intensity)), by = .(groupIndices)][N < minConsecutives]
+  dropNA <- processing[, N := sum(!is.na(Intensity)), by = .(groupIndices)][N < MIN_FEATURE]
   dataPrep <- processing[, Comment := as.character(Comment)][groupIndices %in% dropNA$groupIndices, ":="(Comment = "notEnoughPeaks", enoughPeaks = FALSE, color = "grey")]
 
-  # drop Compounds with values less than minConsecutives
+  # drop Compounds with values less than MIN_FEATURE
   processing <- dataPrep[!enoughPeaks %in% FALSE]
 
   nCompoundsNew <- uniqueN(processing, by = c("ID"))
-  nReplicatesNew <- uniqueN(processing, by = c("Replicate"))
+  nReplicatesNew <- uniqueN(processing, by = c("REPLICATE"))
   nFeaturesNew <- uniqueN(processing, by = c("groupIndices"))
 
-  message("Removed ", nCompounds - nCompoundsNew, " molecular Features with less than ", minConsecutives, " points.
+  message("Removed ", nCompounds - nCompoundsNew, " molecular Features with less than ", MIN_FEATURE, " points.
           New Data set with ", nCompoundsNew, " molecular Features and ", nReplicatesNew, " Replicates -> ", nFeaturesNew, " Feature dilution series \n--------------------------------------------------------\n")
 
 
-  processing <- processing[, .(groupIndices, IDintern, Intensity, Concentration, IntensityLog, ConcentrationLog, IntensityNorm, DilutionPoint, Comment, pch, color)]
+  processing <- processing[, .(groupIndices, IDintern, Intensity, X, IntensityLog, ConcentrationLog, IntensityNorm, DilutionPoint, Comment, pch, color)]
 
   # assert_that(nrow(processList$processing) == rawCompounds*n_dilution*nReplications)
 
@@ -181,16 +179,16 @@ AssessLinearity <- function(columnNames,
 
   # pblapply(1:uniqueN(processing, by = "groupIndices"), function(i) processing[groupIndices %in% i, outlierDetection(.SD)]) |> ldply()
 
-  if (nCore > 1) plan(multisession, workers = nCore)
+  if (nCORE > 1) plan(multisession, workers = nCORE)
   dataFOD <- my_fcn(
     xs = 1:n_distinct(processing$groupIndices),
     inputData = processing,
-    x = Concentration,
+    x = X,
     y = Intensity,
     func = outlierDetection,
     numboutlier = 1,
-    res = OutlierResPre,
-    threshCor = minCorFittingModelFOD
+    SRES = 2,
+    threshCor = R2FOD
   ) |>
     ldply(.id = NULL)
 
@@ -208,12 +206,12 @@ AssessLinearity <- function(columnNames,
   ## trim
   message("Trim data: first Dilution should have the smallest Intensity and last point should have the biggest.")
 
-  if (nCore > 1) plan(multisession, workers = nCore)
+  if (nCORE > 1) plan(multisession, workers = nCORE)
   dataTrim <- my_fcn(
     xs = 1:n_distinct(processing$groupIndices),
     inputData = processing,
     func = trimEnds,
-    x = Concentration,
+    x = X,
     y = Intensity
   ) |>
     ldply(.id = NULL)
@@ -238,7 +236,7 @@ AssessLinearity <- function(columnNames,
   message(TrimFeatures, "individual Features were removed after trimming the data")
 
   dataCons <- processing[color == "black", .N, by = .(groupIndices)]
-  dataCons[, enoughPeaks := N >= minConsecutives][enoughPeaks %in% F, Comment := "notEnoughPeaks"]
+  dataCons[, enoughPeaks := N >= MIN_FEATURE][enoughPeaks %in% F, Comment := "notEnoughPeaks"]
 
   # assert_that(n_distinct(dataCons$groupIndices) == n_distinct(processing$groupIndices))
 
@@ -266,7 +264,7 @@ AssessLinearity <- function(columnNames,
 
   discardCompound <- n_distinct(processing %>% filter(enoughPeaks == FALSE, !color %in% "black") %>% dplyr::select(groupIndices))
   remainingCompound <- n_distinct(processing %>% filter(enoughPeaks == TRUE, color %in% "black") %>% dplyr::select(groupIndices))
-  message(discardCompound, " Compounds had less than ", minConsecutives, " Peaks and were discarded.\n--------------------------------------------------------\n")
+  message(discardCompound, " Compounds had less than ", MIN_FEATURE, " Peaks and were discarded.\n--------------------------------------------------------\n")
   message("Data set with ", remainingCompound, " Compounds.\n--------------------------------------------------------\n")
 
   ## Fitting
@@ -275,12 +273,12 @@ AssessLinearity <- function(columnNames,
 
   message("Fitting linear, logistic and quadratic regression\n")
 
-  if (nCore > 1) plan(multisession, workers = nCore)
+  if (nCORE > 1) plan(multisession, workers = nCORE)
   dataModel <- my_fcn(
     xs = 1:n_distinct(processing |> filter(enoughPeaks %in% TRUE, color %in% "black") |> dplyr::select(groupIndices)),
     inputData = processing[enoughPeaks %in% TRUE & color %in% "black"],
     func = chooseModel,
-    x = Concentration,
+    x = X,
     y = Intensity
   ) %>% unlist(recursive = F)
 
@@ -292,7 +290,7 @@ AssessLinearity <- function(columnNames,
     groupIndices = as.integer(names(map(dataModel, 1))),
     Model = map(dataModel, 1) %>% unlist(use.names = F),
     correlation = map(dataModel, 3) %>% unlist(use.names = F),
-    aboveMinCor = correlation > minCorFittingModel,
+    aboveMinCor = correlation > R2SOD,
     fittingModel = map(dataModel, 2)
   )
   #  nest(ChooseModel = -groupIndices)
@@ -314,17 +312,17 @@ AssessLinearity <- function(columnNames,
   discardCompoundFitting <- n_distinct(dataModel |> filter(aboveMinCor == FALSE) %>% dplyr::select(groupIndices))
   remainingCompoundFitting <- n_distinct(dataModel |> filter(aboveMinCor == TRUE) %>% dplyr::select(groupIndices))
 
-  message(discardCompoundFitting, " Compounds have a low R^2 (less than ", minCorFittingModel, ") and undergo a second outlier detection.\n")
+  message(discardCompoundFitting, " Compounds have a low R^2 (less than ", R2SOD, ") and undergo a second outlier detection.\n")
 
   # 2.) Second Outlier Detection
 
   if (discardCompoundFitting > 0) {
-    if (nCore > 1) plan(multisession, workers = nCore)
+    if (nCORE > 1) plan(multisession, workers = nCORE)
     dataSOD <- my_fcn(
       xs = 1:n_distinct(processing |> filter(aboveCorFit == FALSE) |> dplyr::select(groupIndices)),
       inputData = processing |> filter(aboveCorFit == FALSE),
       func = outlierDetection,
-      x = Concentration,
+      x = X,
       y = Intensity,
       numboutlier = nDilutions
     ) |>
@@ -352,7 +350,7 @@ AssessLinearity <- function(columnNames,
     message("check length of consecutive points after second outlier detection")
 
     dataConsSOD <- processing[groupIndices %in% processing[outlierSOD %in% TRUE, groupIndices] & color %in% "black", .N, by = .(groupIndices)]
-    dataConsSOD[, enoughPeaks := N >= minConsecutives][enoughPeaks %in% F, Comment := "notEnoughPeaksSOD"]
+    dataConsSOD[, enoughPeaks := N >= MIN_FEATURE][enoughPeaks %in% F, Comment := "notEnoughPeaksSOD"]
 
     # assert_that(n_distinct(dataCons$groupIndices) == n_distinct(processing$groupIndices))
 
@@ -368,7 +366,7 @@ AssessLinearity <- function(columnNames,
 
     discardCompoundSOD <- n_distinct(dataConsSOD %>% filter(enoughPeaks == FALSE) %>% dplyr::select(groupIndices))
     remainingCompoundSOD <- n_distinct(dataConsSOD %>% filter(enoughPeaks != FALSE) %>% dplyr::select(groupIndices))
-    message(discardCompound, " features had less than ", minConsecutives, " Peaks and were discarded.\n--------------------------------------------------------\n")
+    message(discardCompound, " features had less than ", MIN_FEATURE, " Peaks and were discarded.\n--------------------------------------------------------\n")
     message(paste0("Data set with ", remainingCompound + remainingCompoundSOD, " Features.\n--------------------------------------------------------\n"))
 
     # 4.) choose model second time
@@ -376,12 +374,12 @@ AssessLinearity <- function(columnNames,
 
     message("Fitting linear, logistic and quadratic regression after second outlierDetection\n")
     if (n_distinct(dataConsSOD[enoughPeaks %in% TRUE, groupIndices]) > 0) {
-      if (nCore > 1) plan(multisession, workers = nCore)
+      if (nCORE > 1) plan(multisession, workers = nCORE)
       dataModelSOD <- my_fcn2(
         xs = 1:n_distinct(dataConsSOD[enoughPeaks %in% TRUE, groupIndices]),
         inputData = processing[groupIndices %in% processing[outlierSOD %in% TRUE & enoughPeaks %in% TRUE, groupIndices] & color %in% "black"],
         func = chooseModel,
-        x = Concentration,
+        x = X,
         y = Intensity
       ) %>% unlist(recursive = F)
 
@@ -390,7 +388,7 @@ AssessLinearity <- function(columnNames,
         groupIndices = as.integer(names(map(dataModelSOD, 1))),
         Model = map(dataModelSOD, 1) %>% unlist(use.names = F),
         correlation = map(dataModelSOD, 3) %>% unlist(use.names = F),
-        aboveMinCor = correlation > minCorFittingModel,
+        aboveMinCor = correlation > R2SOD,
         fittingModel = map(dataModelSOD, 2)
       )
 
@@ -406,7 +404,7 @@ AssessLinearity <- function(columnNames,
 
     discardCompoundFitting <- n_distinct(processing |> filter(aboveCorFit == FALSE) %>% dplyr::select(groupIndices))
     savedCompounds <- n_distinct(processing |> filter(aboveCorFit == TRUE, enoughPeaks %in% TRUE) %>% dplyr::select(groupIndices))
-    message(savedCompounds, " of ", discardCompoundFitting, " Features have a R^2 above ", minCorFittingModel, " after second outlier detection\n--------------------------------------------------------\n")
+    message(savedCompounds, " of ", discardCompoundFitting, " Features have a R^2 above ", R2SOD, " after second outlier detection\n--------------------------------------------------------\n")
 
     # combine data for both outlier detections
     dataModelCombined <- copy(dataModel)
@@ -428,22 +426,22 @@ AssessLinearity <- function(columnNames,
   }
   # assert_that(n_distinct(processList$processing |> filter(aboveMinCor %in% TRUE) |> dplyr::select(groupIndices)) == remainingCompoundFitting + savedCompounds )
 
-  message("Data set with ", n_distinct(processing |> filter(aboveCorFit %in% TRUE) |> dplyr::select(groupIndices)), " Compounds with a R^2 above ", minCorFittingModel, "\n--------------------------------------------------------\n")
+  message("Data set with ", n_distinct(processing |> filter(aboveCorFit %in% TRUE) |> dplyr::select(groupIndices)), " Compounds with a R^2 above ", R2SOD, "\n--------------------------------------------------------\n")
 
   ## find linear Range
   message("Determining linear range\n--------------------------------------------------------\n")
 
   processing[groupIndices %in% dataModelCombined$groupIndices, fittingModel := rep(dataModelCombined$fittingModel, each = nDilutions)]
 
-  if (nCore > 1) plan(multisession, workers = nCore)
+  if (nCORE > 1) plan(multisession, workers = nCORE)
   dataLinearRange <- my_fcn(
     xs = 1:n_distinct(processing |> filter(aboveCorFit %in% TRUE) |> dplyr::select(groupIndices)),
     inputData = processing |> filter(aboveCorFit %in% TRUE, color %in% "black"),
     func = findLinearRange,
-    x = Concentration,
+    x = X,
     y = Intensity,
     modelObject = "fittingModel",
-    minConsecutives = minConsecutives,
+    MIN_FEATURE = MIN_FEATURE,
     res = res
   ) |>
     ldply(.id = NULL)
@@ -461,15 +459,15 @@ AssessLinearity <- function(columnNames,
 
   # assert_that(n_distinct(processList$processing$groupIndices) == rawCompounds)
 
-  message("For ", n_distinct(processing %>% filter(IslinearRange == TRUE & enoughPointsWithinLinearRange == TRUE) %>% dplyr::select(groupIndices)), " Features a linear Range with a minimum of ", minConsecutives, " Points were found.\n--------------------------------------------------------\n")
+  message("For ", n_distinct(processing %>% filter(IslinearRange == TRUE & enoughPointsWithinLinearRange == TRUE) %>% dplyr::select(groupIndices)), " Features a linear Range with a minimum of ", MIN_FEATURE, " Points were found.\n--------------------------------------------------------\n")
 
   #
-  # <!-- plotSignals(dat = processList$Preprocessed$dataLinearRange %>% filter(ID %in% metabolitesRandomSample), x = "DilutionPoint", y = "IntensityNorm") -->
+  # <!-- plotSignals(DAT = processList$Preprocessed$dataLinearRange %>% filter(ID %in% metabolitesRandomSample), x = "DilutionPoint", y = "IntensityNorm") -->
   #
   message("summarize all informations in one list\n--------------------------------------------------------\n")
 
   processing <- full_join(processing, dataPrep[!groupIndices %in% dropNA$groupIndices, -c("pch", "color", "N", "Comment", "enoughPeaks")],
-    by = c("groupIndices", "IDintern", "Intensity", "Concentration", "IntensityNorm", "DilutionPoint", "IntensityLog", "ConcentrationLog")
+    by = c("groupIndices", "IDintern", "Intensity", "X", "IntensityNorm", "DilutionPoint", "IntensityLog", "ConcentrationLog")
   )
 
 
@@ -482,8 +480,8 @@ AssessLinearity <- function(columnNames,
   processing <- dplyr::full_join(
     x = dataOrigin, y = processing,
     by = setNames(
-      c("ID", "IDintern", "Replicate", "Concentration", "Intensity"),
-      c(columnNames[["ID"]], "IDintern", columnNames[["Replicate"]], columnNames[["Concentration"]], columnNames[["Intensity"]])
+      c("ID", "IDintern", "REPLICATE", "X", "Intensity"),
+      c(COLNAMES[["ID"]], "IDintern", COLNAMES[["REPLICATE"]], COLNAMES[["X"]], COLNAMES[["Intensity"]])
     ),
     suffix = c(".raw", ".processed")
   )
@@ -505,15 +503,15 @@ AssessLinearity <- function(columnNames,
     "summaryFFDS" = processing,
     "summaryFDS" = dataSummary,
     "Parameters" = list(
-      data = dat,
-      columnNames = columnNames,
-      nCore = nCore,
+      data = DAT,
+      COLNAMES = COLNAMES,
+      nCORE = nCORE,
       calcFor = calcFor,
-      OutlierResPre = OutlierResPre,
-      minCorFittingModelFOD = minCorFittingModelFOD,
-      minCorFittingModel = minCorFittingModel,
-      minConsecutives = minConsecutives,
-      Concentration = Concentration,
+      SRES = SRES,
+      R2FOD = R2FOD,
+      R2SOD = R2SOD,
+      MIN_FEATURE = MIN_FEATURE,
+      X = X,
       Intensity = Intensity
     )
   )
