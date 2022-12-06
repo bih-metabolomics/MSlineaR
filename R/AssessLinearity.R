@@ -4,7 +4,7 @@
 #' @param DAT
 #' @param NCORE number of cores to use for parallelization. Default value is 1
 #' @param MIN_FEATURE minimum number of features within a dilution or concentration series to be considered as linear range
-#' @param LOG_TRANSFORM should the data be log transformed? Default is TRUE.
+#' @param LOG_TRANSFORM logical Value. should the data be log transformed? Default is TRUE.
 #' @return
 #' @export
 #'
