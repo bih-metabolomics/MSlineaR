@@ -2,7 +2,7 @@
 #'
 #' @param ID
 #' @param modelObject
-#' @param res
+#' @param SRES standardized residuals higher or equal to this value will be considered as outliers. Default value is 2.
 #' @param count
 #'
 #' @return
@@ -15,7 +15,7 @@ outlier <- function(dat, modelObject, res, count){
   residual <- sort(residual.all,decreasing = T)
   if ( count > length(residual.all)) count = length(residual.all)
   residual <- residual[1:count]
-  residual <- residual[residual > res]
+  residual <- residual[residual > SRES]
 
 
   dat$outlier = residual.all %in% residual
@@ -32,7 +32,7 @@ outlier <- function(dat, modelObject, res, count){
 #' @param y
 #' @param x
 #' @param model
-#' @param res
+#' @param SRES standardized residuals higher or equal to this value will be considered as outliers. Default value is 2.
 #' @param threshCor
 #' @param numboutlier
 #'
@@ -41,7 +41,7 @@ outlier <- function(dat, modelObject, res, count){
 #'
 #' @examples
 outlierDetection <- function(dat, y= Intensity, x= Concentration,
-                             model=c("logistic", "linear", "quadratic"), res=2,
+                             model=c("logistic", "linear", "quadratic"), SRES=2,
                              threshCor=0.99, numboutlier = 1){
   #browser()
   #dat <- as_tibble(dat) #%>% arrange(DilutionPoint)
