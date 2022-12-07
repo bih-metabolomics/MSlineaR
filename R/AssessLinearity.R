@@ -1,7 +1,7 @@
 #' Title
 #'
 #' @param COLNAMES
-#' @param DAT
+#' @param DAT data set with minimum following columns must be provided: ID, REPLICATE,Concentration or Dilution and INtensity or Area
 #' @param NCORE number of cores to use for parallelization. Default value is 1
 #' @param MIN_FEATURE minimum number of features within a dilution or concentration series to be considered as linear range
 #' @param LOG_TRANSFORM logical Value. should the data be log transformed? Default is TRUE.
@@ -11,99 +11,33 @@
 #' @examples
 AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
                                          #Batch = "Batch",
-                                         REPLICATE = "Batch",
+                                         REPLICATE = NULL,
                                          X = "Concentration",
                                          Y =   "area.raw"),
                             DAT,
                             nCORE = 1,
                             MIN_FEATURE = 5,
                             LOG_TRANSFORM = TRUE,
-                            #calcFor = c("Replicates", "Median", "both"),
-
-                            #listIgnore = NULL,
                             ...) {
+  devtools::load_all()
 
-  source(file = "R/countConsecutiveValues.R")
-  source(file = "R/findLinearRange.R")
-  source(file = "R/FittingModel.R")
-  source(file = "R/getSummary.R")
-  source(file = "R/outlierDetection.R")
-  source(file = "R/plotSignals.R")
-  source(file = "R/trimEnds.R")
+  # source(file = "R/countConsecutiveValues.R")
+  # source(file = "R/findLinearRange.R")
+  # source(file = "R/FittingModel.R")
+  # source(file = "R/getSummary.R")
+  # source(file = "R/outlierDetection.R")
+  # source(file = "R/plotSignals.R")
+  # source(file = "R/trimEnds.R")
 
+  dataOrigin <- prepareData(data.table::data.table(DAT))
 
-  # progressbar
-  pboptions(type = "timer", char = "[=-]", style = 5)
-  # pb <- timerProgressBar(min = 0, max = grpn, width = 50, char = "[=-]", style = 5)
-
-  progressr::handlers(global = TRUE)
-  progressr::handlers(
-    progressr::handler_progress(
-      format   = ":current/:total [:bar] :percent in :elapsed ETA: :eta",
-      width    = 60,
-      complete = "+"
-    )
-  )
-
-  # if(nCORE > 1){
-
-
-  # handlers(global = TRUE)
-  my_fcn <- function(xs, func, inputData, ...) {
-    p <- progressr::progressor(along = xs)
-    y <- furrr::future_map(xs, function(x) {
-      p(sprintf("x=%g", x))
-      func(setDT(inputData)[groupIndices %in% unique(groupIndices)[x]], ...)
-      # groupInd <- unique(inputData$groupIndices)[x]
-      # inputData = filter(inputData, groupIndices %in% groupInd)
-      # inputData[groupIndices %in% x, func(.SD, ...)]
-      # func(inputData, ...)
-    }, .progress = F)
-  }
-
-  # } else{
-  my_fcn2 <- function(xs, func, inputData, ...) {
-    p <- progressr::progressor(along = xs)
-    y <- map(xs, function(x) {
-      p(sprintf("x=%g", x))
-      # inputData[groupIndices %in% x, func(.SD, ...)]
-      func(setDT(inputData)[groupIndices %in% unique(groupIndices)[x]], ...)
-      # groupInd <- unique(inputData$groupIndices)[x]
-      # inputData = filter(inputData, groupIndices %in% groupInd)
-      # func(inputData, ...)
-    })
-  }
-  # }
-
-  dataOrigin <- data.table(DAT)
-
-  if (!"REPLICATE" %in% names(COLNAMES)) {
-    COLNAMES["REPLICATE"] <- "REPLICATE"
-    dataOrigin[, REPLICATE := "1"]
-  }
-
-  # Args: column names,file, residuals for outlier detection, minimal consecutive points in linear range, minimal fitting correlation
-  set(dataOrigin, j = COLNAMES[["REPLICATE"]], value = as.character(dataOrigin[[COLNAMES[["REPLICATE"]]]]))
-  set(dataOrigin, j = COLNAMES[["Intensity"]], value = as.numeric(dataOrigin[[COLNAMES[["Intensity"]]]]))
-
-
-
-
-
-
-  setorderv(data.table(dataOrigin), c(COLNAMES[["ID"]], COLNAMES[["REPLICATE"]], COLNAMES[["X"]]))
-  dataOrigin[, IDintern := paste0("s", 1:.N)]
-
-  # rm(DAT)
-
-  assert_that(all(COLNAMES %in% colnames(dataOrigin)), msg = "missing columns")
-
+  processing <- copy(dataOrigin)
 
   # rename
-  ifelse(!is.null(listIgnore), processing <- dataOrigin[!COLNAMES[["ID"]] %in% listIgnore[COLNAMES[["ID"]]]], processing <- copy(dataOrigin))
-  setnames(x = processing, old = COLNAMES[sort(names(COLNAMES))], new = c("X", "ID", "Intensity", "REPLICATE"))
-  processing <- processing[, `:=`(REPLICATE = as.character(REPLICATE))][, .(IDintern, ID, REPLICATE, X, Intensity)]
+  data.table::setnames(x = processing, old = COLNAMES[sort(names(COLNAMES))], new = c( "ID", "REPLICATE", "X", "Y"))
+  processing <- processing[, `:=`(REPLICATE = as.character(REPLICATE))][, .(IDintern, ID, REPLICATE, X, Y)]
 
+  # save key numbers
   nCompounds <- uniqueN(processing, by = c("ID"))
   nReplicates <- uniqueN(processing, by = c("REPLICATE"))
   nDilutions <- uniqueN(processing[, DilutionPoint := 1:.N, by = c("ID", "REPLICATE")], by = c("DilutionPoint"))
@@ -119,33 +53,16 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   )
 
 
-  if (calcFor %in% c("both", "Median") & nReplicates >= 2) {
-    message("calculating median and RSD of  ", nReplicates, " replicates per Compound\n--------------------------------------------------------\n")
-    grpn <- uniqueN(processing, by = c("ID", "X"))
-    combinedBatches <- copy(processing)
-    combinedBatches[, IDintern := NULL][, `:=`(
-      RSD = sd(Intensity, na.rm = T) / mean(Intensity, na.rm = T) * 100,
-      Intensity = median(Intensity, na.rm = T),
-      REPLICATE = "all"
-    ), by = .(ID, X)]
-    combinedBatches <- unique(combinedBatches)
-    combinedBatches[, IDintern := paste0("c", 1:.N)]
-    if (calcFor == "both") {
-      processing <- dplyr::full_join(x = processing, y = combinedBatches, by = intersect(names(combinedBatches), names(processing)))
-    } else {
-      processing <- combinedBatches
-    }
-    rm("combinedBatches")
-  }
-  0
+
+
   ## normalizing, centralizing, log transforming
   # message("normalising data\n--------------------------------------------------------\n")
 
   setorderv(processing, c("ID", "REPLICATE", "X"))
 
-  processing[, ":="(Comment = NA, pch = fcase(!is.na(all_of(Intensity)), 19), color = fcase(!is.na(Intensity), "black"))]
-  processing[, ":="(IntensityNorm = Intensity / max(Intensity, na.rm = T) * 100,
-    IntensityLog = log(Intensity),
+  processing[, ":="(Comment = NA, pch = fcase(!is.na(all_of(Y)), 19), color = fcase(!is.na(Y), "black"))]
+  processing[, ":="(YNorm = Y / max(Y, na.rm = T) * 100,
+    YLog = log(Y),
     ConcentrationLog = log(X),
     DilutionPoint = 1:.N,
     groupIndices = .GRP), by = c("ID", "REPLICATE")]
