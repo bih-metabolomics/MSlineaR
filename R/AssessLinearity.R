@@ -29,15 +29,12 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   # source(file = "R/plotSignals.R")
   # source(file = "R/trimEnds.R")
 
-  dataOrigin <- prepareData(data.table::data.table(DAT))
+  dataOrigin <-checkData(data.table::data.table(DAT), MIN_FEATURE, LOG_TRANSFORM, nCORE)
+
 
   processing <- copy(dataOrigin)
 
-  # rename
-  data.table::setnames(x = processing, old = COLNAMES[sort(names(COLNAMES))], new = c( "ID", "REPLICATE", "X", "Y"))
-  processing <- processing[, `:=`(REPLICATE = as.character(REPLICATE))][, .(IDintern, ID, REPLICATE, X, Y)]
-
-  # save key numbers
+   # save key numbers
   nCompounds <- uniqueN(processing, by = c("ID"))
   nReplicates <- uniqueN(processing, by = c("REPLICATE"))
   nDilutions <- uniqueN(processing[, DilutionPoint := 1:.N, by = c("ID", "REPLICATE")], by = c("DilutionPoint"))
@@ -57,15 +54,6 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
 
   ## normalizing, centralizing, log transforming
   # message("normalising data\n--------------------------------------------------------\n")
-
-  setorderv(processing, c("ID", "REPLICATE", "X"))
-
-  processing[, ":="(Comment = NA, pch = fcase(!is.na(all_of(Y)), 19), color = fcase(!is.na(Y), "black"))]
-  processing[, ":="(YNorm = Y / max(Y, na.rm = T) * 100,
-    YLog = log(Y),
-    ConcentrationLog = log(X),
-    DilutionPoint = 1:.N,
-    groupIndices = .GRP), by = c("ID", "REPLICATE")]
 
 
   dropNA <- processing[, N := sum(!is.na(Intensity)), by = .(groupIndices)][N < MIN_FEATURE]

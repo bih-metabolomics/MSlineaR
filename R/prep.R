@@ -30,7 +30,7 @@
 #'
 #' @examples
 #'
-prepareData <- function(dat, MIN_FEATURE = 3, LOG_TRANSFORM = TRUE, nCORE = 1, ...){
+checkData <- function(dat, MIN_FEATURE = 3, LOG_TRANSFORM = TRUE, nCORE = 1, ...){
 
   if (!"REPLICATE" %in% names(COLNAMES)) {
     COLNAMES["REPLICATE"] <- "REPLICATE"
@@ -44,7 +44,8 @@ prepareData <- function(dat, MIN_FEATURE = 3, LOG_TRANSFORM = TRUE, nCORE = 1, .
 
 
   data.table::setorderv(dat, c(COLNAMES[["ID"]], COLNAMES[["REPLICATE"]], COLNAMES[["X"]], COLNAMES[["Y"]]))
-  dat[, IDintern := paste0("s", 1:.N)]
+  dat[ , IDintern := paste0("s", 1:.N)]
+  dat <- dat[ , c( "IDintern", COLNAMES[["ID"]], COLNAMES[["REPLICATE"]], COLNAMES[["X"]], COLNAMES[["Y"]]), with = F]
 
   # tests for Input parameter
 
@@ -63,6 +64,38 @@ prepareData <- function(dat, MIN_FEATURE = 3, LOG_TRANSFORM = TRUE, nCORE = 1, .
 
 
   return(dat)
+}
+
+
+#' Title
+#'normalizing, centralizing, log transforming
+#' @param dat
+#'
+#' @return
+#' @export
+#'
+#' @examples
+prepareData <- function(dat){
+
+  stopifnot(exprs = {
+    "data needs 5 columns called: IDintern, ID, REPLICATE, X, Y" = dim(dat)[2] == 5
+    })
+
+  processed <- data.table::copy(dat)
+  # rename
+  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern", "ID", "REPLICATE", "X", "Y"))
+
+  setorderv(processed, c("ID", "REPLICATE", "X"))
+
+  processed[, ":="(Comment = NA, pch = fcase(!is.na(Y), 19), color = fcase(!is.na(Y), "black"))]
+  processed[, ":="(YNorm = Y / max(Y, na.rm = T) * 100,
+             YLog = log(Y),
+             XLog = log(X),
+             DilutionPoint = 1:.N,
+             groupIndices = .GRP), by = c("ID", "REPLICATE")]
+  processed[ , c( "IDintern","ID", "REPLICATE", "X", "Y", "Comment", "YNorm", "YLog", "XLog", "DilutionPoint", "groupIndices", "pch", "color"), with = F]
+
+  return(processed)
 }
 
 
