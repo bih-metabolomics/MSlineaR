@@ -32,6 +32,12 @@
 #'
 checkData <- function(dat, MIN_FEATURE = 3, LOG_TRANSFORM = TRUE, nCORE = 1, ...){
 
+  stopifnot(exprs = {
+    "DAT needs more rows" = dim(DAT)[1] >= MIN_FEATURE
+    "DAT needs more columns" = dim(DAT)[2] >= 3
+
+  })
+
   if (!"REPLICATE" %in% names(COLNAMES)) {
     COLNAMES["REPLICATE"] <- "REPLICATE"
     dat[, REPLICATE := "1"]
@@ -93,7 +99,7 @@ prepareData <- function(dat){
              XLog = log(X),
              DilutionPoint = 1:.N,
              groupIndices = .GRP), by = c("ID", "REPLICATE")]
-  processed[ , c( "IDintern","ID", "REPLICATE", "X", "Y", "Comment", "YNorm", "YLog", "XLog", "DilutionPoint", "groupIndices", "pch", "color"), with = F]
+  processed <- processed[ , c("groupIndices", "IDintern","ID", "REPLICATE", "X", "Y", "Comment", "YNorm", "YLog", "XLog", "DilutionPoint", "pch", "color"), with = F]
 
   return(processed)
 }

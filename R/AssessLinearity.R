@@ -21,7 +21,7 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
                             ...) {
   devtools::load_all()
 
-  # source(file = "R/countConsecutiveValues.R")
+  # source(file = "R/countMinimumValues.R")
   # source(file = "R/findLinearRange.R")
   # source(file = "R/FittingModel.R")
   # source(file = "R/getSummary.R")
@@ -31,52 +31,56 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
 
   dataOrigin <-checkData(data.table::data.table(DAT), MIN_FEATURE, LOG_TRANSFORM, nCORE)
 
+  if(LOG_TRANSFORM %in% TRUE){
+    X = "XLog"
+    Y = "YLog"
+  } else{
+    X = "X"
+    Y = "Y"
+  }
 
-  processing <- copy(dataOrigin)
+  processingFeature <- copy(dataOrigin)
+
+  ## normalizing, centralizing, log transforming
+   message("preparing data\n--------------------------------------------------------\n")
+
+  processingFeature <- prepareData(processingFeature)
+  processingGroup <- countMinimumValue(processingFeature)
+
+  processingFeature$color[processingFeature$groupIndices %in% processingGroup$groupIndices[processingGroup$enoughPeaks %in% FALSE]] <- "grey"
+  processingFeature$Comment[processingFeature$color %in% "black"] <- unlist(apply(cbind(processingFeature$Comment, "EnoughPeaks"), 1, function(x) paste(x[!is.na(x)], collapse = " _ ")))
+  processingFeature$Comment[processingFeature$color %in% "grey"] <- unlist(apply(cbind(processingFeature$Comment, "notEnoughPeaks"), 1, function(x) paste(x[!is.na(x)], collapse = " _ ")))
+
 
    # save key numbers
-  nCompounds <- uniqueN(processing, by = c("ID"))
-  nReplicates <- uniqueN(processing, by = c("REPLICATE"))
-  nDilutions <- uniqueN(processing[, DilutionPoint := 1:.N, by = c("ID", "REPLICATE")], by = c("DilutionPoint"))
-  nFeatures <- uniqueN(processing, by = c("ID", "REPLICATE"))
-  nPeaks <- uniqueN(processing, by = c("IDintern"))
+  nCompounds <- uniqueN(processingGroup, by = c("ID"))
+  nReplicates <- uniqueN(processingFeature, by = c("REPLICATE"))
+  nDilutions <- uniqueN(processingFeature[, DilutionPoint := 1:.N, by = c("ID", "REPLICATE")], by = c("DilutionPoint"))
+  nSeries <- uniqueN(processingGroup, by = c("groupIndices"))
+  nPeaks <- uniqueN(processingFeature, by = c("IDintern"))
 
   message(
     "Data set with ", nCompounds, " molecular Features, ",
     nReplicates, " REPLICATE(s) and ",
     nDilutions, " X / Dilutions -> ",
-    format.default(nFeatures, big.mark = ",", scientific = F), " Feature dilution series.",
+    format.default(nSeries, big.mark = ",", scientific = F), " Feature dilution series.",
     "\n--------------------------------------------------------\n"
   )
 
-
-
-
-  ## normalizing, centralizing, log transforming
-  # message("normalising data\n--------------------------------------------------------\n")
-
-
-  dropNA <- processing[, N := sum(!is.na(Intensity)), by = .(groupIndices)][N < MIN_FEATURE]
-  dataPrep <- processing[, Comment := as.character(Comment)][groupIndices %in% dropNA$groupIndices, ":="(Comment = "notEnoughPeaks", enoughPeaks = FALSE, color = "grey")]
-
-  # drop Compounds with values less than MIN_FEATURE
-  processing <- dataPrep[!enoughPeaks %in% FALSE]
-
-  nCompoundsNew <- uniqueN(processing, by = c("ID"))
-  nReplicatesNew <- uniqueN(processing, by = c("REPLICATE"))
-  nFeaturesNew <- uniqueN(processing, by = c("groupIndices"))
+  nCompoundsNew <- uniqueN(processingGroup[enoughPeaks %in% TRUE], by = c("ID"))
+  nReplicatesNew <- uniqueN(processingFeature[color %in% "black"], by = c("REPLICATE"))
+  nSeriesNew <- uniqueN(processingGroup[enoughPeaks %in% TRUE], by = c("groupIndices"))
 
   message("Removed ", nCompounds - nCompoundsNew, " molecular Features with less than ", MIN_FEATURE, " points.
-          New Data set with ", nCompoundsNew, " molecular Features and ", nReplicatesNew, " Replicates -> ", nFeaturesNew, " Feature dilution series \n--------------------------------------------------------\n")
+          New Data set with ", nCompoundsNew, " molecular Features and ", nReplicatesNew, " Replicates -> ", nSeriesNew, " Feature dilution series \n--------------------------------------------------------\n")
 
+  stopifnot(exprs = {
+    "all Compounds were removed" = nCompoundsNew - uniqueN(processingGroup[enoughPeaks %in% FALSE], by = c("ID")) > 0
+    "all Dilution/Concentration-Series were removed" = nSeriesNew - uniqueN(processingGroup[enoughPeaks %in% FALSE], by = c("groupIndices")) > 0
+  })
 
-  processing <- processing[, .(groupIndices, IDintern, Intensity, X, IntensityLog, ConcentrationLog, IntensityNorm, DilutionPoint, Comment, pch, color)]
 
   # assert_that(nrow(processList$processing) == rawCompounds*n_dilution*nReplications)
-
-  ## for testing
-  # processList$processing <- processList$processing |> filter(groupIndices %in% 1:50)
-
 
   ## outlier
 
@@ -86,40 +90,39 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
 
   if (nCORE > 1) plan(multisession, workers = nCORE)
   dataFOD <- my_fcn(
-    xs = 1:n_distinct(processing$groupIndices),
-    inputData = processing,
+    xs = 1:data.table::uniqueN(processingFeature$groupIndices),
+    inputData = processingFeature,
     x = X,
-    y = Intensity,
+    y = Y,
     func = outlierDetection,
     numboutlier = 1,
-    SRES = 2,
-    threshCor = R2FOD
+    SRES = 2
   ) |>
-    ldply(.id = NULL)
+    plyr::ldply(.id = NULL)
 
   plan(sequential)
   setDT(dataFOD)[outlier %in% TRUE, Comment := str_replace(Comment, "outlier$", "outlierFOD")]
   # assert_that(n_distinct(dataFOD$groupIndices) == n_distinct(processing$groupIndices))
-  processing[, Comment := as.character(Comment)][IDintern %in% dataFOD$IDintern, ":="(Comment = dataFOD$Comment,
+  processingFeature[, Comment := as.character(Comment)][IDintern %in% dataFOD$IDintern, ":="(Comment = dataFOD$Comment,
     color = dataFOD$color,
     pch = dataFOD$pch,
     outlierFOD = dataFOD$outlier), on = "IDintern"]
 
 
-  message("For ", n_distinct(processing |> dplyr::filter(outlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " Compounds an Outlier were found\n")
+  message("An Outlier were found for ", uniqueN(processingFeature |> dplyr::filter(outlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " Compounds.\n")
 
   ## trim
   message("Trim data: first Dilution should have the smallest Intensity and last point should have the biggest.")
 
   if (nCORE > 1) plan(multisession, workers = nCORE)
   dataTrim <- my_fcn(
-    xs = 1:n_distinct(processing$groupIndices),
-    inputData = processing,
+    xs = 1:uniqueN(processingFeature$groupIndices),
+    inputData = processingFeature,
     func = trimEnds,
     x = X,
-    y = Intensity
+    y = Y
   ) |>
-    ldply(.id = NULL)
+    plyr::ldply(.id = NULL)
 
   setDT(dataTrim)[Intensity < levelnoise, color := "grey"]
   setDT(dataTrim)[Intensity < levelnoise, Comment := "below noise level"]

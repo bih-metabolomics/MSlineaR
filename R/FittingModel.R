@@ -15,22 +15,22 @@ chooseModel <- function(dat,
                         x="Concentration",
                         model=c("logistic", "linear", "quadratic")){
 
-  dat <- setorder(dat,DilutionPoint)[!is.na(get(all_of(y)))]
+  dat <- setorder(dat,DilutionPoint)[!is.na(get(tidyselect::all_of(y)))]
 
   if ("logistic" %in% model) {
-    logistic <- drc::drm(get(all_of(y)) ~ get(x), fct = drc::L.3(), data = dat)
-    cor.logistic <- cor(dat[[all_of(y)]], predict(logistic))
+    logistic <- drc::drm(get(tidyselect::all_of(y)) ~ get(x), fct = drc::L.3(), data = dat)
+    cor.logistic <- cor(dat[[tidyselect::all_of(y)]], predict(logistic))
   } else{cor.logistic <- NA}
 
   if ("linear" %in% model) {
-    linear <- lm(get(all_of(y)) ~ get(x), data = dat)
-    cor.linear <- cor(dat[[all_of(y)]], predict(linear))
+    linear <- lm(get(tidyselect::all_of(y)) ~ get(x), data = dat)
+    cor.linear <- cor(dat[[tidyselect::all_of(y)]], predict(linear))
   } else{cor.linear <- NA}
 
 
   if ("quadratic" %in% model) {
-    quadratic <- lm(get(all_of(y)) ~ poly(get(x), 2, raw = TRUE), data = dat)
-    cor.quadratic <- cor(dat[[all_of(y)]], predict(quadratic))
+    quadratic <- lm(get(tidyselect::all_of(y)) ~ poly(get(x), 2, raw = TRUE), data = dat)
+    cor.quadratic <- cor(dat[[tidyselect::all_of(y)]], predict(quadratic))
   } else{
     cor.quadratic <- NA
   }
