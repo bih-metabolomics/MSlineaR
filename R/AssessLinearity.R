@@ -94,22 +94,30 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
     inputData = processingFeature,
     x = X,
     y = Y,
-    func = outlierDetection,
-    numboutlier = 1,
-    SRES = 2
-  ) |>
-    plyr::ldply(.id = NULL)
+    func = chooseModel
+  ) |> unlist(recursive = F)
 
   plan(sequential)
-  setDT(dataFOD)[outlier %in% TRUE, Comment := str_replace(Comment, "outlier$", "outlierFOD")]
-  # assert_that(n_distinct(dataFOD$groupIndices) == n_distinct(processing$groupIndices))
-  processingFeature[, Comment := as.character(Comment)][IDintern %in% dataFOD$IDintern, ":="(Comment = dataFOD$Comment,
-    color = dataFOD$color,
-    pch = dataFOD$pch,
-    outlierFOD = dataFOD$outlier), on = "IDintern"]
 
 
-  message("An Outlier were found for ", uniqueN(processingFeature |> dplyr::filter(outlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " Compounds.\n")
+  dataFODModel <- tibble::tibble(
+    groupIndices = as.integer(names(map(dataFOD, 1))),
+    ModelName = map(dataFOD, 1) %>% unlist(use.names = F),
+    Model = map(dataFOD, 2)
+    )
+
+  dataFOD = map(dataFOD,4)|> plyr::ldply(.id = NULL)
+
+  dataFOD$color[dataFOD$outlier %in% TRUE] <- "red"
+  dataFOD$Comment[dataFOD$outlier %in% TRUE] <- paste0(dataFOD$Comment[dataFOD$outlier %in% TRUE], "_OutlierFOD")
+  dataFOD$Comment[dataFOD$outlier %in% FALSE] <- paste0(dataFOD$Comment[dataFOD$outlier %in% FALSE], "_NoOutlierFOD")
+  dataFOD$OutlierFOD <- dataFOD$outlier
+  dataFOD <- dataFOD[,-"outlier"]
+
+  processingFeature <- dataFOD
+
+
+  message("An Outlier were found for ", uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " Compounds.\n")
 
   ## trim
   message("Trim data: first Dilution should have the smallest Intensity and last point should have the biggest.")

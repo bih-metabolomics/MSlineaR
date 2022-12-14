@@ -123,9 +123,9 @@ progressr::handlers(
 # handlers(global = TRUE)
 my_fcn <- function(xs, func, inputData, ...) {
   p <- progressr::progressor(along = xs)
-  y <- furrr::future_map(xs, function(x) {
-    p(sprintf("x=%g", x))
-    func(setDT(inputData)[groupIndices %in% unique(groupIndices)[x]], ...)
+  y <- furrr::future_map(xs, function(i) {
+    p(sprintf("x=%g", i))
+    func(setDT(inputData)[groupIndices %in% unique(groupIndices)[i]], ...)
     # groupInd <- unique(inputData$groupIndices)[x]
     # inputData = filter(inputData, groupIndices %in% groupInd)
     # inputData[groupIndices %in% x, func(.SD, ...)]
@@ -136,10 +136,10 @@ my_fcn <- function(xs, func, inputData, ...) {
 # } else{
 my_fcn2 <- function(xs, func, inputData, ...) {
   p <- progressr::progressor(along = xs)
-  y <- map(xs, function(x) {
-    p(sprintf("x=%g", x))
+  y <- map(xs, function(i) {
+    p(sprintf("x=%g", i))
     # inputData[groupIndices %in% x, func(.SD, ...)]
-    func(setDT(inputData)[groupIndices %in% unique(groupIndices)[x]], ...)
+    func(setDT(inputData)[groupIndices %in% unique(groupIndices)[i]], ...)
     # groupInd <- unique(inputData$groupIndices)[x]
     # inputData = filter(inputData, groupIndices %in% groupInd)
     # func(inputData, ...)
