@@ -1,58 +1,70 @@
 testthat::test_that("checks function chooseModel",{
-  dat1 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat1 <- data.table::data.table(tibble::tibble(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             REPLICATE = rep(1,10),
-                                            X = 1:10,
+                                            X = 0.03*c(1, 3^(2:10)),
+                                            XLOG = log(X),
                                             Y = 1:10,
+                                            YLOG = log(Y),
                                             DilutionPoint = 1:10))
 
-  dat2 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat2 <- data.table::data.table(tibble::tibble(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             REPLICATE = rep(1,10),
-                                            X = 1:10,
+                                            X = 0.03*c(1, 3^(2:10)),
+                                            XLOG = log(X),
                                             Y = c(1:5,4:0),
+                                            YLOG = log(Y),
                                             DilutionPoint = 1:10))
 
-  dat3 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat3 <- data.table::data.table(tibble::tibble(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             REPLICATE = rep(1,10),
-                                            X = 1:10,
+                                            X = 0.03*c(1, 3^(2:10)),
+                                            XLOG = log(X),
                                             Y = c(1,1,1,2,3,4,5,6,6,6),
+                                            YLOG = log(Y),
                                             DilutionPoint = 1:10))
 
-  dat4 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat4 <- data.table::data.table(tibble::tibble(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             REPLICATE = rep(1,10),
-                                            X = 1:10,
+                                            X = 0.03*c(1, 3^(2:10)),
                                             Y = c(1:3,10,5:10),
+                                            YLOG = log(Y),
                                             DilutionPoint = 1:10))
 
-  dat5 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat5 <- data.table::data.table(tibble::tibble(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             REPLICATE = rep(1,10),
-                                            X = 1:10,
+                                            X = 0.03*c(1, 3^(2:10)),
+                                            XLOG = log(X),
                                             Y = c(10, 2:10),
+                                            YLOG = log(Y),
                                             DilutionPoint = 1:10))
 
-  dat6 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat6 <- data.table::data.table(tibble::tibble(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             REPLICATE = rep(1,10),
-                                            X = 1:10,
+                                            X = 0.03*c(1, 3^(2:10)),
+                                            XLOG = log(X),
                                             Y = c(1:5,4:2,8,0),
+                                            YLOG = log(Y),
                                             DilutionPoint = 1:10))
 
 
-  dat7 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat7 <- data.table::data.table(tibble::tibble(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             REPLICATE = rep(1,10),
-                                            X = 1:10,
+                                            X = 0.03*c(1, 3^(2:10)),
+                                            XLOG = log(X),
                                             Y = c(1,1,6,2,3,4,5,6,6,6),
                                             DilutionPoint = 1:10))
 
 
 
-  y = "Y"
-  x = "X"
+  y = "YLOG"
+  x = "XLOG"
 
   testthat::expect_equal(chooseModel(dat1, tidyselect::all_of(y), tidyselect::all_of(x), model)[[1]]$model.name, "linear")
   #testthat::expect_equal(chooseModel(dat1, tidyselect::all_of(y), tidyselect::all_of(x), model)[[1]]$cor, 1)

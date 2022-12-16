@@ -25,9 +25,10 @@ chooseModel <- function(dat,
       datOut <- dat
       datOut[[y]][which(residuals(logistic)/sd(residuals(logistic)) > SRES)] <- NA
       logisticOut <- drc::drm(get(tidyselect::all_of(y)) ~ get(x), fct = drc::L.3(), data = datOut)
-      suppressWarnings(aic <- AIC(logistic, logisticOut))
-      aic$AIC[is.infinite(aic$AIC)] <- -1000
-      logistic1 <- get(row.names(aic)[which(aic$AIC %in% min(aic$AIC))])
+      #RMSE
+      logisticRMSE <- Metrics::rmse(dat[[y]], predict(logistic))
+      logisticOutRMSE <- Metrics::rmse(na.exclude(datOut[[y]]), predict(logisticOut))
+      logistic1 <- get(c("logistic", "logisticOut")[which(c(logisticRMSE, logisticOutRMSE) %in% min(logisticRMSE, logisticOutRMSE))])
     } else{
       logistic1 <- logistic
     }
@@ -39,13 +40,15 @@ chooseModel <- function(dat,
 
   if ("linear" %in% model) {
     linear <- lm(get(tidyselect::all_of(y)) ~ get(x), data = dat)
-    if(any(residuals(linear)/sd(residuals(linear)) > SRES)){
+    if(any(abs(residuals(linear)/sd(residuals(linear))) > SRES)){
       datOut <- dat
       datOut[[y]][which(residuals(linear)/sd(residuals(linear)) > SRES)] <- NA
       linearOut <- lm(get(tidyselect::all_of(y)) ~ get(x), data = datOut)
-      suppressWarnings(aic <- AIC(linear, linearOut))
-      aic$AIC[is.infinite(aic$AIC)] <- -1000
-      linear1 <- get(row.names(aic)[which(aic$AIC %in% min(aic$AIC))])
+      #RMSE
+      linearRMSE <- Metrics::rmse(dat[[y]], predict(linear))
+      linearOutRMSE <- Metrics::rmse(na.exclude(datOut[[y]]), predict(linearOut))
+      linear1 <- get(c("linear", "linearOut")[which(c(linearRMSE, linearOutRMSE) %in% min(linearRMSE, linearOutRMSE))])
+
     } else{
       linear1 <- linear
     }
@@ -60,9 +63,10 @@ chooseModel <- function(dat,
       datOut <- dat
       datOut[[y]][which(residuals(quadratic)/sd(residuals(quadratic)) > SRES)] <- NA
       quadraticOut <- lm(get(tidyselect::all_of(y)) ~ poly(get(x), 2, raw = TRUE), data = datOut)
-      suppressWarnings(aic <- AIC(quadratic, quadraticOut))
-      aic$AIC[is.infinite(aic$AIC)] <- -1000
-      quadratic1 <- get(row.names(aic)[which(aic$AIC %in% min(aic$AIC))])
+      #RMSE
+      quadraticRMSE <- Metrics::rmse(dat[[y]], predict(quadratic))
+      quadraticOutRMSE <- Metrics::rmse(na.exclude(datOut[[y]]), predict(quadraticOut))
+      quadratic1 <- get(c("quadratic", "quadraticOut")[which(c(quadraticRMSE, quadraticOutRMSE) %in% min(quadraticRMSE, quadraticOutRMSE))])
     } else{
       quadratic1 <- quadratic
     }
@@ -74,15 +78,16 @@ chooseModel <- function(dat,
     quadratic1 <- NA
   }
 
-  # select Model by using akaike information criterium
+  # select Model by using RMSE
+  logistic1RMSE <- Metrics::rmse(logistic1$data$`get(tidyselect::all_of(y))`, predict(logistic1))
+  linear1RMSE <- Metrics::rmse(linear1$model$`get(tidyselect::all_of(y))`, predict(linear1))
+  quadratic1RMSE <- Metrics::rmse(quadratic1$model$`get(tidyselect::all_of(y))`, predict(quadratic1))
 
-  suppressWarnings(aic <- AIC(linear1, logistic1, quadratic1))
-  aic$AIC[is.infinite(aic$AIC)] <- -1000
-  ModelName <- row.names(aic)[which(aic$AIC %in% min(aic$AIC))]
+  ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2) %in% min(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2)))]
   if ("linear1" %in% ModelName) {ModelName = "linear1"} else if (all(c("logistic1", "quadratic1") %in% ModelName)) {ModelName = "logistic1"}  # if same correlation
 
-  dat$outlier[which(residuals(get(gsub(pattern = "1", x = ModelName, replacement = "")))/sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = "")))) > SRES)] <- TRUE
-  dat$outlier[as.integer(names(which(residuals(get(ModelName))/sd(residuals(get(ModelName))) > SRES)))] <- TRUE
+  dat$outlier[which(abs(residuals(get(gsub(pattern = "1", x = ModelName, replacement = "")))/sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = ""))))) > SRES)] <- TRUE
+  dat$outlier[as.integer(names(which(abs(residuals(get(ModelName))/sd(residuals(get(ModelName)))) > SRES)))] <- TRUE
 
 
   ## calculate correlation

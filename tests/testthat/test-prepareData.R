@@ -1,8 +1,8 @@
 testthat::test_that("function checkData works", {
 
-  dat = data.table::data.table(data.frame(ID = rep(-1,10), X = 1:10, Y = 1:10))
-  dat2 = data.table::data.table(data.frame(ID = rep(1,10), X = -1:8, Y = 1:10))
-  dat3 = data.table::data.table(data.frame(ID = rep(1,10), X = 1:10, Y = -1:8))
+  dat = data.table::data.table(data.frame(ID = rep(-1,10), X = 0.03*c(1, 3^(2:10)), Y = 1:10))
+  dat2 = data.table::data.table(data.frame(ID = rep(1,10), X = -0.03*c(1, 3^(2:10)), Y = 1:10))
+  dat3 = data.table::data.table(data.frame(ID = rep(1,10), X = 0.03*c(1, 3^(2:10)), Y = -1:8))
 
   COLNAMES = c(ID = "ID", REPLICATE = NULL, X = "X", Y = "Y")
   nCORE = 1

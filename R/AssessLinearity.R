@@ -132,8 +132,24 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   ) |>
     plyr::ldply(.id = NULL)
 
-  setDT(dataTrim)[Intensity < levelnoise, color := "grey"]
-  setDT(dataTrim)[Intensity < levelnoise, Comment := "below noise level"]
+
+
+  setDT(dataTrim)[Y < levelnoise, color := "grey"]
+  setDT(dataTrim)[Y < levelnoise, Comment := "below noise level"]
+
+  dataTrim$color[dataTrim$trim %in% TRUE] <- "grey"
+  dataTrim$Comment[dataTrim$trim %in% TRUE] <- paste0(dataTrim$Comment[dataTrim$trim %in% TRUE], "_OutlierFOD")
+  dataTrim$Comment[dataFOD$outlier %in% FALSE] <- paste0(dataFOD$Comment[dataFOD$outlier %in% FALSE], "_NoOutlierFOD")
+  dataTrim$OutlierFOD <- dataFOD$outlier
+  dataFOD <- dataFOD[,-"outlier"]
+
+  processingFeature <- dataFOD
+
+
+
+
+
+
 
 
   plan(sequential)
