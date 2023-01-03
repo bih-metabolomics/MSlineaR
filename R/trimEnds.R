@@ -19,20 +19,22 @@ trimEnds <- function(dats, y="YLog", x="XLog", thresh=0){
   #browser()
   if (last(dat[[tidyselect::all_of(y)]]) != max(dat[[tidyselect::all_of(y)]])) {
     dat.reduced.max <- copy(dat)[
-        get(tidyselect::all_of(y)) >= last(get(tidyselect::all_of(y))) - thresh,
+        get(tidyselect::all_of(y)) >= dat[,last(get(tidyselect::all_of(y)))] + thresh,
         ':=' (trim = TRUE,
               Comment = "trim: >lastPoint")]
     dat.reduced.max[nrow(dat.reduced.max),
-                    Comment := stringr::str_replace(Comment, "trim: >lastPoint", "trim: lastPoint")]
+                    ':=' (Comment = "trim: lastPoint",
+                          trim = TRUE)]
 
   } else {dat.reduced.max <- dat[, trim := FALSE]}
 
   if (dat[[tidyselect::all_of(y)]][1] != min(dat[[tidyselect::all_of(y)]])){
 
-    dat.reduced.min <- copy(dat)[get(tidyselect::all_of(y)) <= get(tidyselect::all_of(y))[1] + thresh,
+    dat.reduced.min <- copy(dat)[get(tidyselect::all_of(y)) <= dat[,get(tidyselect::all_of(y))][1] - thresh,
                             ':=' (trim = TRUE,
                                   Comment = "trim: <firstPoint")]
-    dat.reduced.min[1, Comment := stringr::str_replace(Comment, "trim: <firstPoint", "trim: firstPoint")]
+    dat.reduced.min[1, ':=' (Comment = "trim: firstPoint",
+                             trim = TRUE)]
 
     } else {dat.reduced.min <- dat[, trim := FALSE]}
 

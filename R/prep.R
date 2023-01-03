@@ -33,8 +33,8 @@
 checkData <- function(dat, MIN_FEATURE = 3, LOG_TRANSFORM = TRUE, nCORE = 1, ...){
 
   stopifnot(exprs = {
-    "DAT needs more rows" = dim(DAT)[1] >= MIN_FEATURE
-    "DAT needs more columns" = dim(DAT)[2] >= 3
+    "DAT needs more rows" = dim(dat)[1] >= MIN_FEATURE
+    "DAT needs more columns" = dim(dat)[2] >= 3
 
   })
 

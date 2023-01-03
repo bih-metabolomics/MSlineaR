@@ -21,6 +21,7 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
                             ...) {
   devtools::load_all()
 
+  source(file = "R/prep.R")
   # source(file = "R/countMinimumValues.R")
   # source(file = "R/findLinearRange.R")
   # source(file = "R/FittingModel.R")

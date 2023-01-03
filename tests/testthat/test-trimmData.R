@@ -11,12 +11,12 @@ testthat::test_that("function trimEnds works", {
                                             Y = c(10, 3,2:9),
                                             DilutionPoint = 1:10))
 
-  datOut1 <- chooseModel(dat5, tidyselect::all_of(y), tidyselect::all_of(x), model)$`1`$dat
+  datOut1 <- chooseModel(dat1, tidyselect::all_of(y), tidyselect::all_of(x), model)$`1`$dat
   datOut1$OutlierFOD <- datOut1$outlier
   datOut1 <- datOut1[,-"outlier"]
 
-
-  testthat::expect_true(all(trimEnds(datOut1,y, x)$trim[2:4]))
+  testthat::expect_true(all(trimEnds(datOut1,y, x, thresh = 0)$trim[2:4]))
+  testthat::expect_true(all(trimEnds(datOut1,y, x, thresh = 0.5)$trim[2:3]))
   testthat::expect_equal(trimEnds(datOut1,y, x)$trim[1], NA)
   testthat::expect_match(trimEnds(datOut1,y, x)$Comment[2], "trim: firstPoint")
   testthat::expect_match(trimEnds(datOut1,y, x)$Comment[3], "trim: <firstPoint")
