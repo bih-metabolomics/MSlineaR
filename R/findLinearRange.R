@@ -10,19 +10,20 @@
 #' @export
 #'
 #' @examples
-findLinearRange <- function(dat, x="DilutionPoint", y = "IntensityNorm", modelObject, res = 2, minConsecutives){
+findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelObject, res = 20, MIN_FEATURE){
   #browser()
 
-  setorder(dat,DilutionPoint)
+  dat <- data.table::copy(dats)
+  data.table::setorder(dat,DilutionPoint)
   dat <- dat[color %in% "black"]
   modelObject <- unique(dat[[modelObject]])
   modelObject <- unlist(modelObject, recursive = F)
   int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(modelObject$fit) -min(modelObject$fit))/2 + min(modelObject$fit), which = TRUE, na.rm = T)
 
+  if(length(int50) > 1) int50 <- max(int50)
   if(int50 == length(dat[[x]])) int50 <- length(dat[[x]]) -1
   if(int50 == 1) int50 = 2
-  dat$color[int50] <-  "green"
-  dat$pch[int50] <- 19
+  #dat$color[int50] <-  "green"
 
 
 
@@ -41,24 +42,24 @@ findLinearRange <- function(dat, x="DilutionPoint", y = "IntensityNorm", modelOb
 
 
   #if(all(ablineIntensity/100*(100 + res) >= ablineIntensity)){
-    limit1 <- ablineIntensity + confi
-    limit2 <- ablineIntensity - confi
+  limit1 <- ablineIntensity + confi
+  limit2 <- ablineIntensity - confi
 
-    if(limit1[1] < limit2[1]){
-      limitdown <- limit1
-      limitup <- limit2
-    } else{
-      limitdown <- limit2
-      limitup <- limit1
-    }
-    #limitup <- (linearRange$coefficients[1] + confint) + linearRange$coefficients[2]*dat[[x]]
-    #limitdown <- (linearRange$coefficients[1] - confint) + linearRange$coefficients[2]*dat[[x]]
+  if(limit1[1] < limit2[1]){
+    limitdown <- limit1
+    limitup <- limit2
+  } else{
+    limitdown <- limit2
+    limitup <- limit1
+  }
+  #limitup <- (linearRange$coefficients[1] + confint) + linearRange$coefficients[2]*dat[[x]]
+  #limitdown <- (linearRange$coefficients[1] - confint) + linearRange$coefficients[2]*dat[[x]]
   #} else{
 
-    #limitup <- ablineIntensity - confi
-    #limitdown <- ablineIntensity + confi
-    #limitup <- (linearRange$coefficients[1] - confint) + linearRange$coefficients[2]*dat[[x]]
-    #limitdown <- (linearRange$coefficients[1] + confint) + linearRange$coefficients[2]*dat[[x]]
+  #limitup <- ablineIntensity - confi
+  #limitdown <- ablineIntensity + confi
+  #limitup <- (linearRange$coefficients[1] - confint) + linearRange$coefficients[2]*dat[[x]]
+  #limitdown <- (linearRange$coefficients[1] + confint) + linearRange$coefficients[2]*dat[[x]]
 
   #}
 
@@ -67,91 +68,135 @@ findLinearRange <- function(dat, x="DilutionPoint", y = "IntensityNorm", modelOb
 
 
 
-#rm(linearRange)
+  #rm(linearRange)
   #ndx <- which(abs((dat[[y]] - ablineIntensity) /max(abs(dat[[y]] - ablineIntensity))) < res)
   #consNDX <- rle(round(abs((dat[[y]] - ablineIntensity) /max(abs(dat[[y]] - ablineIntensity))), digits = 2) <= res)
 
 
   consNDX$position <- cumsum(consNDX$length)
 
-  if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= 3) & any(consNDX$position[consNDX$values %in% TRUE] >= int50)){
-
-  TRUEpos <- Position(function(fi) fi >= int50, consNDX$position[consNDX$values %in% TRUE], right = TRUE)
-  maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE
-                                   ][TRUEpos] - consNDX$length[consNDX$values %in% TRUE][TRUEpos] +1) : consNDX$position[consNDX$values %in% TRUE][TRUEpos]
-maxTrueRange <- maxTrueRange[maxTrueRange!=0]
- # if(length(consNDX$length[which(consNDX$values %in% TRUE)]))
 
 
+  # dat <- setorder(dplyr::full_join(dat, dats[!IDintern %in% dat$IDintern]), DilutionPoint)
+  # dat$color[dat[[outlierName]] %in% TRUE] <- "red"
+  # dat$Comment[dat[[outlierName]] %in% TRUE] <- paste0(dat$Comment[dat[[outlierName]] %in% TRUE], "_Outlier",abbr)
+  # dat$Comment[dat[[outlierName]] %in% FALSE] <- paste0(dat$Comment[dat[[outlierName]] %in% FALSE], "_NoOutlier",abbr)
 
-    tmp <- tibble(
-      IDintern = dat$IDintern,
-      groupIndices = dat$groupIndices,
-      linearRangeStart = dat$DilutionPoint[maxTrueRange[1]],
-      linearRangeEnd = dat$DilutionPoint[tail(maxTrueRange,1)],
-      IslinearRange = dat$DilutionPoint >= linearRangeStart & dat$DilutionPoint <= linearRangeEnd,
-      IsPositivAssociated = (dat[[y]] - lag(dat[[y]])) > 0,
-      linearRange = length(maxTrueRange),
-      enoughPointsWithinLinearRange = linearRange >= minConsecutives,
-      color = dat$color,
-      pch = dat$pch,
-      modelFit = modelObject$fit,
-      ablineFit = ablineIntensity,
-      ablineLimit1 = limitup,
-      ablineLimit2 = limitdown,
-      ablineRes = (dat[[y]] - ablineIntensity) /dat[[y]],
-      Comment = "linearRange found"
+
+  if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= MIN_FEATURE) & any(consNDX$position[consNDX$values %in% TRUE] >= int50)){
+
+    TRUEpos <- Position(function(fi) fi >= int50, consNDX$position[consNDX$values %in% TRUE], right = TRUE)
+    maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE
+    ][TRUEpos] - consNDX$length[consNDX$values %in% TRUE][TRUEpos] +1) : consNDX$position[consNDX$values %in% TRUE][TRUEpos]
+    maxTrueRange <- maxTrueRange[maxTrueRange!=0]
+    # if(length(consNDX$length[which(consNDX$values %in% TRUE)]))
+
+
+    tmpGroup <- tibble::tibble(
+      groupIndices = unique(dat$groupIndices),
+      linear = TRUE,
+      LRStart = dat$DilutionPoint[maxTrueRange[1]],
+      LRStartY = dat[[y]][maxTrueRange[1]],
+      LRStartX = dat[[x]][maxTrueRange[1]],
+      LREnd = dat$DilutionPoint[tail(maxTrueRange,1)],
+      LREndY = dat[[y]][tail(maxTrueRange,1)],
+      LREndX = dat[[x]][tail(maxTrueRange,1)],
+      LRLength = length(maxTrueRange),
+      enoughPointsWithinLR = LRLength >= MIN_FEATURE,
+      LRFlag = NA
 
     )
 
-    if(any(tmp$IsPositivAssociated[tmp$linearRangeStart : tmp$linearRangeEnd] %in% FALSE)){
-      tmp$IslinearRange[tmp$IsPositivAssociated %in% FALSE] = FALSE
-      countT <- rle(tmp$IslinearRange)
-      countT$position <- cumsum(countT$length)
+    dat[, ':=' (IsLinear = DilutionPoint >= tmpGroup$LRStart & DilutionPoint <= tmpGroup$LREnd,
+                IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
+                modelFit = modelObject$fit,
+                abline = ablineIntensity,
+                ablineLimit1 = limitup,
+                ablineLimit2 = limitdown,
+                Residuals = residuals(linearRange)
+    )]
+    dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
 
-      if(any(countT$length[which(countT$values %in% TRUE)]>= 3) & any(countT$position[countT$values %in% TRUE] >= int50)){
+    dat$Comment[dat$IsLinear %in% TRUE] <- unlist(apply(cbind(dat$Comment, "linearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
 
-        TRUEpos <- Position(function(fi) fi >= int50, countT$position[countT$values %in% TRUE], right = TRUE)
-        maxTrueRange <- (countT$position[countT$values %in% TRUE
-        ][TRUEpos] - countT$length[countT$values %in% TRUE][TRUEpos] +1) : countT$position[countT$values %in% TRUE][TRUEpos]
-        maxTrueRange <- maxTrueRange[maxTrueRange!=0]
+    # linear but not positive associated?
+    if(any(dat$IsPositivAssociated[tmpGroup$LRStart : tmpGroup$LREnd] %in% FALSE)){
 
-        tmp$linearRangeStart = dat$DilutionPoint[maxTrueRange[1]]
-        tmp$linearRangeEnd = dat$DilutionPoint[tail(maxTrueRange,1)]
-        tmp$IslinearRange = dat$DilutionPoint >= tmp$linearRangeStart & dat$DilutionPoint <= tmp$linearRangeEnd
-        tmp$linearRange = length(maxTrueRange)
-        tmp$enoughPointsWithinLinearRange = tmp$linearRange >= minConsecutives
+      LR_TRUE <- which(dat$IsPositivAssociated %in% 1)
+      LR_TRUE_list <- split(LR_TRUE, cumsum(c(1, diff(LR_TRUE) != 1)))
+      LR_TRUE_list_Length <- lengths(LR_TRUE_list)
+
+      indices <- 1:length( LR_TRUE_list)
+      minsublist <- sapply(indices, function(i) min(LR_TRUE_list[[i]]))
+
+      LR_TRUE_list <- lapply(indices, function(i) c(minsublist[i] -1,LR_TRUE_list[[i]]))
+
+      if(any(lengths(LR_TRUE_list) >= MIN_FEATURE & length(LR_TRUE_list) == 1)){
+
+
+        dat$IsLinear = LR_TRUE_list[which(posLength >= MIN_FEATURE)]
+        dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
+        dat$color[dat$IsLinear %in% FALSE] <- "black"
+
+        tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
+        tmpGroup$LRStartY = dat[[y]][dat$IsLinear %in% TRUE][1]
+        tmpGroup$LRStartX =  dat[[x]][dat$IsLinear %in% TRUE][1]
+        tmpGroup$LREnd = last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
+        tmpGroup$LREndY = last(dat[[y]][dat$IsLinear %in% TRUE])
+        tmpGroup$LREndX = last(dat[[x]][dat$IsLinear %in% TRUE])
+        tmpGroup$LRLength = sum(dat$IsLinear)
+        tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= MIN_FEATURE
+
+        } else if(any(posLength >= MIN_FEATURE & length(LR_TRUE_list) > 1)){
+
+          dat$IsLinear = FALSE
+          dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
+          dat$color[dat$IsLinear %in% FALSE] <- "black"
+
+          tmpGroup$LRStart = NA
+          tmpGroup$LRStartY = NA
+          tmpGroup$LRStartX =  NA
+          tmpGroup$LREnd = NA
+          tmpGroup$LREndY = NA
+          tmpGroup$LREndX = NA
+          tmpGroup$LRLength = NA
+          tmpGroup$enoughPointsWithinLR = NA
+          tmpGroup$LRFlag = "mutiple linear ranges"
+
+
+      }}
+
       } else{
 
-      tmp$IslinearRange = FALSE
-      tmp$Comment = "linearRange found, but not positive associated"
-      tmp$enoughPointsWithinLinearRange = FALSE
-    }
+        tmpGroup <- tibble::tibble(
+          groupIndices = unique(dat$groupIndices),
+          linear = FALSE,
+          LRStart = NA,
+          LRStartY = NA,
+          LRStartX = NA,
+          LREnd = NA,
+          LREndY = NA,
+          LREndX = NA,
+          LRLength = NA,
+          enoughPointsWithinLR = NA,
+          LRFlag = NA
 
-  }} else{
-    tmp <- tibble(
-      IDintern = dat$IDintern,
-      groupIndices = dat$groupIndices,
-      linearRangeStart = NA,
-      linearRangeEnd = NA,
-      IslinearRange = FALSE,
-      IsPositivAssociated = (dat[[y]] - lag(dat[[y]])) > 0,
-      linearRange = NA,
-      enoughPointsWithinLinearRange = NA,
-      color = dat$color,
-      pch = dat$pch,
-      modelFit = modelObject$fit,
-      ablineFit = ablineIntensity,
-      ablineLimit1 = limitup,
-      ablineLimit2 = limitdown,
-      ablineRes = (dat[[y]] - ablineIntensity) /dat[[y]],
-      Comment = "no linearRange found"
+        )
 
-    )
-  }
-  if(tmp$IsPositivAssociated[2] %in% TRUE) tmp$IsPositivAssociated[1] <- TRUE
+        dat[, ':=' (IsLinear = FALSE,
+                    IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
+                    modelFit = modelObject$fit,
+                    abline = ablineIntensity,
+                    ablineLimit1 = limitup,
+                    ablineLimit2 = limitdown,
+                    Residuals = residuals(linearRange)
+        )]
+        dat$Comment[dat$IsLinear %in% FALSE] <- unlist(apply(cbind(dat$Comment, "NolinearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
 
-  return(tmp)
+      }
+  dat <- data.table::setorder(dplyr::full_join(dat, dats[!IDintern %in% dat$IDintern]), DilutionPoint)
+dat <- subset(dat, select = -fittingModel)
+  return(list(dat, tmpGroup))
 }
 
 

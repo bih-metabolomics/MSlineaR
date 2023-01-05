@@ -9,11 +9,10 @@ testthat::test_that("function trimEnds works", {
                                             REPLICATE = rep(1,10),
                                             X = 1:10,
                                             Y = c(10, 3,2:9),
-                                            DilutionPoint = 1:10))
+                                            DilutionPoint = 1:10,
+                                            color = rep("black",10)))
 
-  datOut1 <- chooseModel(dat1, tidyselect::all_of(y), tidyselect::all_of(x), model)$`1`$dat
-  datOut1$OutlierFOD <- datOut1$outlier
-  datOut1 <- datOut1[,-"outlier"]
+  datOut1 <- chooseModel(dat1, tidyselect::all_of(y), tidyselect::all_of(x),  abbr = "FOD")$`1`$dat
 
   testthat::expect_true(all(trimEnds(datOut1,y, x, thresh = 0)$trim[2:4]))
   testthat::expect_true(all(trimEnds(datOut1,y, x, thresh = 0.5)$trim[2:3]))
@@ -28,11 +27,10 @@ testthat::test_that("function trimEnds works", {
                                             REPLICATE = rep(1,10),
                                             X = 1:10,
                                             Y = c(10, 3,2:5,9,6,8,7),
-                                            DilutionPoint = 1:10))
+                                            DilutionPoint = 1:10,
+                                            color = rep("black",10)))
 
-  datOut2 <- chooseModel(dat2, tidyselect::all_of(y), tidyselect::all_of(x), model)$`1`$dat
-  datOut2$OutlierFOD <- datOut2$outlier
-  datOut2 <- datOut2[,-"outlier"]
+  datOut2 <- chooseModel(dat2, tidyselect::all_of(y), tidyselect::all_of(x), abbr = "FOD")$`1`$dat
 
   testthat::expect_true(all(trimEnds(datOut2,y, x)$trim[2:4]))
   testthat::expect_equal(trimEnds(datOut2,y, x)$trim[1], NA)

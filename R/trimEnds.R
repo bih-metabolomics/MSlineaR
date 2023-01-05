@@ -12,14 +12,13 @@
 trimEnds <- function(dats, y="YLog", x="XLog", thresh=0){
 
   dats$trim <- FALSE
-  dats$Comment <- ""
   dats$trim[is.na(dats[, get(y)]) | dats$OutlierFOD %in% TRUE] <- NA
-  dat <- setorder(dats,DilutionPoint)[!is.na(get(y)) & !OutlierFOD %in% TRUE]
+  dat <- data.table::setorder(dats,DilutionPoint)[!is.na(get(y)) & !OutlierFOD %in% TRUE]
 
   #browser()
-  if (last(dat[[tidyselect::all_of(y)]]) != max(dat[[tidyselect::all_of(y)]])) {
-    dat.reduced.max <- copy(dat)[
-        get(tidyselect::all_of(y)) >= dat[,last(get(tidyselect::all_of(y)))] + thresh,
+  if (data.table::last(dat[[tidyselect::all_of(y)]]) != max(dat[[tidyselect::all_of(y)]])) {
+    dat.reduced.max <- data.table::copy(dat)[
+        get(tidyselect::all_of(y)) >= dat[,data.table::last(get(tidyselect::all_of(y)))] + thresh,
         ':=' (trim = TRUE,
               Comment = "trim: >lastPoint")]
     dat.reduced.max[nrow(dat.reduced.max),
@@ -30,7 +29,7 @@ trimEnds <- function(dats, y="YLog", x="XLog", thresh=0){
 
   if (dat[[tidyselect::all_of(y)]][1] != min(dat[[tidyselect::all_of(y)]])){
 
-    dat.reduced.min <- copy(dat)[get(tidyselect::all_of(y)) <= dat[,get(tidyselect::all_of(y))][1] - thresh,
+    dat.reduced.min <- data.table::copy(dat)[get(tidyselect::all_of(y)) <= dat[,get(tidyselect::all_of(y))][1] - thresh,
                             ':=' (trim = TRUE,
                                   Comment = "trim: <firstPoint")]
     dat.reduced.min[1, ':=' (Comment = "trim: firstPoint",
@@ -43,12 +42,13 @@ trimEnds <- function(dats, y="YLog", x="XLog", thresh=0){
                     by = colnames(dat.reduced.max)[colnames(dat.reduced.max) != "Comment"],
                     suffix = c(".x", ".y")) |>
     tidyr::unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE, sep = " / ")
-  setorder(tmp,DilutionPoint)
-  setorder(dats,DilutionPoint)
-  dats[IDintern %in% tmp$IDintern & (!Comment %in% c(NA, NULL, "", " ")), Comment := paste(Comment,tmp$Comment, sep = "_")]
-  dats[IDintern %in% tmp$IDintern & (Comment %in% c(NA, NULL, "", " ")), Comment := tmp$Comment]
-  dats[IDintern %in% tmp$IDintern, trim := ifelse(is.null(tmp$trim), FALSE, tmp$trim)]
+  data.table::setorder(tmp,DilutionPoint)
+  data.table::setorder(dats,DilutionPoint)
 
+  dats[IDintern %in% tmp$IDintern , Comment := paste(Comment,tmp$Comment, sep = "_")]
+  dats[IDintern %in% tmp$IDintern, trim := ifelse(is.null(tmp$trim), FALSE, tmp$trim)]
+  dats$Comment[dats$trim %in% FALSE] <- paste0(dats$Comment[dats$trim %in% FALSE], "_NoTrim")
+  dats$color[dats$trim %in% TRUE] <- "grey"
 
   return(dats)
 }

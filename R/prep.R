@@ -91,9 +91,9 @@ prepareData <- function(dat){
   # rename
   data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern", "ID", "REPLICATE", "X", "Y"))
 
-  setorderv(processed, c("ID", "REPLICATE", "X"))
+  data.table::setorderv(processed, c("ID", "REPLICATE", "X"))
 
-  processed[, ":="(Comment = NA, pch = fcase(!is.na(Y), 19), color = fcase(!is.na(Y), "black"))]
+  processed[, ":="(Comment = NA, pch = data.table::fcase(!is.na(Y), 19), color = data.table::fcase(!is.na(Y), "black"))]
   processed[, ":="(YNorm = Y / max(Y, na.rm = T) * 100,
              YLog = log(Y),
              XLog = log(X),
@@ -125,7 +125,7 @@ my_fcn <- function(xs, func, inputData, ...) {
   p <- progressr::progressor(along = xs)
   y <- furrr::future_map(xs, function(i) {
     p(sprintf("x=%g", i))
-    func(setDT(inputData)[groupIndices %in% unique(groupIndices)[i]], ...)
+    func(data.table::setDT(inputData)[groupIndices %in% unique(groupIndices)[i]], ...)
     # groupInd <- unique(inputData$groupIndices)[x]
     # inputData = filter(inputData, groupIndices %in% groupInd)
     # inputData[groupIndices %in% x, func(.SD, ...)]
@@ -139,7 +139,7 @@ my_fcn2 <- function(xs, func, inputData, ...) {
   y <- map(xs, function(i) {
     p(sprintf("x=%g", i))
     # inputData[groupIndices %in% x, func(.SD, ...)]
-    func(setDT(inputData)[groupIndices %in% unique(groupIndices)[i]], ...)
+    func(data.table::setDT(inputData)[groupIndices %in% unique(groupIndices)[i]], ...)
     # groupInd <- unique(inputData$groupIndices)[x]
     # inputData = filter(inputData, groupIndices %in% groupInd)
     # func(inputData, ...)

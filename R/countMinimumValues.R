@@ -15,12 +15,16 @@ countMinimumValue <- function(DAT, MIN_FEATURE = 3, ...){
 
 
   })
+  dat <- data.table::data.table(DAT)
 
-  dat <- data.table::copy(DAT)
+  dat <- unique(dat[, N := sum(color %in% "black"),groupIndices][ , ":=" ( enoughPeaks = ifelse( N >= MIN_FEATURE, TRUE, FALSE)#,
+                                                     #Comment = ifelse( N >= MIN_FEATURE, "EnoughPeaks", "notEnoughPeaks")
+                                                     )][
+                                                       ,list(groupIndices,ID, REPLICATE,  N, enoughPeaks)])
 
-  dat <- unique(dat[, N := sum(!is.na(Y)),by = .(groupIndices)][ , ":=" ( enoughPeaks = ifelse( N >= MIN_FEATURE, TRUE, FALSE),
-                                                     Comment = ifelse( N >= MIN_FEATURE, "EnoughPeaks", "notEnoughPeaks"))][
-                                                       ,list(groupIndices,ID, REPLICATE,  N, enoughPeaks, Comment)])
+  DAT$color[DAT$groupIndices %in% dat$groupIndices[dat$enoughPeaks %in% FALSE]] <- "grey"
+  DAT$Comment[DAT$groupIndices %in% dat$groupIndices[dat$enoughPeaks %in% FALSE]] <- unlist(apply(cbind(DAT$Comment, "notEnoughPeaks"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
+  DAT$Comment[DAT$groupIndices %in% dat$groupIndices[dat$enoughPeaks %in% TRUE]] <- unlist(apply(cbind(DAT$Comment, "EnoughPeaks"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
 
-    return(dat)
+    return(list(DAT, dat))
 }

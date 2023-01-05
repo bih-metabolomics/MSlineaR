@@ -10,15 +10,18 @@
 #'
 #' @examples
 #'
-chooseModel <- function(dat,
+chooseModel <- function(dats,
                         y="Intensity",
                         x="Concentration",
                         model=c("logistic", "linear", "quadratic"),
                         SDRESMIN = 1,
-                        SRES = 2){
-
-  dat <- setorder(dat,DilutionPoint)[!is.na(get(tidyselect::all_of(y)))]
-  dat$outlier <- FALSE
+                        SRES = 2,
+                        abbr,
+                        R2min = 0.95){
+  dat <- data.table::copy(dats)[color %in% "black"]
+  outlierName <- paste0("Outlier", abbr)
+  dat <- data.table::setorder(dat,DilutionPoint)[!is.na(get(tidyselect::all_of(y)))]
+  dat[[outlierName]] <- FALSE
 
   if ("logistic" %in% model) {
     logistic <- drc::drm(get(tidyselect::all_of(y)) ~ get(x), fct = drc::L.3(), data = dat)
@@ -34,10 +37,13 @@ chooseModel <- function(dat,
       logistic1 <- logistic
     }
 
-
+    logistic1RMSE <- Metrics::rmse(logistic1$data$`get(tidyselect::all_of(y))`, predict(logistic1))
 
     #cor.logistic <- cor(dat[[tidyselect::all_of(y)]], predict(logistic))
-  } else{logistic1 <- NA}
+  } else{
+    logistic1 <- NA
+    logistic1RMSE <- NA
+  }
 
   if ("linear" %in% model) {
     linear <- lm(get(tidyselect::all_of(y)) ~ get(x), data = dat)
@@ -53,9 +59,13 @@ chooseModel <- function(dat,
     } else{
       linear1 <- linear
     }
+    linear1RMSE <- Metrics::rmse(linear1$model$`get(tidyselect::all_of(y))`, predict(linear1))
 
     #cor.linear <- cor(dat[[tidyselect::all_of(y)]], predict(linear))
-  } else{linear1 <- NA}
+  } else{
+    linear1 <- NA
+    linear1RMSE <- NA
+    }
 
 
   if ("quadratic" %in% model) {
@@ -63,7 +73,7 @@ chooseModel <- function(dat,
     if(any(residuals(quadratic)/sd(residuals(quadratic)) > SRES) & sd(residuals(quadratic)) > SDRESMIN){
       datOutQuad <- dat
       datOutQuad[[y]][which(residuals(quadratic)/sd(residuals(quadratic)) > SRES)] <- NA
-      quadraticOut <- lm(get(tidyselect::all_of(y)) ~ poly(get(x), 2, raw = TRUE), data = datOuQuadt)
+      quadraticOut <- lm(get(tidyselect::all_of(y)) ~ poly(get(x), 2, raw = TRUE), data = datOutQuad)
       #RMSE
       quadraticRMSE <- Metrics::rmse(dat[[y]], predict(quadratic))
       quadraticOutRMSE <- Metrics::rmse(na.exclude(datOutQuad[[y]]), predict(quadraticOut))
@@ -72,24 +82,35 @@ chooseModel <- function(dat,
       quadratic1 <- quadratic
     }
 
-
+    quadratic1RMSE <- Metrics::rmse(quadratic1$model$`get(tidyselect::all_of(y))`, predict(quadratic1))
 
     #cor.quadratic <- cor(dat[[tidyselect::all_of(y)]], predict(quadratic))
   } else{
     quadratic1 <- NA
+    quadratic1RMSE <- NA
   }
 
   # select Model by using RMSE
-  logistic1RMSE <- Metrics::rmse(logistic1$data$`get(tidyselect::all_of(y))`, predict(logistic1))
-  linear1RMSE <- Metrics::rmse(linear1$model$`get(tidyselect::all_of(y))`, predict(linear1))
-  quadratic1RMSE <- Metrics::rmse(quadratic1$model$`get(tidyselect::all_of(y))`, predict(quadratic1))
+ # logistic1RMSE <- Metrics::rmse(logistic1$data$`get(tidyselect::all_of(y))`, predict(logistic1))
+ # linear1RMSE <- Metrics::rmse(linear1$model$`get(tidyselect::all_of(y))`, predict(linear1))
+ # quadratic1RMSE <- Metrics::rmse(quadratic1$model$`get(tidyselect::all_of(y))`, predict(quadratic1))
 
-  ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2) %in% min(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2)))]
+  ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2) %in% min(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2),na.rm = TRUE))]
   if ("linear1" %in% ModelName) {ModelName = "linear1"} else if (all(c("logistic1", "quadratic1") %in% ModelName)) {ModelName = "logistic1"}  # if same correlation
 
- if(sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = "")))) > SDRESMIN) dat$outlier[which(abs(residuals(get(gsub(pattern = "1", x = ModelName, replacement = "")))/sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = ""))))) > SRES)] <- TRUE
- if(sd(residuals(get(ModelName))) > SDRESMIN) dat[IDintern %in% na.omit(get(get(ModelName)$call$data))[which(abs(residuals(get(ModelName))/sd(residuals(get(ModelName)))) > SRES)]$IDintern]$outlier <- TRUE
+ if(sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = "")))) > SDRESMIN) dat[[outlierName]][which(abs(residuals(get(gsub(pattern = "1", x = ModelName, replacement = "")))/sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = ""))))) > SRES)] <- TRUE
+ if(sd(residuals(get(ModelName))) > SDRESMIN) dat[IDintern %in% get(get(ModelName)$call$data)[!is.na(get(y))][which(abs(residuals(get(ModelName))/sd(residuals(get(ModelName)))) > SRES)]$IDintern][[outlierName]] <- TRUE
 
+  dat <- data.table::setorder(dplyr::full_join(dat, dats[!IDintern %in% dat$IDintern]), DilutionPoint)
+  dat$color[dat[[outlierName]] %in% TRUE] <- "red"
+  dat$Comment[dat[[outlierName]] %in% TRUE] <- paste0(dat$Comment[dat[[outlierName]] %in% TRUE], "_Outlier",abbr)
+  dat$Comment[dat[[outlierName]] %in% FALSE] <- paste0(dat$Comment[dat[[outlierName]] %in% FALSE], "_NoOutlier",abbr)
+
+
+
+  modelNew <- if(ModelName %in% "logistic1"){drc::drm(get(tidyselect::all_of(y)) ~ get(x), fct = drc::L.3(), data = dat[dat$color %in% "black"])
+  } else if(ModelName %in% "linear1"){lm(get(tidyselect::all_of(y)) ~ get(x), data = dat[dat$color %in% "black"])
+      } else if(ModelName %in% "quadratic1"){lm(get(tidyselect::all_of(y)) ~ poly(get(x), 2, raw = TRUE), data = dat[dat$color %in% "black"])}
 
   ## calculate correlation
   # cor.poly <- c(
@@ -104,7 +125,7 @@ chooseModel <- function(dat,
 
   Model <- ModelName
 
-  Model = list("fit" = fitted(get(Model)), "coefficients" = coef(get(Model)), "residuals" = residuals(get(Model))/sd(residuals(get(Model))))
+  Model = list("fit" = fitted(get(Model)), "coefficients" = coef(get(Model)), "std.residuals" = residuals(get(Model))/sd(residuals(get(Model))), "RMSE" = c(c("logistic" = logistic1RMSE, "linear" = linear1RMSE, "quadratic" = quadratic1RMSE)))
 
 
 
@@ -112,12 +133,12 @@ chooseModel <- function(dat,
     "tmp" = list(
       "model.name" = gsub(pattern = "1", x = ModelName, replacement = ""),
       "model" = Model,
-      "RMSE" = c(c("logistic" = logistic1RMSE, "linear" = linear1RMSE, "quadratic" = quadratic1RMSE)),
+      "R2" = cor(dat[dat$color %in% "black"][[tidyselect::all_of(y)]], predict(modelNew))^2,
+      "aboveMinCor" = cor(dat[dat$color %in% "black"][[tidyselect::all_of(y)]], predict(modelNew))^2 > R2min,
       #"aic" = aic$AIC[ row.names(aic) %in% ModelName],
       dat = dat
     )
-  )
-
+)
   names(tmp) <- unique(dat$groupIndices)
 
   #SSE <- sum((fitted(cor.max) - dat$Intensity_norm)^2)
