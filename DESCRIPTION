@@ -28,7 +28,7 @@ Suggests:
     testthat,
     lattice,
     survival,
-    MASS,
+    MASS
     
     
 

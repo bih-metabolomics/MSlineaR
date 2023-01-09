@@ -4,7 +4,7 @@
 \alias{my_fcn}
 \title{Title}
 \usage{
-my_fcn(cl, exportObjects, xs, func, inputData, ...)
+my_fcn(cl, xs, func, inputData, ...)
 }
 \arguments{
 \item{...}{}

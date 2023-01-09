@@ -82,7 +82,7 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   message(
     "Data set with ", nCompounds, " molecular Features, ",
     nReplicates, " REPLICATE(s) and ",
-    nDilutions, " X / Dilutions -> ",
+    nDilutions, " Concentrations or Dilutions -> ",
     format.default(nSeries, big.mark = ",", scientific = F), " Feature dilution series.",
     "\n--------------------------------------------------------\n"
   )
@@ -142,7 +142,9 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
 
   countList <- countMinimumValue(processingFeature, MIN_FEATURE)
   processingFeature <- countList[[1]]
-  processingGroup <- dplyr::full_join(subset(processingGroup[groupIndices %in% countList[[2]]$groupIndices], select= -c(N, enoughPeaks)), countList[[2]])
+  subdt <- processingGroup[groupIndices %in% countList[[2]]$groupIndices, .(groupIndices, N, enoughPeaks)]
+  processingGroup[subdt, ':=' (N = countList[[2]]$N,
+                               enoughPeaks = countList[[2]]$enoughPeaks), on = "groupIndices"]
 
   #### trim ####
   message("Trim data: first Dilution should have the smallest Intensity and last point should have the biggest.")
@@ -171,7 +173,9 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   # check length of points
   countList <- countMinimumValue(processingFeature, MIN_FEATURE )
   processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern])
-  processingGroup <- dplyr::full_join(subset(processingGroup[groupIndices %in% countList[[2]]$groupIndices], select= -c(N, enoughPeaks)), countList[[2]])
+  subdt <- processingGroup[groupIndices %in% countList[[2]]$groupIndices, .(groupIndices, N, enoughPeaks)]
+  processingGroup[subdt, ':=' (N = countList[[2]]$N,
+                               enoughPeaks = countList[[2]]$enoughPeaks), on = "groupIndices"]
 
 
   # assert_that(n_distinct(dataTrim$groupIndices) == n_distinct(processing$groupIndices))
@@ -238,7 +242,9 @@ parallel::stopCluster(cl)
   # check length of points
   countList <- countMinimumValue(processingFeature, MIN_FEATURE )
   processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern])
-  processingGroup <- dplyr::full_join(subset(processingGroup[groupIndices %in% countList[[2]]$groupIndices], select= -c(N, enoughPeaks)), countList[[2]])
+  subdt <- processingGroup[groupIndices %in% countList[[2]]$groupIndices, .(groupIndices, N, enoughPeaks)]
+  processingGroup[subdt, ':=' (N = countList[[2]]$N,
+                               enoughPeaks = countList[[2]]$enoughPeaks), on = "groupIndices"]
 
 
   discardCompoundFitting <- data.table::uniqueN(processingGroup[aboveMinCor %in% FALSE, groupIndices])
@@ -346,7 +352,7 @@ parallel::stopCluster(cl)
     "dataModel_6" = dataSODModel,
     "dataLinearRange_7" = dataLinearRange,
     "dataLR_8" = dataLR,
-    "summaryFFDS" = processingFeature,
+    "summaryFFDS" = processing,
     "summaryFDS" = processingGroup,
     "Parameters" = list(
       data = DAT,
