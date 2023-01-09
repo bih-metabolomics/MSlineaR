@@ -1,67 +1,67 @@
 testthat::test_that("checks function chooseModel",{
-  dat1 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat1 <- data.table::data.table(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             IDintern = paste0("s", 1:10),
                                             REPLICATE = rep(1,10),
                                             color = "black",
                                             X = 1:10,
                                             Y = 1:10,
-                                            DilutionPoint = 1:10))
+                                            DilutionPoint = 1:10)
 
-  dat2 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat2 <- data.table::data.table(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             IDintern = paste0("s", 1:10),
                                             REPLICATE = rep(1,10),
                                             color = "black",
                                             X = 1:10,
                                             Y = c(1:5,4:0),
-                                            DilutionPoint = 1:10))
+                                            DilutionPoint = 1:10)
 
-  dat3 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat3 <- data.table::data.table(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             IDintern = paste0("s", 1:10),
                                             REPLICATE = rep(1,10),
                                             color = "black",
                                             X = 1:10,
                                             Y = c(1,1,1,2,3,4,5,6,6,6),
-                                            DilutionPoint = 1:10))
+                                            DilutionPoint = 1:10)
 
-  dat4 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat4 <- data.table::data.table(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             IDintern = paste0("s", 1:10),
                                             REPLICATE = rep(1,10),
                                             color = "black",
                                             X = 1:10,
                                             Y = c(1:3,10,5:10),
-                                            DilutionPoint = 1:10))
+                                            DilutionPoint = 1:10)
 
-  dat5 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat5 <- data.table::data.table(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             IDintern = paste0("s", 1:10),
                                             REPLICATE = rep(1,10),
                                             color = "black",
                                             X = 1:10,
                                             Y = c(10, (2:10)+0.2),
-                                            DilutionPoint = 1:10))
+                                            DilutionPoint = 1:10)
 
-  dat6 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat6 <- data.table::data.table(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             IDintern = paste0("s", 1:10),
                                             REPLICATE = rep(1,10),
                                             color = "black",
                                             X = 1:10,
                                             Y = c(1:5,4:2,8,0),
-                                            DilutionPoint = 1:10))
+                                            DilutionPoint = 1:10)
 
 
-  dat7 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
+  dat7 <- data.table::data.table(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             IDintern = paste0("s", 1:10),
                                             REPLICATE = rep(1,10),
                                             color = "black",
                                             X = 1:10,
                                             Y = c(1,1,6,2,3,4,5,6,6,6),
-                                            DilutionPoint = 1:10))
+                                            DilutionPoint = 1:10)
 
 
 

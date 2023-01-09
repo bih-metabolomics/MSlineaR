@@ -96,11 +96,11 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
       groupIndices = unique(dat$groupIndices),
       linear = TRUE,
       LRStart = dat$DilutionPoint[maxTrueRange[1]],
-      LRStartY = dat[[y]][maxTrueRange[1]],
-      LRStartX = dat[[x]][maxTrueRange[1]],
+      LRStartY = dat$Y[maxTrueRange[1]],
+      LRStartX = dat$X[maxTrueRange[1]],
       LREnd = dat$DilutionPoint[tail(maxTrueRange,1)],
-      LREndY = dat[[y]][tail(maxTrueRange,1)],
-      LREndX = dat[[x]][tail(maxTrueRange,1)],
+      LREndY = dat$Y[tail(maxTrueRange,1)],
+      LREndX = dat$X[tail(maxTrueRange,1)],
       LRLength = length(maxTrueRange),
       enoughPointsWithinLR = LRLength >= MIN_FEATURE,
       LRFlag = NA
@@ -130,24 +130,25 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
       minsublist <- sapply(indices, function(i) min(LR_TRUE_list[[i]]))
 
       LR_TRUE_list <- lapply(indices, function(i) c(minsublist[i] -1,LR_TRUE_list[[i]]))
+      LR_TRUE_list <- lapply(LR_TRUE_list, function(x) {x[x!=0]})
 
       if(any(lengths(LR_TRUE_list) >= MIN_FEATURE & length(LR_TRUE_list) == 1)){
 
 
-        dat$IsLinear = LR_TRUE_list[which(posLength >= MIN_FEATURE)]
+        dat$IsLinear = LR_TRUE_list[which(LR_TRUE_list_Length >= MIN_FEATURE)]
         dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
         dat$color[dat$IsLinear %in% FALSE] <- "black"
 
         tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
-        tmpGroup$LRStartY = dat[[y]][dat$IsLinear %in% TRUE][1]
-        tmpGroup$LRStartX =  dat[[x]][dat$IsLinear %in% TRUE][1]
+        tmpGroup$LRStartY = dat$Y[dat$IsLinear %in% TRUE][1]
+        tmpGroup$LRStartX =  dat$X[dat$IsLinear %in% TRUE][1]
         tmpGroup$LREnd = last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
-        tmpGroup$LREndY = last(dat[[y]][dat$IsLinear %in% TRUE])
-        tmpGroup$LREndX = last(dat[[x]][dat$IsLinear %in% TRUE])
+        tmpGroup$LREndY = last(dat$Y[dat$IsLinear %in% TRUE])
+        tmpGroup$LREndX = last(dat$X[dat$IsLinear %in% TRUE])
         tmpGroup$LRLength = sum(dat$IsLinear)
         tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= MIN_FEATURE
 
-        } else if(any(posLength >= MIN_FEATURE & length(LR_TRUE_list) > 1)){
+        } else if(any(lengths(LR_TRUE_list) >= MIN_FEATURE & length(LR_TRUE_list) > 1)){
 
           dat$IsLinear = FALSE
           dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
@@ -164,6 +165,21 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
           tmpGroup$LRFlag = "mutiple linear ranges"
 
 
+        } else{
+
+          dat$IsLinear = FALSE
+          dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
+          dat$color[dat$IsLinear %in% FALSE] <- "black"
+
+          tmpGroup$LRStart = NA
+          tmpGroup$LRStartY = NA
+          tmpGroup$LRStartX =  NA
+          tmpGroup$LREnd = NA
+          tmpGroup$LREndY = NA
+          tmpGroup$LREndX = NA
+          tmpGroup$LRLength = NA
+          tmpGroup$enoughPointsWithinLR = NA
+          LRFlag = NA
       }}
 
       } else{

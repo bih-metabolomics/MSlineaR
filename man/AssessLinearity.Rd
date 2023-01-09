@@ -2,28 +2,29 @@
 % Please edit documentation in R/AssessLinearity.R
 \name{AssessLinearity}
 \alias{AssessLinearity}
-\title{Ti#' Title}
+\title{Title}
 \usage{
 AssessLinearity(
-  columnNames,
-  dat,
-  nCore = 4,
-  OutlierResPre = 2,
-  minCorFittingModelFOD = 0.99,
-  minCorFittingModel = 0.99,
-  minConsecutives = 5,
-  calcFor = c("Replicates", "Median", "both"),
-  Concentration = "Concentration",
-  Intensity = "Intensity",
-  res = 10,
-  listIgnore = NULL,
-  levelnoise = 0,
+  COLNAMES = c(ID = "featNames", REPLICATE = NULL, X = "Concentration", Y = "area.raw"),
+  DAT,
+  nCORE = 1,
+  MIN_FEATURE = 5,
+  LOG_TRANSFORM = TRUE,
+  R2min = 0.9,
   ...
 )
 }
 \arguments{
-\item{minConsecutives}{}
+\item{COLNAMES}{colum names from the input data set to define: ID, number of Replicate, x-value(e.g. Concentration or Dilution) and the y-value(e.g. Intensity or area)}
+
+\item{DAT}{data set with minimum following columns must be provided: ID, REPLICATE,Concentration or Dilution and Intensity or Area}
+
+\item{nCORE}{number of cores to use for parallelization. Default value is 1}
+
+\item{MIN_FEATURE}{minimum number of features within a dilution or concentration series to be considered as linear range}
+
+\item{LOG_TRANSFORM}{logical Value. should the data be log transformed? Default is TRUE.}
 }
 \description{
-Ti#' Title
+Title
 }

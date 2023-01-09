@@ -1,14 +1,16 @@
 #' Title
 #'
-#' @param COLNAMES
-#' @param DAT data set with minimum following columns must be provided: ID, REPLICATE,Concentration or Dilution and INtensity or Area
-#' @param NCORE number of cores to use for parallelization. Default value is 1
+#' @param COLNAMES colum names from the input data set to define: ID, number of Replicate, x-value(e.g. Concentration or Dilution) and the y-value(e.g. Intensity or area)
+#' @param DAT data set with minimum following columns must be provided: ID, REPLICATE,Concentration or Dilution and Intensity or Area
+#' @param nCORE number of cores to use for parallelization. Default value is 1
 #' @param MIN_FEATURE minimum number of features within a dilution or concentration series to be considered as linear range
 #' @param LOG_TRANSFORM logical Value. should the data be log transformed? Default is TRUE.
+#' @param R2min
 #' @return
 #' @export
 #'
 #' @examples
+#'
 AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
                                          #Batch = "Batch",
                                          REPLICATE = NULL,
@@ -18,9 +20,10 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
                             nCORE = 1,
                             MIN_FEATURE = 5,
                             LOG_TRANSFORM = TRUE,
-                            R2min = 0.95,
+                            R2min = 0.90,
                             ...) {
-  devtools::load_all()
+
+  #devtools::load_all()
 
   source(file = "R/prep.R")
   source(file = "R/countMinimumValues.R")
@@ -31,7 +34,21 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   # source(file = "R/plotSignals.R")
   source(file = "R/trimEnds.R")
 
-  dataOrigin <-checkData(data.table::data.table(DAT), MIN_FEATURE, LOG_TRANSFORM, nCORE)
+
+  # progressbar
+  pbapply::pboptions(type = "timer", char = "[=-]", style = 5)
+
+  progressr::handlers(global = TRUE)
+  progressr::handlers(
+    progressr::handler_progress(
+      format   = ":current/:total [:bar] :percent in :elapsed ETA: :eta",
+      width    = 60,
+      complete = "+"
+    )
+  )
+
+
+  dataOrigin <-checkData(dat = DAT, MIN_FEATURE = MIN_FEATURE, LOG_TRANSFORM = LOG_TRANSFORM, nCORE = nCORE, COLNAMES = COLNAMES)
 
   if(LOG_TRANSFORM %in% TRUE){
     X = "XLog"
@@ -50,7 +67,7 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
 
   processingFeature <- data.table::copy(dataPrep)
 
-  countList <- countMinimumValue(processingFeature, MIN_FEATURE)
+  countList <- countMinimumValue(DAT = processingFeature, MIN_FEATURE)
   processingFeature <- data.table::data.table(countList[[1]])
   processingGroup <- data.table::data.table(countList[[2]])
 
@@ -58,7 +75,7 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
    # save key numbers
   nCompounds <- data.table::uniqueN(processingGroup, by = c("ID"))
   nReplicates <- data.table::uniqueN(processingFeature, by = c("REPLICATE"))
-  nDilutions <- data.table::uniqueN(processingFeature[, DilutionPoint := 1:.N, by = c("ID", "REPLICATE")], by = c("DilutionPoint"))
+  nDilutions <- data.table::uniqueN(processingFeature[, 'DilutionPoint' := 1:.N, by = c("ID", "REPLICATE")], by = c("DilutionPoint"))
   nSeries <- data.table::uniqueN(processingGroup, by = c("groupIndices"))
   nPeaks <- data.table::uniqueN(processingFeature, by = c("IDintern"))
 
@@ -89,19 +106,23 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
 
   message("First Outlier Detection\n")
 
-  # pblapply(1:uniqueN(processing, by = "groupIndices"), function(i) processing[groupIndices %in% i, outlierDetection(.SD)]) |> ldply()
+  processingFeature <- processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% TRUE, groupIndices]]
 
-  if (nCORE > 1) future::plan(multisession, workers = nCORE)
+  cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+  #options(future.globals.onReference = "error")
   dataFOD <- my_fcn(
-    xs = 1:data.table::uniqueN(processingFeature$groupIndices),
+    cl,
+    #exportObjects = c("chooseModel", "X","Y", "abbr", "R2min"),
+    xs = 1: data.table::uniqueN(processingFeature$groupIndices),
     inputData = processingFeature,
     x = X,
     y = Y,
     func = chooseModel,
-    abbr = "FOD"
+    abbr = "FOD",
+    R2min = R2min
   ) |> unlist(recursive = F)
 
-  if (nCORE > 1) future::plan(sequential)
+  parallel::stopCluster(cl)
 
 
   dataFODModel <- tibble::tibble(
@@ -115,9 +136,9 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   dataFOD = map(dataFOD,5)|> plyr::ldply(.id = NULL)
 
   processingFeature <- data.table::data.table(dplyr::full_join(dataFOD, processingFeature[!IDintern %in% dataFOD$IDintern]))
-  processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,OutlierFOD :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]))
+  processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierFOD' :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]))
 
-  message("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " Compounds.\n")
+  message("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " FDS.\n")
 
   countList <- countMinimumValue(processingFeature, MIN_FEATURE)
   processingFeature <- countList[[1]]
@@ -126,9 +147,10 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   #### trim ####
   message("Trim data: first Dilution should have the smallest Intensity and last point should have the biggest.")
 
-  if (nCORE > 1) future::plan(multisession, workers = nCORE)
+  cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
   dataTrim <- my_fcn(
-    xs = 1: data.table::uniqueN(processingFeature$groupIndices),
+    cl,
+    xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
     inputData = processingFeature,
     func = trimEnds,
     x = X,
@@ -136,14 +158,14 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   ) |>
     plyr::ldply(.id = NULL)
 
-  if (nCORE > 1) future::plan(sequential)
+  parallel::stopCluster(cl)
 
   # setDT(dataTrim)[Y < levelnoise, color := "grey"]
   # setDT(dataTrim)[Y < levelnoise, Comment := "below noise level"]
 
 
   processingFeature <- data.table::data.table(dplyr::full_join(dataTrim, processingFeature[!IDintern %in% dataTrim$IDintern]))
-  processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,trim :=any(trim %in% TRUE),groupIndices][,.(groupIndices, trim)]))
+  processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'trim' :=any(trim %in% TRUE),groupIndices][,.(groupIndices, trim)]))
 
 
   # check length of points
@@ -180,8 +202,11 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
 
   message("Fitting linear, logistic and quadratic regression\n")
 
-  if (nCORE > 1) future::plan(multisession, workers = nCORE)
+  processingFeature <- processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% TRUE, groupIndices]]
+
+  cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
   dataSOD <- my_fcn(
+    cl,
     xs = 1:data.table::uniqueN(processingFeature$groupIndices),
     inputData = processingFeature,
     x = X,
@@ -189,11 +214,10 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
     func = chooseModel,
     abbr = "SOD",
     model = "linear",
-    R2min = 0.95
+    R2min = R2min
   ) |> unlist(recursive = F)
 
-  if (nCORE > 1) future::plan(sequential)
-
+parallel::stopCluster(cl)
 
   dataSODModel <- tibble::tibble(
     groupIndices = as.integer(names(map(dataSOD, 1))),
@@ -207,7 +231,7 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   dataSOD = map(dataSOD,5)|> plyr::ldply(.id = NULL)
 
   processingFeature <- data.table::data.table(dplyr::full_join(dataSOD, processingFeature[!IDintern %in% dataSOD$IDintern]))
-  processingGroup <-  dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,OutlierSOD :=any(OutlierSOD %in% TRUE),groupIndices][,.(groupIndices, OutlierSOD)]))
+  processingGroup <-  dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierSOD' :=any(OutlierSOD %in% TRUE),groupIndices][,.(groupIndices, OutlierSOD)]))
   processingGroup <-  dplyr::full_join( processingGroup, subset(dataSODModel, select = -c(Model)), by = "groupIndices")
 
 
@@ -256,8 +280,9 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[aboveMinCor %in% TRUE, groupIndices]]
   dataLin$fittingModel <- sapply(dataLin$groupIndices, function(i) dataSODModel$Model[dataSODModel$groupIndices %in% i])
 
-  if (nCORE > 1) future::plan(multisession, workers = nCORE)
+  cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
   dataLinearRange <- my_fcn(
+    cl,
     xs = 1:data.table::uniqueN(dataLin$groupIndices),
     inputData = dataLin,
     func = findLinearRange,
@@ -269,8 +294,7 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
     #unlist(recursive = F)
     #plyr::ldply(.id = NULL)
 
-  if (nCORE > 1) future::plan(sequential)
-
+parallel::stopCluster(cl)
 
   dataLR = map(dataLinearRange,1)|> plyr::ldply(.id = NULL)
   processingFeature <- data.table::data.table(dplyr::full_join(dataLR, processingFeature[!IDintern %in% dataLR$IDintern]))
@@ -298,7 +322,7 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
 
 
   data.table::setorder(processingFeature, DilutionPoint)
-  dataSummary <- getSummaryList(processing)
+  #dataSummary <- getSummaryList(processingFeature)
 
   processing <- dplyr::full_join(
     x = dataOrigin, y = processingFeature,

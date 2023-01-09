@@ -5,10 +5,15 @@
 \title{Title}
 \usage{
 chooseModel(
-  dat,
+  dats,
   y = "Intensity",
   x = "Concentration",
-  model = c("logistic", "linear", "quadratic")
+  model = c("logistic", "linear", "quadratic"),
+  SDRESMIN = 1,
+  SRES = 2,
+  abbr,
+  R2min = 0.95,
+  ...
 )
 }
 \arguments{

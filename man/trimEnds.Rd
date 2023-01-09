@@ -4,7 +4,7 @@
 \alias{trimEnds}
 \title{Title}
 \usage{
-trimEnds(dats, y = "IntensityNorm", x = "DilutionPoint", thresh = 0)
+trimEnds(dats, y = "YLog", x = "XLog", thresh = 0)
 }
 \arguments{
 \item{thresh}{}

@@ -30,7 +30,9 @@
 #'
 #' @examples
 #'
-checkData <- function(dat, MIN_FEATURE = 3, LOG_TRANSFORM = TRUE, nCORE = 1, ...){
+checkData <- function(dat, MIN_FEATURE = 3, LOG_TRANSFORM = TRUE, nCORE = 1, COLNAMES, ...){
+
+  data.table::setDT(dat)
 
   stopifnot(exprs = {
     "DAT needs more rows" = dim(dat)[1] >= MIN_FEATURE
@@ -57,8 +59,8 @@ checkData <- function(dat, MIN_FEATURE = 3, LOG_TRANSFORM = TRUE, nCORE = 1, ...
 
   stopifnot(exprs = {
     "missing columns" = all(COLNAMES %in% colnames(dat))
-    "all values of X and Y need to be from type double and positive." = is.double(dat[[COLNAMES[["X"]]]]) & all(dat[[COLNAMES[["X"]]]] >= 0)
-    "all values of X and Y need to be from type double and positive." = is.double(dat[[COLNAMES[["Y"]]]]) & all(dat[[COLNAMES[["Y"]]]] >= 0)
+    "all values of X and Y need to be from type double and positive." = is.double(dat[[COLNAMES[["X"]]]]) & all(dat[[COLNAMES[["X"]]]] >= 0, na.rm = T)
+    "all values of X and Y need to be from type double and positive." = is.double(dat[[COLNAMES[["Y"]]]]) & all(dat[[COLNAMES[["Y"]]]] >= 0, na.rm = T)
     "Column ID needs to be from type character " = is.character(dat[[COLNAMES[["ID"]]]])
     "Column REPLICATE needs to be from type character " = is.character(dat[[COLNAMES[["REPLICATE"]]]])
     "Parameter LOG_TRANSFORM need to be from type logical" = is.logical(LOG_TRANSFORM)
@@ -86,7 +88,7 @@ prepareData <- function(dat){
   stopifnot(exprs = {
     "data needs 5 columns called: IDintern, ID, REPLICATE, X, Y" = dim(dat)[2] == 5
     })
-
+data.table::setDT(dat)
   processed <- data.table::copy(dat)
   # rename
   data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern", "ID", "REPLICATE", "X", "Y"))
@@ -105,33 +107,47 @@ prepareData <- function(dat){
 }
 
 
-# progressbar
-pbapply::pboptions(type = "timer", char = "[=-]", style = 5)
-
-progressr::handlers(global = TRUE)
-progressr::handlers(
-  progressr::handler_progress(
-    format   = ":current/:total [:bar] :percent in :elapsed ETA: :eta",
-    width    = 60,
-    complete = "+"
-  )
-)
 
 # if(nCORE > 1){
 
 
 # handlers(global = TRUE)
-my_fcn <- function(xs, func, inputData, ...) {
-  p <- progressr::progressor(along = xs)
-  y <- furrr::future_map(xs, function(i) {
-    p(sprintf("x=%g", i))
-    func(data.table::setDT(inputData)[groupIndices %in% unique(groupIndices)[i]], ...)
-    # groupInd <- unique(inputData$groupIndices)[x]
-    # inputData = filter(inputData, groupIndices %in% groupInd)
-    # inputData[groupIndices %in% x, func(.SD, ...)]
-    # func(inputData, ...)
-  }, .progress = F)
+#' Title
+#'
+#' @param xs
+#' @param func
+#' @param inputData
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#'
+
+my_fcn <- function(cl, xs, func, inputData, ...) {
+  #parallel::clusterExport(cl, exportObjects)
+  doSNOW::registerDoSNOW(cl)
+  pb <- progressr::progressor(along = xs)
+  progress <- function(i)  pb(sprintf("x=%g", i))
+  opts <- list(progress=progress)
+  y <- foreach::foreach(i = xs,   .options.snow=opts) %dopar% {func(data.table::setDT(inputData)[inputData$groupIndices %in% unique(inputData$groupIndices)[i]], ...)}
 }
+
+
+
+
+# my_fcn <- function(xs, func, inputData, ...) {
+#   p <- progressr::progressor(along = xs)
+#   y <- furrr::future_map(xs, function(i) {
+#     p(sprintf("x=%g", i))
+#     func(data.table::setDT(inputData)[inputData$groupIndices %in% unique(inputData$groupIndices)[i]], ...)
+#     # groupInd <- unique(inputData$groupIndices)[x]
+#     # inputData = filter(inputData, groupIndices %in% groupInd)
+#     # inputData[groupIndices %in% x, func(.SD, ...)]
+#     # func(inputData, ...)
+#   }, .progress = F)
+# }
 
 # } else{
 my_fcn2 <- function(xs, func, inputData, ...) {

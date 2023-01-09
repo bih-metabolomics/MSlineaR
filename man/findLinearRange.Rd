@@ -5,12 +5,12 @@
 \title{Title}
 \usage{
 findLinearRange(
-  dat,
+  dats,
   x = "DilutionPoint",
   y = "IntensityNorm",
   modelObject,
-  res = 2,
-  minConsecutives
+  res = 20,
+  MIN_FEATURE
 )
 }
 \arguments{

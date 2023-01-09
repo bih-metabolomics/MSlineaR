@@ -20,9 +20,17 @@ RoxygenNote: 7.2.0
 Imports:
     pbapply,
     progressr,
-    data.table
+    data.table,
+    future,
+    Metrics,
+    foreach
 Suggests: 
-    testthat
+    testthat,
+    lattice,
+    survival,
+    MASS,
+    
+    
 
 
 
