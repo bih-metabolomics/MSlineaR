@@ -2,41 +2,15 @@
 % Please edit documentation in R/prep.R
 \name{prepareData}
 \alias{prepareData}
-\title{Prepare raw data}
+\title{Title
+normalizing, centralizing, log transforming}
 \usage{
 prepareData(dat)
 }
 \arguments{
-\item{dat}{Data frame with raw data. Mandatory columns are:
-\itemize{
-\item ID,
-\item IDintern
-\item Batch,
-\item Replicate,
-\item MZ
-\item RT
-\item Concentration
-\item Intensity
-}}
-}
-\value{
-Data frame with columns:
-\itemize{
-\item IDintern,
-\item ID,
-\item IntensityNorm,
-\item DP,
-\item Comment,
-\item pch,
-\item color,
-\item ConcentrationRaw,
-\item IntensityRaw,
-\item ConcentrationLog,
-\item IntensityLog,
-\item IntensityRaw
-\item DilutionPoint
-}
+\item{dat}{}
 }
 \description{
-Prepare raw data
+Title
+normalizing, centralizing, log transforming
 }

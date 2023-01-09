@@ -6,24 +6,24 @@
 #' @export
 #'
 #' @examples
-getSummaryList <- function(completeList){
+getSummaryList <- function(completeList, y){
   #browser()
 
   dat <- setorder(na.last = T, completeList[ , .(ID, groupIndices,Replicate, Comment)], Comment) |> distinct(.keep_all = T, groupIndices,Replicate)
 
-  LR <- unique(completeList[!is.na(linearRangeStart) , .(groupIndices, linearRangeStart, linearRangeEnd, linearRange, enoughPointsWithinLinearRange)])
+  #LR <- unique(completeList[!is.na(LRStart) , .(groupIndices, LRStart, LREnd, LRLength, enoughPointsWithinLR)])
 
-  LR_limits <-  map(LR$groupIndices, .f = function(x) {
+  # LR_limits <-  map(LR$groupIndices, .f = function(x) {
+  #
+  #   completeList[groupIndices %in% x][, ':=' (LR_ConcentrationStart = Concentration[LR$linearRangeStart[LR$groupIndices %in% x]],
+  #                                             LR_ConcentrationEnd = Concentration[LR$linearRangeEnd[LR$groupIndices %in% x]],
+  #                                             LR_IntensityStart = Intensity[LR$linearRangeStart[LR$groupIndices %in% x]],
+  #                                             LR_IntensityEnd = Intensity[LR$linearRangeEnd[LR$groupIndices %in% x]]
+  #   )]})%>% ldply |>
+  #   dplyr::select(groupIndices, LR_ConcentrationStart, LR_ConcentrationEnd, LR_IntensityStart, LR_IntensityEnd) %>%
+  #   distinct()
 
-    completeList[groupIndices %in% x][, ':=' (LR_ConcentrationStart = Concentration[LR$linearRangeStart[LR$groupIndices %in% x]],
-                                              LR_ConcentrationEnd = Concentration[LR$linearRangeEnd[LR$groupIndices %in% x]],
-                                              LR_IntensityStart = Intensity[LR$linearRangeStart[LR$groupIndices %in% x]],
-                                              LR_IntensityEnd = Intensity[LR$linearRangeEnd[LR$groupIndices %in% x]]
-    )]})%>% ldply |>
-    dplyr::select(groupIndices, LR_ConcentrationStart, LR_ConcentrationEnd, LR_IntensityStart, LR_IntensityEnd) %>%
-    distinct()
-
-  MissingNr <- unique(completeList[, .(groupIndices, Intensity)][,Nr_MissingValue := sum(is.na(Intensity)),by = "groupIndices"][,-("Intensity")])
+  MissingNr <- unique(completeList[, .(groupIndices, get(y))][,Nr_MissingValue := sum(is.na(get(y))),by = "groupIndices"][,-(y)])
 
 
   MissingList <- setDT(completeList)[groupIndices %in% LR$groupIndices, .SD[any(IslinearRange %in% TRUE)], by = "groupIndices"]

@@ -1,22 +1,22 @@
 testthat::test_that("function checkData works", {
 
   dat = data.table::data.table(data.frame(ID = rep(-1,10), X = 1:10, Y = 1:10))
-  dat2 = data.table::data.table(data.frame(ID = rep(1,10), X = -1:8, Y = 1:10))
-  dat3 = data.table::data.table(data.frame(ID = rep(1,10), X = 1:10, Y = -1:8))
+  dat2 = data.table::data.table(data.frame(ID = rep(1,10), X = -1:-10, Y = 1:10))
+  dat3 = data.table::data.table(data.frame(ID = rep(1,10), X = 1, 1:10, Y = -1:8))
 
   COLNAMES = c(ID = "ID", REPLICATE = NULL, X = "X", Y = "Y")
   nCORE = 1
   LOG_TRANSFORM = TRUE
   MIN_FEATURE = 3
-  testthat::expect_vector(checkData(dat)$ID, ptype = character(), size= 10)
-  testthat::expect_vector(checkData(dat)$REPLICATE, ptype = character(), size= 10)
-  testthat::expect_vector(checkData(dat)$X, ptype = double(), size= 10)
-  testthat::expect_vector(checkData(dat)$Y, ptype = double(), size= 10)
-  testthat::expect_error(checkData(dat2))
-  testthat::expect_error(checkData(dat3))
-  testthat::expect_error(checkData(dat, MIN_FEATURE = 2))
-  testthat::expect_error(checkData(dat, nCORE = -1))
-  testthat::expect_error(checkData(dat, LOG_TRANSFORM = "TRUE"))
+  testthat::expect_vector(checkData(dat, COLNAMES = COLNAMES)$ID, ptype = character(), size= 10)
+  testthat::expect_vector(checkData(dat, COLNAMES = COLNAMES)$REPLICATE, ptype = character(), size= 10)
+  testthat::expect_vector(checkData(dat, COLNAMES = COLNAMES)$X, ptype = double(), size= 10)
+  testthat::expect_vector(checkData(dat, COLNAMES = COLNAMES)$Y, ptype = double(), size= 10)
+  testthat::expect_error(checkData(dat2, COLNAMES = COLNAMES))
+  testthat::expect_error(checkData(dat3, COLNAMES = COLNAMES))
+  testthat::expect_error(checkData(dat, MIN_FEATURE = 2, COLNAMES = COLNAMES))
+  testthat::expect_error(checkData(dat, nCORE = -1, COLNAMES = COLNAMES))
+  testthat::expect_error(checkData(dat, LOG_TRANSFORM = "TRUE", COLNAMES = COLNAMES))
 
   })
 

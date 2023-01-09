@@ -4,7 +4,7 @@
 \alias{getSummaryList}
 \title{Title}
 \usage{
-getSummaryList(completeList)
+getSummaryList(completeList, y)
 }
 \arguments{
 \item{completeList}{}

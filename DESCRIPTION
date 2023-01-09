@@ -18,10 +18,19 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.0
 Imports:
-    pbapply
-    progressr
+    pbapply,
+    progressr,
+    data.table,
+    future,
+    Metrics,
+    foreach
 Suggests: 
-    testthat
+    testthat,
+    lattice,
+    survival,
+    MASS
+    
+    
 
 
 
