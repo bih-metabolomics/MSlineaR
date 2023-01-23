@@ -21,18 +21,19 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
                             MIN_FEATURE = 5,
                             LOG_TRANSFORM = TRUE,
                             R2min = 0.90,
+                            res = 20,
                             ...) {
 
   #devtools::load_all()
 
-  source(file = "R/prep.R")
-  source(file = "R/countMinimumValues.R")
-  source(file = "R/findLinearRange.R")
-  source(file = "R/FittingModel.R")
+  #source(file = "R/prep.R")
+  #source(file = "R/countMinimumValues.R")
+  #source(file = "R/findLinearRange.R")
+  #source(file = "R/FittingModel.R")
   # source(file = "R/getSummary.R")
   # source(file = "R/outlierDetection.R")
   # source(file = "R/plotSignals.R")
-  source(file = "R/trimEnds.R")
+  #source(file = "R/trimEnds.R")
 
 
   # progressbar
@@ -58,7 +59,16 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
     Y = "Y"
   }
 
+  if (!"REPLICATE" %in% names(COLNAMES)) {
+    COLNAMES["REPLICATE"] <- "REPLICATE"
+    dataOrigin[, REPLICATE := "1"]
+  }
+
+
+
   processingFeature <- data.table::copy(dataOrigin)
+
+
 
   #### normalizing, centralizing, log transforming ####
    message("preparing data\n--------------------------------------------------------\n")
@@ -106,14 +116,18 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
 
   message("First Outlier Detection\n")
 
+  cutoff <- processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% FALSE, groupIndices]]
   processingFeature <- processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% TRUE, groupIndices]]
+  startTime = Sys.time()
+
+  # prints recorded time
 
   cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
   #options(future.globals.onReference = "error")
   dataFOD <- my_fcn(
     cl,
     #exportObjects = c("chooseModel", "X","Y", "abbr", "R2min"),
-    xs = 1: data.table::uniqueN(processingFeature$groupIndices),
+    xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
     inputData = processingFeature,
     x = X,
     y = Y,
@@ -124,6 +138,10 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
 
   parallel::stopCluster(cl)
 
+  endTime = Sys.time()
+  total <- endTime - startTime
+  print(total)
+  message("FOD: ",total)
 
   dataFODModel <- tibble::tibble(
     groupIndices = as.integer(names(map(dataFOD, 1))),
@@ -149,6 +167,7 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   #### trim ####
   message("Trim data: first Dilution should have the smallest Intensity and last point should have the biggest.")
 
+  startTime = Sys.time()
   cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
   dataTrim <- my_fcn(
     cl,
@@ -161,6 +180,10 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
     plyr::ldply(.id = NULL)
 
   parallel::stopCluster(cl)
+endTime = Sys.time()
+total <- endTime - startTime
+print(total)
+message("trim: ",endTime - startTime)
 
   # setDT(dataTrim)[Y < levelnoise, color := "grey"]
   # setDT(dataTrim)[Y < levelnoise, Comment := "below noise level"]
@@ -206,8 +229,11 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
 
   message("Fitting linear, logistic and quadratic regression\n")
 
+
+  cutoff <- dplyr::full_join(cutoff, processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% FALSE, groupIndices]])
   processingFeature <- processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% TRUE, groupIndices]]
 
+  startTime = Sys.time()
   cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
   dataSOD <- my_fcn(
     cl,
@@ -217,18 +243,23 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
     y = Y,
     func = chooseModel,
     abbr = "SOD",
-    model = "linear",
+    #model = c("linear","logistic"),
     R2min = R2min
   ) |> unlist(recursive = F)
 
 parallel::stopCluster(cl)
 
+endTime = Sys.time()
+total <- endTime - startTime
+print(total)
+message("FOD: ",endTime - startTime)
+
   dataSODModel <- tibble::tibble(
     groupIndices = as.integer(names(map(dataSOD, 1))),
     ModelName = map(dataSOD, 1) %>% unlist(use.names = F),
-    Model = map(dataSOD, 2),
-    R2 = map(dataSOD, 3) %>% unlist(use.names = F),
-    aboveMinCor = map(dataSOD, 4) %>% unlist(use.names = F)
+    Model = map(dataSOD, 2)#,
+    #R2 = map(dataSOD, 3) %>% unlist(use.names = F)#,
+    #aboveMinCor = map(dataSOD, 4) %>% unlist(use.names = F)
 
   )
   data.table::setDT(dataSODModel)
@@ -247,10 +278,10 @@ parallel::stopCluster(cl)
                                enoughPeaks = countList[[2]]$enoughPeaks), on = "groupIndices"]
 
 
-  discardCompoundFitting <- data.table::uniqueN(processingGroup[aboveMinCor %in% FALSE, groupIndices])
-  remainingCompoundFitting <- data.table::uniqueN(processingGroup[aboveMinCor %in% TRUE, groupIndices])
+  discardCompoundFitting <- data.table::uniqueN(processingGroup[enoughPeaks %in% FALSE, groupIndices])
+  remainingCompoundFitting <- data.table::uniqueN(processingGroup[enoughPeaks %in% TRUE, groupIndices])
 
-  message(discardCompoundFitting, " Compounds have a low R^2 (less than ", R2min, ") and will be excluded.\n")
+  #message(discardCompoundFitting, " Compounds have a low R^2 (less than ", R2min, ") and will be excluded.\n")
 
 
     #### Combining ####
@@ -278,33 +309,55 @@ parallel::stopCluster(cl)
   # }
   # assert_that(n_distinct(processList$processing |> filter(aboveMinCor %in% TRUE) |> dplyr::select(groupIndices)) == remainingCompoundFitting + savedCompounds )
 
-  message("Data set with ", data.table::uniqueN(processingGroup[aboveMinCor %in% TRUE, groupIndices]), " Compounds with a R^2 above ", R2min, "\n--------------------------------------------------------\n")
+  message("Data set with ", data.table::uniqueN(processingGroup[enoughPeaks %in% TRUE, groupIndices]), " Compounds ", "\n--------------------------------------------------------\n")
 
   ## find linear Range
   message("Determining linear range\n--------------------------------------------------------\n")
 
-  dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[aboveMinCor %in% TRUE, groupIndices]]
+  cutoff <- dplyr::full_join(cutoff, processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% FALSE, groupIndices]])
+  processingFeature <- processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% TRUE, groupIndices]]
+
+  #dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[aboveMinCor %in% TRUE, groupIndices]]
+  dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[ , groupIndices]]
   dataLin$fittingModel <- sapply(dataLin$groupIndices, function(i) dataSODModel$Model[dataSODModel$groupIndices %in% i])
 
+  startTime = Sys.time()
   cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
   dataLinearRange <- my_fcn(
     cl,
-    xs = 1:data.table::uniqueN(dataLin$groupIndices),
+    xs = 1 : data.table::uniqueN(dataLin$groupIndices),
     inputData = dataLin,
     func = findLinearRange,
     x = X,
     y = Y,
     modelObject = "fittingModel",
-    MIN_FEATURE = MIN_FEATURE
+    MIN_FEATURE = MIN_FEATURE,
+    res = res
   ) #|>
     #unlist(recursive = F)
     #plyr::ldply(.id = NULL)
 
 parallel::stopCluster(cl)
+endTime = Sys.time()
+total <- endTime - startTime
+print(total)
+message("fitting: ",endTime - startTime)
 
-  dataLR = map(dataLinearRange,1)|> plyr::ldply(.id = NULL)
-  processingFeature <- data.table::data.table(dplyr::full_join(dataLR, processingFeature[!IDintern %in% dataLR$IDintern]))
-  processingGroup <-  dplyr::full_join(processingGroup, map(dataLinearRange,2)|> plyr::ldply(.id = NULL), by = "groupIndices")
+  dataLRFeature = data.table::data.table(map(dataLinearRange,1)|> plyr::ldply(.id = NULL))
+  dataLRGroup = data.table::data.table(map(dataLinearRange,2)|> plyr::ldply(.id = NULL))
+  dataLRGroup$aboveR2 = dataLRGroup$R2 >= R2min
+  dataLRGroup$LRFlag[dataLRGroup$aboveR2 %in% FALSE] = "small R2"
+  dataLRGroup$enoughPointsWithinLR[dataLRGroup$aboveR2 %in% FALSE] = FALSE
+
+
+  dataLRFeaturesub <- dataLRFeature[groupIndices %in% dataLRGroup[aboveR2 %in% FALSE, groupIndices] & color %in% "darkseagreen", .(IDintern, color, IsLinear, Comment)]
+  dataLRFeature[dataLRFeaturesub,':=' ( color = "black",
+                                        IsLinear = FALSE,
+                                        Comment = paste0(Comment, "_small R2")) , on = "IDintern"]
+
+
+  processingFeature <- data.table::data.table(dplyr::full_join(dataLRFeature, processingFeature[!IDintern %in% dataLRFeature$IDintern]))
+  processingGroup <-  dplyr::full_join(processingGroup, dataLRGroup, by = "groupIndices")
 
 
 
@@ -312,7 +365,7 @@ parallel::stopCluster(cl)
 
   # assert_that(n_distinct(processList$processing$groupIndices) == rawCompounds)
 
-  message("For ", data.table::uniqueN(processingGroup[enoughPointsWithinLR %in% TRUE,groupIndices]), " Features a linear Range with a minimum of ", MIN_FEATURE, " Points were found.\n--------------------------------------------------------\n")
+  message("For ", data.table::uniqueN(processingGroup[aboveR2 %in% TRUE,groupIndices]), " Features a linear Range with a minimum of ", MIN_FEATURE, " Points and an R^2 higher or equal ", R2min," were found.\n--------------------------------------------------------\n")
 
   #
   # <!-- plotSignals(DAT = processList$Preprocessed$dataLinearRange %>% filter(ID %in% metabolitesRandomSample), x = "DilutionPoint", y = "IntensityNorm") -->
@@ -330,6 +383,8 @@ parallel::stopCluster(cl)
   data.table::setorder(processingFeature, DilutionPoint)
   #dataSummary <- getSummaryList(processingFeature)
 
+  processingFeature <- dplyr::full_join(processingFeature, cutoff)
+
   processing <- dplyr::full_join(
     x = dataOrigin, y = processingFeature,
     by = setNames(
@@ -339,6 +394,7 @@ parallel::stopCluster(cl)
     suffix = c(".raw", ".processed")
   )
 
+  data.table::setnames(processingGroup, c("ID", "REPLICATE"), c(COLNAMES[["ID"]],COLNAMES[["REPLICATE"]] ))
 
   # <!-- processList$SummaryAll <- getAllList(processList) -->
   #
@@ -351,7 +407,7 @@ parallel::stopCluster(cl)
     "dataSOD_5" = dataSOD,
     "dataModel_6" = dataSODModel,
     "dataLinearRange_7" = dataLinearRange,
-    "dataLR_8" = dataLR,
+    "dataLR_8" = dataLRFeature,
     "summaryFFDS" = processing,
     "summaryFDS" = processingGroup,
     "Parameters" = list(
