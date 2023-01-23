@@ -123,7 +123,7 @@ data.table::setDT(dat)
 #' @param ...
 #'
 #' @return
-#' @importFrom foreach %dopar%
+#' @import foreach
 #' @export
 #'
 #' @examples
