@@ -26,6 +26,7 @@ Imports:
     foreach
 Suggests: 
     testthat,
+    tidyselect,
     lattice,
     survival,
     MASS
