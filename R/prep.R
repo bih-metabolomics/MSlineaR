@@ -102,6 +102,9 @@ data.table::setDT(dat)
              DilutionPoint = 1:.N,
              groupIndices = .GRP), by = c("ID", "REPLICATE")]
   processed <- processed[ , c("groupIndices", "IDintern","ID", "REPLICATE", "X", "Y", "Comment", "YNorm", "YLog", "XLog", "DilutionPoint", "pch", "color"), with = F]
+  processed$YLog[is.infinite(processed$YLog)] <- NA
+  processed$color[is.na(processed$YLog)] <- NA
+
 
   return(processed)
 }
@@ -120,6 +123,7 @@ data.table::setDT(dat)
 #' @param ...
 #'
 #' @return
+#' @importFrom foreach %dopar%
 #' @export
 #'
 #' @examples
