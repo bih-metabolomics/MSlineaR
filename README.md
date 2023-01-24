@@ -38,7 +38,7 @@ targetedMstarsCal <- AssessLinearity(
   COLNAMES = c(
     ID =  "Compound",
     REPLICATE = "Batch",
-    X = "ConcentrationCal",
+    X = "Concentration",
     Y =   "Area"
   ),
   nCORE = 4,
