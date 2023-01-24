@@ -25,7 +25,8 @@ Imports:
     Metrics,
     foreach,
     doSNOW,
-    drc
+    drc,
+    purrr
 Suggests: 
     testthat,
     tidyselect,
