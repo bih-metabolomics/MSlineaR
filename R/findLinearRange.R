@@ -116,6 +116,9 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
                 Residuals = residuals(linearRange)
     )]
     dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
+    tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
+    tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
+    tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
 
     dat$Comment[dat$IsLinear %in% TRUE] <- unlist(apply(cbind(dat$Comment, "linearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
 
@@ -135,35 +138,43 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
       if(any(lengths(LR_TRUE_list) >= MIN_FEATURE & length(LR_TRUE_list) == 1)){
 
 
-        dat$IsLinear = LR_TRUE_list[which(LR_TRUE_list_Length >= MIN_FEATURE)]
+        dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length >= MIN_FEATURE)]), IsLinear := TRUE]
+        dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length < MIN_FEATURE)]), IsLinear := FALSE]
         dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
         dat$color[dat$IsLinear %in% FALSE] <- "black"
 
         tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
         tmpGroup$LRStartY = dat$Y[dat$IsLinear %in% TRUE][1]
         tmpGroup$LRStartX =  dat$X[dat$IsLinear %in% TRUE][1]
-        tmpGroup$LREnd = last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
-        tmpGroup$LREndY = last(dat$Y[dat$IsLinear %in% TRUE])
-        tmpGroup$LREndX = last(dat$X[dat$IsLinear %in% TRUE])
+        tmpGroup$LREnd = data.table::last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
+        tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
+        tmpGroup$LREndX = data.table::last(dat$X[dat$IsLinear %in% TRUE])
         tmpGroup$LRLength = sum(dat$IsLinear)
         tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= MIN_FEATURE
+        tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
+        tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
+        tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
 
-        } else if(any(lengths(LR_TRUE_list) >= MIN_FEATURE & length(LR_TRUE_list) > 1)){
+        } else if(any(lengths(LR_TRUE_list) >= MIN_FEATURE & length(LR_TRUE_list) > 1 & length(max(LR_TRUE_list_Length)) == 1)){
 
-          dat$IsLinear = FALSE
+          dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length == max(LR_TRUE_list_Length))]), IsLinear := TRUE]
+          dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length != max(LR_TRUE_list_Length))]), IsLinear := FALSE]
           dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
           dat$color[dat$IsLinear %in% FALSE] <- "black"
 
-          tmpGroup$LRStart = NA
-          tmpGroup$LRStartY = NA
-          tmpGroup$LRStartX =  NA
-          tmpGroup$LREnd = NA
-          tmpGroup$LREndY = NA
-          tmpGroup$LREndX = NA
-          tmpGroup$LRLength = NA
-          tmpGroup$enoughPointsWithinLR = NA
-          tmpGroup$LRFlag = "mutiple linear ranges"
 
+          tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
+          tmpGroup$LRStartY = dat$Y[dat$IsLinear %in% TRUE][1]
+          tmpGroup$LRStartX =  dat$X[dat$IsLinear %in% TRUE][1]
+          tmpGroup$LREnd = data.table::last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
+          tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
+          tmpGroup$LREndX = data.table::last(dat$X[dat$IsLinear %in% TRUE])
+          tmpGroup$LRLength = sum(dat$IsLinear)
+          tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= MIN_FEATURE
+          tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
+          tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
+          tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
+          tmpGroup$LRFlag = "mutiple linear ranges"
 
         } else{
 
@@ -179,7 +190,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
           tmpGroup$LREndX = NA
           tmpGroup$LRLength = NA
           tmpGroup$enoughPointsWithinLR = NA
-          LRFlag = NA
+          tmpGroup$LRFlag = NA
+          tmpGroup$Intercept <- NA
+          tmpGroup$slope <- NA
+          tmpGroup$R2 <- NA
       }}
 
       } else{
@@ -195,7 +209,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
           LREndX = NA,
           LRLength = NA,
           enoughPointsWithinLR = NA,
-          LRFlag = NA
+          LRFlag = NA,
+          Intercept = NA,
+          slope = NA,
+          R2 = NA
 
         )
 
