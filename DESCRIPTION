@@ -26,7 +26,8 @@ Imports:
     foreach,
     doSNOW,
     drc,
-    purrr
+    purrr,
+    dplyr
 Suggests: 
     testthat,
     tidyselect,
