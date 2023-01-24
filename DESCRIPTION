@@ -24,7 +24,8 @@ Imports:
     future,
     Metrics,
     foreach,
-    doSNOW
+    doSNOW,
+    drc
 Suggests: 
     testthat,
     tidyselect,
