@@ -11,6 +11,7 @@ AssessLinearity(
   MIN_FEATURE = 5,
   LOG_TRANSFORM = TRUE,
   R2min = 0.9,
+  res = 20,
   ...
 )
 }
