@@ -27,7 +27,8 @@ Imports:
     doSNOW,
     drc,
     purrr,
-    dplyr
+    dplyr,
+    DescTools
 Suggests: 
     testthat,
     tidyselect,
