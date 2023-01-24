@@ -30,7 +30,7 @@ Calibrants <- MSlineaR::TryptophanCalibration
 data_tbl_cal <- data.table::data.table(MSData)[Sample.Type %in% "Calibration Standard", ]
 
 data_tbl_cal <- data_tbl_cal[Calibrants, on = c(Sample.Identification = "Sample Identification", Compound = "Metabolite" )]
-data_tbl_cal <- na.omit(data_tbl_cal, c("ConcentrationCal", "Batch"))
+data_tbl_cal <- na.omit(data_tbl_cal, c("Concentration", "Batch"))
 
 targetedMstarsCal <- AssessLinearity(
 
