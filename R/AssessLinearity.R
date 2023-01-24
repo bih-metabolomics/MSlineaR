@@ -144,14 +144,14 @@ AssessLinearity <- function(COLNAMES = c(ID =  "featNames",
   message("FOD: ",total)
 
   dataFODModel <- tibble::tibble(
-    groupIndices = as.integer(names(map(dataFOD, 1))),
-    ModelName = map(dataFOD, 1) %>% unlist(use.names = F),
-    Model = map(dataFOD, 2),
-    #RMSE = map(dataFOD,3) %>% unlist(use.names = T),
-    R2 = map(dataFOD, 3) %>% unlist(use.names = F)
+    groupIndices = as.integer(names(purrr::map(dataFOD, 1))),
+    ModelName = purrr::map(dataFOD, 1) %>% unlist(use.names = F),
+    Model = purrr::map(dataFOD, 2),
+    #RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
+    R2 = purrr::map(dataFOD, 3) %>% unlist(use.names = F)
     )
 
-  dataFOD = map(dataFOD,5)|> plyr::ldply(.id = NULL)
+  dataFOD = purrr::map(dataFOD,5)|> plyr::ldply(.id = NULL)
 
   processingFeature <- data.table::data.table(dplyr::full_join(dataFOD, processingFeature[!IDintern %in% dataFOD$IDintern]))
   processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierFOD' :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]))
@@ -255,15 +255,15 @@ print(total)
 message("FOD: ",endTime - startTime)
 
   dataSODModel <- tibble::tibble(
-    groupIndices = as.integer(names(map(dataSOD, 1))),
-    ModelName = map(dataSOD, 1) %>% unlist(use.names = F),
-    Model = map(dataSOD, 2)#,
-    #R2 = map(dataSOD, 3) %>% unlist(use.names = F)#,
-    #aboveMinCor = map(dataSOD, 4) %>% unlist(use.names = F)
+    groupIndices = as.integer(names(purrr::map(dataSOD, 1))),
+    ModelName = purrr::map(dataSOD, 1) %>% unlist(use.names = F),
+    Model = purrr::map(dataSOD, 2)#,
+    #R2 = purrr::map(dataSOD, 3) %>% unlist(use.names = F)#,
+    #aboveMinCor = purrr::map(dataSOD, 4) %>% unlist(use.names = F)
 
   )
   data.table::setDT(dataSODModel)
-  dataSOD = map(dataSOD,5)|> plyr::ldply(.id = NULL)
+  dataSOD = purrr::map(dataSOD,5)|> plyr::ldply(.id = NULL)
 
   processingFeature <- data.table::data.table(dplyr::full_join(dataSOD, processingFeature[!IDintern %in% dataSOD$IDintern]))
   processingGroup <-  dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierSOD' :=any(OutlierSOD %in% TRUE),groupIndices][,.(groupIndices, OutlierSOD)]))
@@ -343,8 +343,8 @@ total <- endTime - startTime
 print(total)
 message("fitting: ",endTime - startTime)
 
-  dataLRFeature = data.table::data.table(map(dataLinearRange,1)|> plyr::ldply(.id = NULL))
-  dataLRGroup = data.table::data.table(map(dataLinearRange,2)|> plyr::ldply(.id = NULL))
+  dataLRFeature = data.table::data.table(purrr::map(dataLinearRange,1)|> plyr::ldply(.id = NULL))
+  dataLRGroup = data.table::data.table(purrr::map(dataLinearRange,2)|> plyr::ldply(.id = NULL))
   dataLRGroup$aboveR2 = dataLRGroup$R2 >= R2min
   dataLRGroup$LRFlag[dataLRGroup$aboveR2 %in% FALSE] = "small R2"
   dataLRGroup$enoughPointsWithinLR[dataLRGroup$aboveR2 %in% FALSE] = FALSE
