@@ -17,10 +17,17 @@ trimEnds <- function(dats, y="YLog", x="XLog", thresh=0){
 
   #browser()
   if (data.table::last(dat[[tidyselect::all_of(y)]]) != max(dat[[tidyselect::all_of(y)]])) {
+
+    maxPoint <- which.max(dat[[tidyselect::all_of(y)]])
+    maxminPoint <- which(dat[[tidyselect::all_of(y)]] %in% min(dat[[tidyselect::all_of(y)]][maxPoint:length(dat[[tidyselect::all_of(y)]])]))
     dat.reduced.max <- data.table::copy(dat)[
-        get(tidyselect::all_of(y)) >= dat[,data.table::last(get(tidyselect::all_of(y)))] + thresh,
+        get(tidyselect::all_of(y)) >= dat[,get(tidyselect::all_of(y))][maxminPoint],# + thresh,
         ':=' (trim = TRUE,
               Comment = "trim: >lastPoint")]
+    # dat.reduced.max <- data.table::copy(dat)[
+    #     which.max(get(tidyselect::all_of(y))) : data.table::last(get(tidyselect::all_of(y))),#get(tidyselect::all_of(y)) >= dat[,data.table::last(get(tidyselect::all_of(y)))] + thresh,
+    #     ':=' (trim = TRUE,
+    #           Comment = "trim: >lastPoint")]
     dat.reduced.max[nrow(dat.reduced.max),
                     ':=' (Comment = "trim: lastPoint",
                           trim = TRUE)]
@@ -29,11 +36,18 @@ trimEnds <- function(dats, y="YLog", x="XLog", thresh=0){
 
   if (dat[[tidyselect::all_of(y)]][1] != min(dat[[tidyselect::all_of(y)]])){
 
-    dat.reduced.min <- data.table::copy(dat)[get(tidyselect::all_of(y)) <= dat[,get(tidyselect::all_of(y))][1] - thresh,
-                            ':=' (trim = TRUE,
-                                  Comment = "trim: <firstPoint")]
-    dat.reduced.min[1, ':=' (Comment = "trim: firstPoint",
+    minPoint <- which.min(dat[[tidyselect::all_of(y)]])
+    minmaxPoint <- which.max(dat[[tidyselect::all_of(y)]][1:minPoint])
+    dat.reduced.min <- data.table::copy(dat)[get(tidyselect::all_of(y)) <= dat[,get(tidyselect::all_of(y))][minmaxPoint], #- thresh,
+                             ':=' (trim = TRUE,
+                                   Comment = "trim: <firstPoint")]
+    # dat.reduced.min <- data.table::copy(dat)[1: which.min(get(tidyselect::all_of(y))), #get(tidyselect::all_of(y)) <= dat[,get(tidyselect::all_of(y))][1] - thresh,
+    #                         ':=' (trim = TRUE,
+    #                               Comment = "trim: <firstPoint")]
+     dat.reduced.min[1, ':=' (Comment = "trim: firstPoint",
                              trim = TRUE)]
+
+
 
     } else {dat.reduced.min <- dat[, trim := FALSE]}
 
