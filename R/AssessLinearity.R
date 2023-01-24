@@ -6,6 +6,7 @@
 #' @param MIN_FEATURE minimum number of features within a dilution or concentration series to be considered as linear range
 #' @param LOG_TRANSFORM logical Value. should the data be log transformed? Default is TRUE.
 #' @param R2min
+#' @import dplyr
 #' @return
 #' @export
 #'
