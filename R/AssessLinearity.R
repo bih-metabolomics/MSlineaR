@@ -416,7 +416,7 @@ message("fitting: ",endTime - startTime)
       COLNAMES = COLNAMES,
       nCORE = nCORE,
       LOG_TRANSFORM = LOG_TRANSFORM,
-      R2min = 0.90 = R2min = 0.90,
+      R2min = R2min,
       res = res,
       #calcFor = calcFor,
       #SRES = SRES,
