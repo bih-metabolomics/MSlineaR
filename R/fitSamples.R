@@ -1,17 +1,17 @@
 #' Title
 #'
 #' @param dats samples compare to the dilution series
-#' @param datCal output object from AssessLinearity function$summaryFDS
+#' @param datCal output object from AssessLinearity
 #' @param COLNAMES
 #'
 #' @return
 #' @export
 #'
 #' @examples
-getLRstatus <- function(dats, datCal, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area")){
+getLRstatus <- function(LR_object, dats, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area")){
 
+  datCal <- data.table(LR_object[["summaryFDS"]])
   setDT(dats)
-  setDT(datCal)
 
   dats$uniqueID <- 1:nrow(dats)
   dat <- data.table::copy(dats)
@@ -19,8 +19,15 @@ getLRstatus <- function(dats, datCal, COLNAMES = c(ID = "Compound", Replicate = 
 
   dat <- dat[datCal, on = names(datCal)[2:3]]
 
-  dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[, get(COLNAMES[["Y"]])], upper = dat$LREndY)
 
+  if(LR_object$Parameters$LOG_TRANSFORM %in% TRUE){
+
+    dat$Status_LR = data.table::between(lower = exp(dat$LRStartY), x = dat[, get(COLNAMES[["Y"]])], upper = exp(dat$LREndY))
+
+    } else{
+
+      dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[, get(COLNAMES[["Y"]])], upper = dat$LREndY)
+  }
   data.table::setnames(dat,new =  COLNAMES[1:2], old = c(names(datCal)[2], names(datCal)[3]))
 
   dats <- dats[dat[ ,.(uniqueID, LRFlag, Status_LR)], on = "uniqueID"]
