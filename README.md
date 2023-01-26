@@ -57,6 +57,28 @@ data_tbl_Sample = MSData[Sample.Type %in% "Sample"]
 # check if samples within linear range or not
 data_tbl_Sample = getLRstatus(dats = data_tbl_Sample, datCal = targetedMSCal$summaryFDS, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area"))
 
+# plot all FDS
+plotFDS(LR_object = targetedMSCal,
+        groupIndices = "all", 
+        statusLinear = c(TRUE, FALSE), 
+        ID = "all", 
+        printPDF = TRUE, 
+        outputfileName = c("Calibrationplot"), 
+        pdfwidth = 9, 
+        pdfheight = 60)
+        
+        
+# plot all FDS plus Samples
+
+plotSamples(LR_object = targetedMSCal,
+            data_Sample = data_tbl_Sample,
+            groupIndices = "all", 
+            statusLinear = c(TRUE, FALSE), 
+            ID = "all", 
+            printPDF = TRUE, 
+            outputfileName = c("Sampleplot"), 
+            pdfwidth = 9, 
+            pdfheight = 60)
 
 
 
