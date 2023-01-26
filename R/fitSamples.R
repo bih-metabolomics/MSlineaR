@@ -13,6 +13,9 @@ getLRstatus <- function(LR_object, dats, COLNAMES = c(ID = "Compound", Replicate
   datCal <- data.table(LR_object[["summaryFDS"]])
   setDT(dats)
 
+  dats <- getConc(dats, datCal)
+
+
   dats$uniqueID <- 1:nrow(dats)
   dat <- data.table::copy(dats)
   data.table::setnames(dat,old =  COLNAMES[1:2], new = c(names(datCal)[2], names(datCal)[3]))
@@ -22,11 +25,11 @@ getLRstatus <- function(LR_object, dats, COLNAMES = c(ID = "Compound", Replicate
 
   if(LR_object$Parameters$LOG_TRANSFORM %in% TRUE){
 
-    dat$Status_LR = data.table::between(lower = exp(dat$LRStartY), x = dat[, get(COLNAMES[["Y"]])], upper = exp(dat$LREndY))
+    dat$Status_LR = data.table::between(lower = exp(dat$LRStartY), x = dat[, get(COLNAMES[["Y"]])], upper = exp(dat$LREndY)) & data.table::between(lower = dat$LRStartX, x = dat[, ConcentrationLR], upper = dat$LREndX)
 
     } else{
 
-      dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[, get(COLNAMES[["Y"]])], upper = dat$LREndY)
+      dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[, get(COLNAMES[["Y"]])], upper = dat$LREndY) & data.table::between(lower = dat$LRStartX, x = dat[, ConcentrationLR], upper = dat$LREndX)
   }
   data.table::setnames(dat,new =  COLNAMES[1:2], old = c(names(datCal)[2], names(datCal)[3]))
 
