@@ -19,8 +19,8 @@ plotFDS <- function(LR_object, printPDF = TRUE, groupIndices = "all", statusLine
   plotDataGroup <- data.table(LR_object[["summaryFDS"]])
   plotDataGroup$enoughPointsWithinLR[is.na(plotDataGroup$enoughPointsWithinLR)] <- FALSE
   plotDataGroup <- plotDataGroup[enoughPointsWithinLR %in% statusLinear]
-  if(groupIndices != "all" & groupIndices != "") plotDataGroup <- plotDataGroup[groupIndices]
-  if(ID != "all" & ID != "") plotDataGroup <- plotDataGroup[get(LR_object$Parameters$COLNAMES[["ID"]]) %in% ID]
+  if(any(groupIndices != "all" & groupIndices != "")) plotDataGroup <- plotDataGroup[groupIndices]
+  if(any(ID != "all" & ID != "")) plotDataGroup <- plotDataGroup[get(LR_object$Parameters$COLNAMES[["ID"]]) %in% ID]
 
   plotDataFeature <- LR_object[["summaryFFDS"]]
   plotDataFeature <- plotDataFeature[groupIndices %in% plotDataGroup$groupIndices, ]
