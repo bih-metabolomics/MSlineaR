@@ -36,31 +36,31 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
   linearRange <- lm(dat[[y]] ~ dat[[x]], weights = we)
   ablineIntensity <- fitted(linearRange)
 
-  newx <- seq(min(dat[[x]]), max(dat[[x]]), length.out=nrow(dat))
-  newdata = data.frame(x = newx)
-  names(newdata) = x
-  preds <- predict(linearRange, newdata, interval = 'confidence', weights = we)
-
-  limitdown <- preds[ ,2]
-  limitup <- preds[ ,3]
+  # newx <- seq(min(dat[[x]]), max(dat[[x]]), length.out=nrow(dat))
+  # newdata = data.frame(x = newx)
+  # names(newdata) = x
+  # preds <- predict(linearRange, newdata, interval = 'confidence', weights = we)
+  #
+  # limitdown <- preds[ ,2]
+  # limitup <- preds[ ,3]
 
   #confint <- linearRange$coefficients[1]*res
   #confint <- max(dat[[y]])/100*res
-  #confi <- abs(ablineIntensity/100)*res
+  confi <- abs(ablineIntensity/100)*res
 
 
 
   #if(all(ablineIntensity/100*(100 + res) >= ablineIntensity)){
-  # limit1 <- ablineIntensity + confi
-  # limit2 <- ablineIntensity - confi
-  #
-  # if(limit1[1] < limit2[1]){
-  #   limitdown <- limit1
-  #   limitup <- limit2
-  # } else{
-  #   limitdown <- limit2
-  #   limitup <- limit1
-  # }
+  limit1 <- ablineIntensity + confi
+  limit2 <- ablineIntensity - confi
+
+  if(limit1[1] < limit2[1]){
+    limitdown <- limit1
+    limitup <- limit2
+  } else{
+    limitdown <- limit2
+    limitup <- limit1
+  }
   #limitup <- (linearRange$coefficients[1] + confint) + linearRange$coefficients[2]*dat[[x]]
   #limitdown <- (linearRange$coefficients[1] - confint) + linearRange$coefficients[2]*dat[[x]]
   #} else{
