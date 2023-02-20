@@ -37,7 +37,9 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
   ablineIntensity <- fitted(linearRange)
 
   newx <- seq(min(dat[[x]]), max(dat[[x]]), length.out=nrow(dat))
-  preds <- predict(linearRange, newdata = data.frame(x = newx), interval = 'confidence', weights = we)
+  newdata = data.frame(x = newx)
+  names(newdata) = x
+  preds <- predict(linearRange, newdata, interval = 'confidence', weights = we)
 
   limitdown <- preds[ ,2]
   limitup <- preds[ ,3]
