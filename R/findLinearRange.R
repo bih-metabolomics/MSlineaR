@@ -18,7 +18,8 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
   dat <- dat[color %in% "black"]
   modelObject <- unique(dat[[modelObject]])
   modelObject <- unlist(modelObject, recursive = F)
-  int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(modelObject$fit) -min(modelObject$fit))/2 + min(modelObject$fit), which = TRUE, na.rm = T)
+  #int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(modelObject$fit) -min(modelObject$fit))/2 + min(modelObject$fit), which = TRUE, na.rm = T)
+  int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(dat[[y]]) -min(dat[[y]]))/2 + min(dat[[y]]), which = TRUE, na.rm = T)
 
   if(length(int50) > 1) int50 <- max(int50)
   if(int50 == length(dat[[x]])) int50 <- length(dat[[x]]) -1
@@ -32,26 +33,32 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
   we[(int50 - 1) : (int50 + 1)] <- 1000
 
 
-  linearRange <- lm(modelObject$fit ~ dat[[x]], weights = we)
+  linearRange <- lm(dat[[y]] ~ dat[[x]], weights = we)
   ablineIntensity <- fitted(linearRange)
+
+  newx <- seq(min(dat[[x]]), max(dat[[x]]), length.out=nrow(dat))
+  preds <- predict(model, newdata = data.frame(x = newx), interval = 'confidence', weights = we)
+
+  limitdown <- preds[ ,2]
+  limitup <- preds[ ,3]
 
   #confint <- linearRange$coefficients[1]*res
   #confint <- max(dat[[y]])/100*res
-  confi <- abs(ablineIntensity/100)*res
+  #confi <- abs(ablineIntensity/100)*res
 
 
 
   #if(all(ablineIntensity/100*(100 + res) >= ablineIntensity)){
-  limit1 <- ablineIntensity + confi
-  limit2 <- ablineIntensity - confi
-
-  if(limit1[1] < limit2[1]){
-    limitdown <- limit1
-    limitup <- limit2
-  } else{
-    limitdown <- limit2
-    limitup <- limit1
-  }
+  # limit1 <- ablineIntensity + confi
+  # limit2 <- ablineIntensity - confi
+  #
+  # if(limit1[1] < limit2[1]){
+  #   limitdown <- limit1
+  #   limitup <- limit2
+  # } else{
+  #   limitdown <- limit2
+  #   limitup <- limit1
+  # }
   #limitup <- (linearRange$coefficients[1] + confint) + linearRange$coefficients[2]*dat[[x]]
   #limitdown <- (linearRange$coefficients[1] - confint) + linearRange$coefficients[2]*dat[[x]]
   #} else{
