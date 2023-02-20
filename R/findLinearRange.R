@@ -72,7 +72,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
 
   #}
 
-  consNDX <- rle(data.table::between(x = dat[[y]], lower = limitdown, upper = limitup, NAbounds = NA, check = T))
+  consNDX <- rle(data.table::between(x = dat[[y]], lower = floor(limitdown), upper = ceiling(limitup), NAbounds = NA, check = T))
 
 
 
