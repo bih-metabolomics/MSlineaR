@@ -51,7 +51,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
   scalefit <- scalefit*res/100
 
   fact <- ablineIntensity[1]*res/100/scalefit[1]
-  confi <- scalefit*fact
+  confi <- abs(scalefit*fact)
 
 
 
