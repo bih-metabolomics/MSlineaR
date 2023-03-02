@@ -46,7 +46,21 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
 
   #confint <- linearRange$coefficients[1]*res
   #confint <- max(dat[[y]])/100*res
-  confi <- abs(ablineIntensity/100)*res
+
+  scalefit <- scale(ablineIntensity)
+  scalefit <- scalefit*res/100
+
+  fact <- ablineIntensity[1]*res/100/scalefit[1]
+  confi <- scalefit*fact
+
+
+
+
+  #confi <- abs(ablineIntensity/100)*res
+
+
+
+
 
 
 

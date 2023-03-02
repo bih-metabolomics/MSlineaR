@@ -13,7 +13,11 @@ getLRstatus <- function(LR_object, dats, COLNAMES = c(ID = "Compound", Replicate
   datCal <- data.table(LR_object[["summaryFDS"]])
   setDT(dats)
 
-  dats <- getConc(dats, datCal)
+  data.table::set(dats, j = COLNAMES[["Replicate"]], value = as.character(dats[[COLNAMES[["Replicate"]]]]))
+  data.table::set(dats, j = COLNAMES[["Y"]], value = as.numeric(dats[[COLNAMES[["Y"]]]]))
+
+
+  dats <- getConc(dats, datCal, COLNAMES)
 
 
   dats$uniqueID <- 1:nrow(dats)
@@ -25,11 +29,11 @@ getLRstatus <- function(LR_object, dats, COLNAMES = c(ID = "Compound", Replicate
 
   if(LR_object$Parameters$LOG_TRANSFORM %in% TRUE){
 
-    dat$Status_LR = data.table::between(lower = exp(dat$LRStartY), x = dat[, get(COLNAMES[["Y"]])], upper = exp(dat$LREndY)) & data.table::between(lower = dat$LRStartX, x = dat[, ConcentrationLR], upper = dat$LREndX)
+    dat$Status_LR = data.table::between(lower = exp(dat$LRStartY), x = dat[, get(COLNAMES[["Y"]])], upper = exp(dat$LREndY))
 
     } else{
 
-      dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[, get(COLNAMES[["Y"]])], upper = dat$LREndY) & data.table::between(lower = dat$LRStartX, x = dat[, ConcentrationLR], upper = dat$LREndX)
+      dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[, get(COLNAMES[["Y"]])], upper = dat$LREndY)
   }
   data.table::setnames(dat,new =  COLNAMES[1:2], old = c(names(datCal)[2], names(datCal)[3]))
 
@@ -59,6 +63,9 @@ getConc <- function(dats, datCal, COLNAMES = c(ID = "Compound", Replicate = "Bat
   dats$uniqueID <- 1:nrow(dats)
   dat <- data.table::copy(dats)
   data.table::setnames(dat,old =  COLNAMES[1:2], new = c(names(datCal)[2], names(datCal)[3]))
+
+  data.table::set(dat, j = COLNAMES[["Replicate"]], value = as.character(dat[[COLNAMES[["Replicate"]]]]))
+  data.table::set(dat, j = COLNAMES[["Y"]], value = as.numeric(dat[[COLNAMES[["Y"]]]]))
 
   dat <- dat[datCal, on = names(datCal)[2:3]]
 
