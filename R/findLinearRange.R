@@ -43,15 +43,24 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
   #
   # limitdown <- preds[ ,2]
   # limitup <- preds[ ,3]
-
+###use absolute percentage
   #confint <- linearRange$coefficients[1]*res
   #confint <- max(dat[[y]])/100*res
+### use scaled interval
+  #scalefit <- scale(ablineIntensity)
+  #scalefit <- scalefit*res/100
+  #fact <- ablineIntensity[1]*res/100/scalefit[1]
+###use residuals
 
-  scalefit <- scale(ablineIntensity)
-  scalefit <- scalefit*res/100
+  sd_residuals <- abs(2*sd(residuals(linearRange)[which(abs(residuals(linearRange)) < 1)]))
+  lr <- abs(residuals(linearRange)) < ceiling(sd_residuals*10)/10
 
-  fact <- ablineIntensity[1]*res/100/scalefit[1]
-  confi <- abs(scalefit*fact)
+
+
+
+
+
+  #confi <- abs(scalefit*fact)
 
 
 
@@ -65,16 +74,16 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
 
 
   #if(all(ablineIntensity/100*(100 + res) >= ablineIntensity)){
-  limit1 <- ablineIntensity + confi
-  limit2 <- ablineIntensity - confi
-
-  if(limit1[1] < limit2[1]){
-    limitdown <- limit1
-    limitup <- limit2
-  } else{
-    limitdown <- limit2
-    limitup <- limit1
-  }
+  # limit1 <- ablineIntensity + confi
+  # limit2 <- ablineIntensity - confi
+  #
+  # if(limit1[1] < limit2[1]){
+  #   limitdown <- limit1
+  #   limitup <- limit2
+  # } else{
+  #   limitdown <- limit2
+  #   limitup <- limit1
+  # }
   #limitup <- (linearRange$coefficients[1] + confint) + linearRange$coefficients[2]*dat[[x]]
   #limitdown <- (linearRange$coefficients[1] - confint) + linearRange$coefficients[2]*dat[[x]]
   #} else{
@@ -86,8 +95,9 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
 
   #}
 
-  consNDX <- rle(data.table::between(x = dat[[y]], lower = floor(limitdown), upper = ceiling(limitup), NAbounds = NA, check = T))
+  # consNDX <- rle(data.table::between(x = dat[[y]], lower = floor(limitdown), upper = ceiling(limitup), NAbounds = NA, check = T))
 
+   consNDX <- rle(lr)
 
 
 
@@ -119,10 +129,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
       groupIndices = unique(dat$groupIndices),
       linear = TRUE,
       LRStart = dat$DilutionPoint[maxTrueRange[1]],
-      LRStartY = limitdown[maxTrueRange[1]],
+      LRStartY = dat$Y[maxTrueRange[1]],
       LRStartX = dat$X[maxTrueRange[1]],
       LREnd = dat$DilutionPoint[tail(maxTrueRange,1)],
-      LREndY = limitup[tail(maxTrueRange,1)],
+      LREndY = dat$Y[tail(maxTrueRange,1)],
       LREndX = dat$X[tail(maxTrueRange,1)],
       LRLength = length(maxTrueRange),
       enoughPointsWithinLR = LRLength >= MIN_FEATURE,
@@ -134,8 +144,8 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
                 IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
                 modelFit = modelObject$fit,
                 abline = ablineIntensity,
-                ablineLimit1 = limitup,
-                ablineLimit2 = limitdown,
+                #ablineLimit1 = limitup,
+                #ablineLimit2 = limitdown,
                 Residuals = residuals(linearRange)
     )]
     dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
@@ -167,10 +177,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
         dat$color[dat$IsLinear %in% FALSE] <- "black"
 
         tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
-        tmpGroup$LRStartY = limitdown[dat$IsLinear %in% TRUE][1]
+        tmpGroup$LRStartY = ldat$Y[dat$IsLinear %in% TRUE][1]
         tmpGroup$LRStartX =  dat$X[dat$IsLinear %in% TRUE][1]
         tmpGroup$LREnd = data.table::last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
-        tmpGroup$LREndY = data.table::last(limitup[dat$IsLinear %in% TRUE])
+        tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
         tmpGroup$LREndX = data.table::last(dat$X[dat$IsLinear %in% TRUE])
         tmpGroup$LRLength = sum(dat$IsLinear)
         tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= MIN_FEATURE
@@ -187,10 +197,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
 
 
           tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
-          tmpGroup$LRStartY = limitdown[dat$IsLinear %in% TRUE][1]
+          tmpGroup$LRStartY = dat$Y[dat$IsLinear %in% TRUE][1]
           tmpGroup$LRStartX =  dat$X[dat$IsLinear %in% TRUE][1]
           tmpGroup$LREnd = data.table::last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
-          tmpGroup$LREndY = data.table::last(limitup[dat$IsLinear %in% TRUE])
+          tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
           tmpGroup$LREndX = data.table::last(dat$X[dat$IsLinear %in% TRUE])
           tmpGroup$LRLength = sum(dat$IsLinear)
           tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= MIN_FEATURE
@@ -243,8 +253,8 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
                     IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
                     modelFit = modelObject$fit,
                     abline = ablineIntensity,
-                    ablineLimit1 = limitup,
-                    ablineLimit2 = limitdown,
+                    #ablineLimit1 = limitup,
+                    #ablineLimit2 = limitdown,
                     Residuals = residuals(linearRange)
         )]
         dat$Comment[dat$IsLinear %in% FALSE] <- unlist(apply(cbind(dat$Comment, "NolinearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
