@@ -53,7 +53,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
 ###use residuals
 
   sd_residuals <- abs(2*sd(residuals(linearRange)[which(abs(residuals(linearRange)) < 1)]))
-  if(sd_residuals < 0.5) sd_residuals <- 0.5
+  if(sd_residuals < 1) sd_residuals <- 1
 
   lr <- abs(residuals(linearRange)) < ceiling(sd_residuals*10)/10
 
