@@ -27,14 +27,15 @@ getLRstatus <- function(LR_object, dats, COLNAMES = c(ID = "Compound", Replicate
   dat <- dat[datCal, on = names(datCal)[2:3]]
 
 
-  # if(LR_object$Parameters$LOG_TRANSFORM %in% TRUE){
-  #
-  #   dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[, get(COLNAMES[["Y"]])], upper = exp(dat$LREndY))
-  #
-  #   } else{
+  #if(LR_object$Parameters$LOG_TRANSFORM %in% TRUE){
+
+   # dat$Status_LR = data.table::between(lower = exp(dat$LRStartY), x = dat[, get(COLNAMES[["Y"]])], upper = exp(dat$LREndY))
+
+    #} else{
 
       dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[, get(COLNAMES[["Y"]])], upper = dat$LREndY)
-  # }
+  #}
+
   data.table::setnames(dat,new =  COLNAMES[1:2], old = c(names(datCal)[2], names(datCal)[3]))
 
   dats <- dats[dat[ ,.(uniqueID, LRFlag, Status_LR)], on = "uniqueID"]
