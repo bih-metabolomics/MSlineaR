@@ -35,6 +35,7 @@ getLRstatus <- function(LR_object, dats, COLNAMES = c(ID = "Compound", Replicate
 
       dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[, get(COLNAMES[["Y"]])], upper = dat$LREndY)
   #}
+
   data.table::setnames(dat,new =  COLNAMES[1:2], old = c(names(datCal)[2], names(datCal)[3]))
 
   dats <- dats[dat[ ,.(uniqueID, LRFlag, Status_LR)], on = "uniqueID"]
