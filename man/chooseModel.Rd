@@ -9,10 +9,10 @@ chooseModel(
   y = "Intensity",
   x = "Concentration",
   model = c("logistic", "linear", "quadratic"),
-  SDRESMIN = 1,
-  SRES = 2,
+  SDRES_MIN = 1,
+  SDRES = 2,
   abbr,
-  R2min = 0.95,
+  R2_MIN = 0.95,
   ...
 )
 }

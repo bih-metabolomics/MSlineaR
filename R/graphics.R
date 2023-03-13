@@ -14,7 +14,7 @@
 #' @export
 #'
 #' @examples
-plotFDS <- function(LR_object, printPDF = TRUE, groupIndices = "all", statusLinear = c(TRUE, FALSE), ID = "all", outputfileName = c("Calibrationplot"), pdfwidth = 9, pdfheight = 60){
+plotFDS <- function(LR_object, printPDF = TRUE, groupIndices = "all", statusLinear = c(TRUE, FALSE), ID = "all", printR2 = TRUE, outputfileName = c("Calibrationplot"), pdfwidth = 9, pdfheight = 60){
 
   plotDataGroup <- data.table(LR_object[["summaryFDS"]])
   plotDataGroup$enoughPointsWithinLR[is.na(plotDataGroup$enoughPointsWithinLR)] <- FALSE
@@ -45,11 +45,6 @@ plotFDS <- function(LR_object, printPDF = TRUE, groupIndices = "all", statusLine
     geom_vline(data = plotDataGroup, aes( xintercept = log(plotDataGroup$LREndX), color = "darkgrey"), linetype = "dotted") +
 
     facet_grid(get(LR_object$Parameters$COLNAMES[["ID"]]) ~ get(LR_object$Parameters$COLNAMES[["REPLICATE"]]) ,  scales = "free") +
-    geom_text(aes(x = -Inf, y = Inf, label = paste("R2 = ", round(R2,2)), group = Compound),
-              size = 5,
-              hjust = -0.5,
-              vjust = 1.4,
-              inherit.aes = FALSE) +
     theme_bw() +
     theme(panel.grid.minor=element_blank()) +
     theme(panel.grid.major=element_blank()) +
@@ -58,7 +53,11 @@ plotFDS <- function(LR_object, printPDF = TRUE, groupIndices = "all", statusLine
     theme(legend.position="top")
 
   if(LR_object$Parameters$LOG_TRANSFORM %in% TRUE) plotlinearData <- plotlinearData + scale_y_continuous(name = "Area", labels = scales::trans_format("exp"))
-
+  if(printR2 %in% TRUE) plotlinearData <- plotlinearData + geom_text(aes(x = -Inf, y = Inf, label = paste("R2 = ", round(R2,2)), group = plotID),
+                                                                     size = 5,
+                                                                     hjust = -0.5,
+                                                                     vjust = 1.4,
+                                                                     inherit.aes = FALSE)
 
 
   if(printPDF %in% TRUE){

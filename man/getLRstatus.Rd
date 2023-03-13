@@ -5,17 +5,17 @@
 \title{Title}
 \usage{
 getLRstatus(
+  LR_object,
   dats,
-  datCal,
   COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area")
 )
 }
 \arguments{
 \item{dats}{samples compare to the dilution series}
 
-\item{datCal}{output object from AssessLinearity function$summaryFDS}
-
 \item{COLNAMES}{}
+
+\item{datCal}{output object from AssessLinearity}
 }
 \description{
 Title

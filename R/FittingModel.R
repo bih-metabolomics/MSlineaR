@@ -14,10 +14,10 @@ chooseModel <- function(dats,
                         y = "Intensity",
                         x = "Concentration",
                         model = c("logistic", "linear", "quadratic"),
-                        SDRESMIN = 1,
-                        SRES = 2,
+                        SDRES_MIN = 1,
+                        SDRES = 2,
                         abbr,
-                        R2min = 0.95,
+                        R2_MIN = 0.95,
                         ...){
  # .datatable.aware=TRUE
   data.table::setDT(dats)
@@ -28,9 +28,9 @@ chooseModel <- function(dats,
 
   if ("logistic" %in% model) {
     logistic <- drc::drm(get(y) ~ get(x), fct = drc::L.3(), data = dat)
-    if(any(abs(residuals(logistic)/sd(residuals(logistic))) > SRES) & abs(sd(residuals(logistic))) > SDRESMIN){
+    if(any(abs(residuals(logistic)/sd(residuals(logistic))) > SDRES) & abs(sd(residuals(logistic))) > SDRES_MIN){
       datOutLog <- dat
-      datOutLog[[y]][which(abs(residuals(logistic)/sd(residuals(logistic))) > SRES)] <- NA
+      datOutLog[[y]][which(abs(residuals(logistic)/sd(residuals(logistic))) > SDRES)] <- NA
       logisticOut <- drc::drm(get(y) ~ get(x), fct = drc::L.3(), data = datOutLog)
       #RMSE
       logisticRMSE <- Metrics::rmse(dat[[y]], predict(logistic))
@@ -50,9 +50,9 @@ chooseModel <- function(dats,
 
   if ("linear" %in% model) {
     linear <- lm(get(y) ~ get(x), data = dat)
-    if(any(abs(residuals(linear)/sd(residuals(linear))) > SRES) & abs(sd(residuals(linear))) > SDRESMIN){
+    if(any(abs(residuals(linear)/sd(residuals(linear))) > SDRES) & abs(sd(residuals(linear))) > SDRES_MIN){
       datOutLin <- dat
-      datOutLin[[y]][which(abs(residuals(linear)/sd(residuals(linear))) > SRES)] <- NA
+      datOutLin[[y]][which(abs(residuals(linear)/sd(residuals(linear))) > SDRES)] <- NA
       linearOut <- lm(get(y) ~ get(x), data = datOutLin)
       #RMSE
       linearRMSE <- Metrics::rmse(dat[[y]], predict(linear))
@@ -73,9 +73,9 @@ chooseModel <- function(dats,
 
   if ("quadratic" %in% model) {
     quadratic <- lm(get(y) ~ poly(get(x), 2, raw = TRUE), data = dat)
-    if(any(abs(residuals(quadratic)/sd(residuals(quadratic))) > SRES) & abs(sd(residuals(quadratic))) > SDRESMIN){
+    if(any(abs(residuals(quadratic)/sd(residuals(quadratic))) > SDRES) & abs(sd(residuals(quadratic))) > SDRES_MIN){
       datOutQuad <- dat
-      datOutQuad[[y]][which(abs(residuals(quadratic)/sd(residuals(quadratic))) > SRES)] <- NA
+      datOutQuad[[y]][which(abs(residuals(quadratic)/sd(residuals(quadratic))) > SDRES)] <- NA
       quadraticOut <- lm(get(y) ~ poly(get(x), 2, raw = TRUE), data = datOutQuad)
       #RMSE
       quadraticRMSE <- Metrics::rmse(dat[[y]], predict(quadratic))
@@ -101,9 +101,9 @@ chooseModel <- function(dats,
   ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2) %in% min(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2),na.rm = TRUE))]
   if ("linear1" %in% ModelName) {ModelName = "linear1"} else if (all(c("logistic1", "quadratic1") %in% ModelName)) {ModelName = "logistic1"}  # if same correlation
 
- if(abs(sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = ""))))) > SDRESMIN) dat[[outlierName]][which(abs(residuals(get(gsub(pattern = "1", x = ModelName, replacement = "")))/sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = ""))))) > SRES)] <- TRUE
- if(abs(sd(residuals(get(ModelName)))) > SDRESMIN & any(abs(sd(residuals(get(ModelName)))/sd(residuals(get(ModelName)))) > SRES)){
-   dat[IDintern %in% get(get(ModelName)$call$data)[!is.na(get(y))][which(abs(residuals(get(ModelName))/sd(residuals(get(ModelName)))) > SRES)]$IDintern][[outlierName]] <- TRUE
+ if(abs(sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = ""))))) > SDRES_MIN) dat[[outlierName]][which(abs(residuals(get(gsub(pattern = "1", x = ModelName, replacement = "")))/sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = ""))))) > SDRES)] <- TRUE
+ if(abs(sd(residuals(get(ModelName)))) > SDRES_MIN & any(abs(sd(residuals(get(ModelName)))/sd(residuals(get(ModelName)))) > SDRES)){
+   dat[IDintern %in% get(get(ModelName)$call$data)[!is.na(get(y))][which(abs(residuals(get(ModelName))/sd(residuals(get(ModelName)))) > SDRES)]$IDintern][[outlierName]] <- TRUE
 }
   dat <- data.table::setorder(dplyr::full_join(dat, dats[!IDintern %in% dat$IDintern], by = colnames(dats)), DilutionPoint)
   dat$color[dat[[outlierName]] %in% TRUE] <- "red"
@@ -138,7 +138,7 @@ chooseModel <- function(dats,
       "model.name" = gsub(pattern = "1", x = ModelName, replacement = ""),
       "model" = Model,
       "R2" = cor(dat[color %in% "black",][[y]], predict(modelNew))^2,
-      "aboveMinCor" = cor(dat[color %in% "black",][[y]], predict(modelNew))^2 > R2min,
+      "aboveMinCor" = cor(dat[color %in% "black",][[y]], predict(modelNew))^2 > R2_MIN,
       #"aic" = aic$AIC[ row.names(aic) %in% ModelName],
       dat = dat
     )
