@@ -10,6 +10,7 @@ plotFDS(
   groupIndices = "all",
   statusLinear = c(TRUE, FALSE),
   ID = "all",
+  printR2 = TRUE,
   outputfileName = c("Calibrationplot"),
   pdfwidth = 9,
   pdfheight = 60

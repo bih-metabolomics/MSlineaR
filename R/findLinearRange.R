@@ -3,21 +3,20 @@
 #' @param dat
 #' @param x
 #' @param y
-#' @param modelObject
 #' @param res
 #'
 #' @return
 #' @export
 #'
 #' @examples
-findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelObject, res = 20, MIN_FEATURE){
+findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_res_factor = 2, min_feature){#modelObject
   #browser()
 
   dat <- data.table::copy(dats)
   data.table::setorder(dat,DilutionPoint)
   dat <- dat[color %in% "black"]
-  modelObject <- unique(dat[[modelObject]])
-  modelObject <- unlist(modelObject, recursive = F)
+  #modelObject <- unique(dat[[modelObject]])
+  #modelObject <- unlist(modelObject, recursive = F)
   #int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(modelObject$fit) -min(modelObject$fit))/2 + min(modelObject$fit), which = TRUE, na.rm = T)
   int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(dat[[y]]) -min(dat[[y]]))/2 + min(dat[[y]]), which = TRUE, na.rm = T)
 
@@ -52,7 +51,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
   #fact <- ablineIntensity[1]*res/100/scalefit[1]
 ###use residuals
 
-  sd_residuals <- abs(2*sd(residuals(linearRange)[which(abs(residuals(linearRange)) < 1)]))
+  sd_residuals <- abs(sd_res_factor*sd(residuals(linearRange)[which(abs(residuals(linearRange)) < 1)]))
   if(sd_residuals < 1) sd_residuals <- 1
 
   lr <- abs(residuals(linearRange)) < ceiling(sd_residuals*10)/10
@@ -118,7 +117,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
   # dat$Comment[dat[[outlierName]] %in% FALSE] <- paste0(dat$Comment[dat[[outlierName]] %in% FALSE], "_NoOutlier",abbr)
 
 
-  if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= MIN_FEATURE) & any(consNDX$position[consNDX$values %in% TRUE] >= int50)){
+  if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= min_feature) & any(consNDX$position[consNDX$values %in% TRUE] >= int50)){
 
     TRUEpos <- Position(function(fi) fi >= int50, consNDX$position[consNDX$values %in% TRUE], right = TRUE)
     maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE
@@ -137,14 +136,14 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
       LREndY = dat$Y[tail(maxTrueRange,1)],
       LREndX = dat$X[tail(maxTrueRange,1)],
       LRLength = length(maxTrueRange),
-      enoughPointsWithinLR = LRLength >= MIN_FEATURE,
+      enoughPointsWithinLR = LRLength >= min_feature,
       LRFlag = NA
 
     )
 
     dat[, ':=' (IsLinear = DilutionPoint >= tmpGroup$LRStart & DilutionPoint <= tmpGroup$LREnd,
                 IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
-                modelFit = modelObject$fit,
+                #modelFit = modelObject$fit,
                 abline = ablineIntensity,
                 #ablineLimit1 = limitup,
                 #ablineLimit2 = limitdown,
@@ -170,11 +169,11 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
       LR_TRUE_list <- lapply(indices, function(i) c(minsublist[i] -1,LR_TRUE_list[[i]]))
       LR_TRUE_list <- lapply(LR_TRUE_list, function(x) {x[x!=0]})
 
-      if(any(lengths(LR_TRUE_list) >= MIN_FEATURE & length(LR_TRUE_list) == 1)){
+      if(any(lengths(LR_TRUE_list) >= min_feature & length(LR_TRUE_list) == 1)){
 
 
-        dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length >= MIN_FEATURE)]), IsLinear := TRUE]
-        dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length < MIN_FEATURE)]), IsLinear := FALSE]
+        dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length >= min_feature)]), IsLinear := TRUE]
+        dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length < min_feature)]), IsLinear := FALSE]
         dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
         dat$color[dat$IsLinear %in% FALSE] <- "black"
 
@@ -185,12 +184,12 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
         tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
         tmpGroup$LREndX = data.table::last(dat$X[dat$IsLinear %in% TRUE])
         tmpGroup$LRLength = sum(dat$IsLinear)
-        tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= MIN_FEATURE
+        tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= min_feature
         tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
         tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
         tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
 
-        } else if(any(lengths(LR_TRUE_list) >= MIN_FEATURE & length(LR_TRUE_list) > 1 & length(max(LR_TRUE_list_Length)) == 1)){
+        } else if(any(lengths(LR_TRUE_list) >= min_feature & length(LR_TRUE_list) > 1 & length(max(LR_TRUE_list_Length)) == 1)){
 
           dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length == max(LR_TRUE_list_Length))]), IsLinear := TRUE]
           dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length != max(LR_TRUE_list_Length))]), IsLinear := FALSE]
@@ -205,7 +204,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
           tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
           tmpGroup$LREndX = data.table::last(dat$X[dat$IsLinear %in% TRUE])
           tmpGroup$LRLength = sum(dat$IsLinear)
-          tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= MIN_FEATURE
+          tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= min_feature
           tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
           tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
           tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
@@ -253,7 +252,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm", modelO
 
         dat[, ':=' (IsLinear = FALSE,
                     IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
-                    modelFit = modelObject$fit,
+                    #modelFit = modelObject$fit,
                     abline = ablineIntensity,
                     #ablineLimit1 = limitup,
                     #ablineLimit2 = limitdown,

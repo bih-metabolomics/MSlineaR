@@ -2,30 +2,138 @@
 % Please edit documentation in R/AssessLinearity.R
 \name{AssessLinearity}
 \alias{AssessLinearity}
-\title{Title}
+\title{Cleaning up a mass spectrometry data set according to the linear response of signals.}
 \usage{
 AssessLinearity(
-  COLNAMES = c(ID = "featNames", REPLICATE = NULL, X = "Concentration", Y = "area.raw"),
-  DAT,
+  analysis_type = c("target", "untarget", NULL)[3],
+  input_data = NULL,
+  column_sample_type = c("Sample.Type", "Type")[1],
+  sample_type_QC = c("pooled QC", "QC")[1],
+  sample_type_sample = "Sample",
+  sample_type_serial = "Calibration Standard",
+  column_ID = "Compound",
+  column_Batch = "Batch",
+  column_X = c("Concentration", "Dilution")[2],
+  column_Y = c("Area", "Height", "Intensity")[1],
+  transform = c(TRUE, FALSE)[1],
+  transform_x = "log",
+  transform_y = "log",
+  first_outlier_detection = c(TRUE, FALSE)[1],
+  FOD_model = c("logistic", "linear", "quadratic"),
+  FOD_sdres_min = 1,
+  FOD_sdres_max = 2,
+  FOD_R2_min = 0.9,
+  trimming = c(TRUE, FALSE)[1],
+  second_outlier_detection = c(TRUE, FALSE)[1],
+  SOD_model = c("logistic", "linear", "quadratic"),
+  SOD_sdres_min = 1,
+  SOD_sdres_max = 2,
+  SOD_R2_min = 0.9,
+  min_feature = 6,
+  LR_sd_res_factor = 2,
+  calculate_concentration = c(TRUE, FALSE)[1],
+  get_linearity_status_samples = c(TRUE, FALSE)[1],
   nCORE = 1,
-  MIN_FEATURE = 5,
-  LOG_TRANSFORM = TRUE,
-  R2min = 0.9,
-  res = 20,
-  ...
+  get_output = c(TRUE, FALSE)[1],
+  output_name = NULL,
+  which_output = c("R_object", "serial_list", "samples_all", "samples_filtered",
+    "plots")[1:5],
+  output_folder = NULL
 )
 }
 \arguments{
-\item{COLNAMES}{colum names from the input data set to define: ID, number of Replicate, x-value(e.g. Concentration or Dilution) and the y-value(e.g. Intensity or area)}
+\item{analysis_type}{String; was the analysis "targeted" or "untargeted"?}
 
-\item{DAT}{data set with minimum following columns must be provided: ID, REPLICATE,Concentration or Dilution and Intensity or Area}
+\item{input_data}{Long format data frame or data table combining the information
+of samples, serial diluted/concentrated samples and optional repeated measured
+QC samples for all batches.}
 
-\item{nCORE}{number of cores to use for parallelization. Default value is 1}
+\item{column_sample_type}{String; Column name which distinguish between
+samples, QC and serial samples.}
 
-\item{MIN_FEATURE}{minimum number of features within a dilution or concentration series to be considered as linear range}
+\item{sample_type_QC}{String; Identification of QC in 'column_sample_type'.}
 
-\item{LOG_TRANSFORM}{logical Value. should the data be log transformed? Default is TRUE.}
+\item{sample_type_sample}{String;Identification of sample in 'column_sample_type'.}
+
+\item{sample_type_serial}{String;Identification of serial data in 'column_sample_type'.}
+
+\item{column_ID}{String; Column name, which identifies the measured Signals.}
+
+\item{column_Batch}{String; Column name to identify the different batches.
+Only necessary if there are more than 1 Batch.}
+
+\item{column_X}{String; Column name of the independent variable,
+e.g. Concentration, Dilution,...}
+
+\item{column_Y}{String; Column name of the dependent variable,
+e.g. Intensity, Area,..}
+
+\item{transform}{Boolean; Should the data be transformed? Default is TRUE.}
+
+\item{transform_x, transformy}{If parameter 'transform' is TRUE.
+String; Which transformation should be used for the independent variable (concentration/dilution) or/and
+the dependent variable of the serial diluted/concentrated samples? Default for both is "log"}
+
+\item{first_outlier_detection, second_outlier_detection}{Boolean;
+Should an outlier detection be performed before/after the exclusion of
+nonlinear portions at the beginning/ end of the concentration/dilution range?
+Default is TRUE}
+
+\item{FOD_model, SOD_model}{Only necessary if 'first_outlier_detection'/'second_outlier_detection' is TRUE (default).
+A vector of statistical models, which should be used for the outlier detection.
+Currently supported are linear regression ("linear"), quadratic regression ("quadratic")
+and logistic regression ("logistic"). Default is a vector with all three models:
+'FOD_model = c("linear", "logistic", "quadratic")'}
+
+\item{FOD_sdres_min, SOD_sdres_min}{Only necessary if
+'first_outlier_detection'/'second_outlier_detection' is TRUE (default).
+Integer; Minimum residual standard deviation of a statistical model.
+If the residual standard deviation is below this value, there will be no
+outlier detection performed for this signal. Default to 1.}
+
+\item{FOD_R2_min, SOD_R2_min}{Only necessary if 'first_outlier_detection'/'second_outlier_detection' is TRUE (default).
+Numeric, ranges from 0 to 1; Minimum coefficient of determination,
+which needs to be reached to consider the signal as linear. Default to 0.9}
+
+\item{trimming}{Boolean; Should the data be trimmed? Default to TRUE.}
+
+\item{min_feature}{Integer, ranging between 3 and maximum number of dilutions/concentrations.
+Minimum number of points present in one serial diluted/concentrated series
+marked as linear to consider this signal as linear. Default to 6, according to EMA guidelines2022.}
+
+\item{LR_sd_res_factor}{Integer; points of serial diluted/concentrated series,
+which are lower than 'LR_sd_res_factor' times residual standard deviation are considered as linear.
+Default to 2.}
+
+\item{calculate_concentration}{Boolean; For targeted analysis. Should the
+concentration of samples in regard to the linear regression equation be calculated? Default is TRUE.}
+
+\item{get_linearity_status_samples}{Boolean; If TRUE (default) the samples
+will be differentiated into linear and non linear according to their serial diluted/concentrated signal.}
+
+\item{nCORE}{Integer; Number of cores used for parallelization. Default to 1.}
+
+\item{get_output}{Boolean; If TRUE (default), output files will be generated
+and stored in output folder.}
+
+\item{output_name}{Only necessary if 'get_output' is TRUE. String; custom prefix
+for the output files.}
+
+\item{which_output}{Only necessary if 'get_output' is TRUE. Vector of output files,
+which should be generated.Default all files will be generated and stored:
+'which_output = c("R_object", "serial_list", "samples_all", "samples_filtered", "plot")'}
+
+\item{output_folder}{Only necessary if 'get_output' is TRUE.
+custom path, where the outputfiles should be stored.}
+
+\item{FOD_stdres_max, SOD_stdres_max}{Only necessary if
+'first_outlier_detection'/'second_outlier_detection' is TRUE (default).
+Integer; Maximum value for standardized residuals of a statistically model.
+If a standardized residual is above this value.
+this point will be considered as outlier and removed for further procedere. Default to 2.}
 }
 \description{
-Title
+'AssessLinearity()' cleans up a data set to only signals which
+show a linear response. The function use two outlier detections and a partially
+linear regression to identify the exact linear response range for each Signal.
 }
