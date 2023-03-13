@@ -15,7 +15,7 @@ chooseModel <- function(dats,
                         x = "Concentration",
                         model = c("logistic", "linear", "quadratic"),
                         SDRES_MIN = 1,
-                        SDRES = 2,
+                        STDRES = 2,
                         abbr,
                         R2_MIN = 0.95,
                         ...){
