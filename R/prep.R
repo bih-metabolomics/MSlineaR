@@ -197,8 +197,8 @@ data.table::setDT(dat)
 
 my_fcn <- function(xs, func, inputData, ...) {
   #parallel::clusterExport(cl, exportObjects)
-  cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
-  on.exit(parallel::stopCluster(cl))
+  #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+  #on.exit(parallel::stopCluster(cl))
   doSNOW::registerDoSNOW(cl)
   pb <- progressr::progressor(along = xs)
   progress <- function(i)  pb(sprintf("x=%g", i))
