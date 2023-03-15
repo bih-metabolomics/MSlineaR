@@ -12,8 +12,8 @@
 trimEnds <- function(dats, y="YLog", x="XLog", thresh=0){
 
   dats$trim <- FALSE
-  dats$trim[is.na(dats[, get(y)]) | dats$OutlierFOD %in% TRUE] <- NA
-  dat <- data.table::setorder(dats,DilutionPoint)[!is.na(get(y)) & !OutlierFOD %in% TRUE]
+  dats$trim[is.na(dats[, get(y)])] <- NA # | dats$OutlierFOD %in% TRUE
+  dat <- data.table::setorder(dats,DilutionPoint)[!is.na(get(y))]# & !OutlierFOD %in% TRUE]
 
   #browser()
   if (data.table::last(dat[[tidyselect::all_of(y)]]) != max(dat[[tidyselect::all_of(y)]])) {
@@ -63,6 +63,10 @@ trimEnds <- function(dats, y="YLog", x="XLog", thresh=0){
   dats[IDintern %in% tmp$IDintern, trim := ifelse(is.null(tmp$trim), FALSE, tmp$trim)]
   dats$Comment[dats$trim %in% FALSE] <- paste0(dats$Comment[dats$trim %in% FALSE], "_NoTrim")
   dats$color[dats$trim %in% TRUE] <- "grey"
+  dats$trim[is.na(dats[[y]])] <- NA
+  dats$Y_trim <- dats[[y]]
+  dats$Y_trim[dats$trim %in% TRUE] <- NA
+
 
   return(dats)
 }
