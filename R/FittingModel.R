@@ -17,7 +17,7 @@ chooseModel <- function(dats,
                         SDRES_MIN = 1,
                         STDRES = 2,
                         abbr,
-                        R2_MIN = 0.95,
+                        #R2_MIN = 0.95,
                         ...){
  # .datatable.aware=TRUE
   data.table::setDT(dats)
@@ -110,7 +110,7 @@ chooseModel <- function(dats,
   dat$color[dat[[outlierName]] %in% TRUE] <- "red"
   dat$Comment[dat[[outlierName]] %in% TRUE] <- paste0(dat$Comment[dat[[outlierName]] %in% TRUE], "_Outlier",abbr)
   dat$Comment[dat[[outlierName]] %in% FALSE] <- paste0(dat$Comment[dat[[outlierName]] %in% FALSE], "_NoOutlier",abbr)
-  dat[[outlierY]] <- dat[[Y]]
+  dat[[outlierY]] <- dat[[y]]
   dat[[outlierY]][is.na(dat[, get(y)]) | dat[[outlierName]] %in% TRUE] <- NA
 
 
@@ -141,7 +141,7 @@ chooseModel <- function(dats,
       "model.name" = gsub(pattern = "1", x = ModelName, replacement = ""),
       "model" = Model,
       "R2" = cor(dat[color %in% "black",][[y]], predict(modelNew))^2,
-      "aboveMinCor" = cor(dat[color %in% "black",][[y]], predict(modelNew))^2 > R2_MIN,
+      #"aboveMinCor" = cor(dat[color %in% "black",][[y]], predict(modelNew))^2 > R2_MIN,
       #"aic" = aic$AIC[ row.names(aic) %in% ModelName],
       dat = dat
     )
