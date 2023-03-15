@@ -4,7 +4,7 @@
 \alias{countMinimumValue}
 \title{Title}
 \usage{
-countMinimumValue(DAT, MIN_FEATURE = 3, ...)
+countMinimumValue(DAT, MIN_FEATURE = 3, step)
 }
 \arguments{
 \item{MIN_FEATURE}{minimum number of features within a dilution or concentration series to be considered as linear range}

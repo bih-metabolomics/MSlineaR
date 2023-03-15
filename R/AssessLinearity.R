@@ -1,6 +1,6 @@
-#' Cleaning up a mass spectrometry data set according to the linear response of signals.
+#' Cleaning up a mass spectrometry data set according to the linear response of serial diluted/concentrated signals.
 #'
-#' @description 'AssessLinearity()' cleans up a data set to only signals which
+#' @description `AssessLinearity()` cleans up a data set to only signals which
 #' show a linear response. The function use two outlier detections and a partially
 #' linear regression to identify the exact linear response range for each Signal.
 #'
@@ -10,9 +10,9 @@
 #' QC samples for all batches.
 #' @param column_sample_type String; Column name which distinguish between
 #' samples, QC and serial samples.
-#' @param sample_type_QC String; Identification of QC in 'column_sample_type'.
-#' @param sample_type_sample String;Identification of sample in 'column_sample_type'.
-#' @param sample_type_serial String;Identification of serial data in 'column_sample_type'.
+#' @param sample_type_QC String; Identification of QC in `column_sample_type`.
+#' @param sample_type_sample String;Identification of sample in `column_sample_type`.
+#' @param sample_type_serial String;Identification of serial data in `column_sample_type`.
 #' @param column_ID String; Column name, which identifies the measured Signals.
 #' @param column_Batch String; Column name to identify the different batches.
 #' Only necessary if there are more than 1 Batch.
@@ -20,55 +20,55 @@
 #'  e.g. Concentration, Dilution,...
 #' @param column_Y String; Column name of the dependent variable,
 #'  e.g. Intensity, Area,..
-#' @param transform Boolean; Should the data be transformed? Default is TRUE.
-#' @param transform_x,transformy If parameter 'transform' is TRUE.
+#' @param transform Boolean; Should the data be transformed? Default is `TRUE`.
+#' @param transform_x,transformy If `transform` is `TRUE`.
 #' String; Which transformation should be used for the independent variable (concentration/dilution) or/and
-#' the dependent variable of the serial diluted/concentrated samples? Default for both is "log"
+#' the dependent variable of the serial diluted/concentrated samples?
+#' Default for both is "log". If no transformation should be performed for one variable use NA.
 #' @param first_outlier_detection,second_outlier_detection Boolean;
 #' Should an outlier detection be performed before/after the exclusion of
 #' nonlinear portions at the beginning/ end of the concentration/dilution range?
-#' Default is TRUE
-#' @param FOD_model,SOD_model Only necessary if 'first_outlier_detection'/'second_outlier_detection' is TRUE (default).
+#' Default is `TRUE`
+#' @param FOD_model,SOD_model Only necessary if `first_outlier_detection`/`second_outlier_detection` is `TRUE` (default).
 #' A vector of statistical models, which should be used for the outlier detection.
 #' Currently supported are linear regression ("linear"), quadratic regression ("quadratic")
 #' and logistic regression ("logistic"). Default is a vector with all three models:
-#' 'FOD_model = c("linear", "logistic", "quadratic")'
+#' `FOD_model = c("linear", "logistic", "quadratic")`
 #' @param FOD_sdres_min,SOD_sdres_min Only necessary if
-#' 'first_outlier_detection'/'second_outlier_detection' is TRUE (default).
+#' `first_outlier_detection`/`second_outlier_detection` is `TRUE` (default).
 #' Integer; Minimum residual standard deviation of a statistical model.
 #' If the residual standard deviation is below this value, there will be no
 #' outlier detection performed for this signal. Default to 1.
 #' @param FOD_stdres_max,SOD_stdres_max Only necessary if
-#' 'first_outlier_detection'/'second_outlier_detection' is TRUE (default).
+#' `first_outlier_detection`/`second_outlier_detection` is `TRUE` (default).
 #' Integer; Maximum value for standardized residuals of a statistically model.
 #' If a standardized residual is above this value.
 #' this point will be considered as outlier and removed for further procedere. Default to 2.
-#' @param FOD_R2_min,SOD_R2_min Only necessary if 'first_outlier_detection'/'second_outlier_detection' is TRUE (default).
+#' @param FOD_R2_min,SOD_R2_min Only necessary if `first_outlier_detection`/`second_outlier_detection` is `TRUE` (default).
 #' Numeric, ranges from 0 to 1; Minimum coefficient of determination,
 #' which needs to be reached to consider the signal as linear. Default to 0.9
-#' @param trimming Boolean; Should the data be trimmed? Default to TRUE.
+#' @param trimming Boolean; Should the data be trimmed? Default to `TRUE`.
 #' @param min_feature Integer, ranging between 3 and maximum number of dilutions/concentrations.
 #' Minimum number of points present in one serial diluted/concentrated series
 #' marked as linear to consider this signal as linear. Default to 6, according to EMA guidelines2022.
 #' @param LR_sd_res_factor Integer; points of serial diluted/concentrated series,
-#' which are lower than 'LR_sd_res_factor' times residual standard deviation are considered as linear.
+#' which are lower than `LR_sd_res_factor` times residual standard deviation are considered as linear.
 #' Default to 2.
 #' @param calculate_concentration Boolean; For targeted analysis. Should the
-#' concentration of samples in regard to the linear regression equation be calculated? Default is TRUE.
-#' @param get_linearity_status_samples Boolean; If TRUE (default) the samples
+#' concentration of samples in regard to the linear regression equation be calculated? Default is `TRUE`.
+#' @param get_linearity_status_samples Boolean; If `TRUE` (default) the samples
 #' will be differentiated into linear and non linear according to their serial diluted/concentrated signal.
-#' @param get_output Boolean; If TRUE (default), output files will be generated
+#' @param get_output Boolean; If `TRUE` (default), output files will be generated
 #' and stored in output folder.
-#' @param output_name Only necessary if 'get_output' is TRUE. String; custom prefix
+#' @param output_name Only necessary if `get_output` is `TRUE`. String; custom prefix
 #' for the output files.
-#' @param which_output Only necessary if 'get_output' is TRUE. Vector of output files,
+#' @param which_output Only necessary if `get_output` is `TRUE`. Vector of output files,
 #'  which should be generated.Default all files will be generated and stored:
-#' 'which_output = c("R_object", "serial_list", "samples_all", "samples_filtered", "plot")'
-#' @param output_folder Only necessary if 'get_output' is TRUE.
-#' custom path, where the outputfiles should be stored.
+#' `which_output = c("R_object", "serial_list", "samples_all", "samples_filtered", "plot")`
+#' @param output_dir Only necessary if `get_output` is `TRUE`.
+#' custom path, where the output files should be stored.
 #' @param nCORE Integer; Number of cores used for parallelization. Default to 1.
 #' @param analysis_type String; was the analysis "targeted" or "untargeted"?
-#'
 #'
 #'
 #' @import dplyr
@@ -81,7 +81,7 @@
 #' @examples
 #'
 AssessLinearity <- function(
-    analysis_type = c("target", "untarget", NULL)[3],
+    analysis_type = c("targeted", "untargeted", NULL)[3],
     #input_data
     input_data = NULL,
     column_sample_type = c("Sample.Type", "Type")[1],
@@ -102,7 +102,7 @@ AssessLinearity <- function(
     first_outlier_detection = c(TRUE, FALSE)[1],
     FOD_model = c("logistic", "linear", "quadratic"),
     FOD_sdres_min = 1,
-    FOD_sdres_max = 2,
+    FOD_stdres_max = 2,
     FOD_R2_min = 0.9,
 
     trimming = c(TRUE, FALSE)[1],
@@ -111,7 +111,7 @@ AssessLinearity <- function(
     second_outlier_detection = c(TRUE, FALSE)[1],
     SOD_model = c("logistic", "linear", "quadratic"),
     SOD_sdres_min = 1,
-    SOD_sdres_max = 2,
+    SOD_stdres_max = 2,
     SOD_R2_min = 0.9,
 
     #linear_range
@@ -127,19 +127,43 @@ AssessLinearity <- function(
     get_output = c(TRUE, FALSE)[1],
     output_name = NULL,
     which_output = c("R_object", "serial_list", "samples_all", "samples_filtered", "plots")[1:5],
-    output_folder = NULL
+    output_dir = NULL
     ) {
 
-  #devtools::load_all()
 
-  #source(file = "R/prep.R")
-  #source(file = "R/countMinimumValues.R")
-  #source(file = "R/findLinearRange.R")
-  #source(file = "R/FittingModel.R")
-  # source(file = "R/getSummary.R")
-  # source(file = "R/outlierDetection.R")
-  # source(file = "R/plotSignals.R")
-  #source(file = "R/trimEnds.R")
+# define arguments
+  TYPE = analysis_type
+  DAT = input_data
+  #QC =  sample_type_QC
+  SAMPLE = sample_type_sample
+  CALIBRANTS = sample_type_serial
+  COLNAMES = c(ID = column_ID, Batch = column_Batch, Sample_type = column_sample_type, X = column_X,Y = column_Y)
+  TRANSFORM = transform
+  TRANSFORM_X = transform_x
+  TRANSFORM_Y = transform_y
+  FOD = first_outlier_detection
+  FOD_MODEL = FOD_model
+  FOD_SDRES_MIN = FOD_sdres_min
+  FOD_STDRES_MAX = FOD_stdres_max
+  FOD_R2_MIN = FOD_R2_min
+  TRIMM = trimming
+  SOD = second_outlier_detection
+  SOD_MODEL = SOD_model
+  SOD_SDRES_MIN = SOD_sdres_min
+  SOD_STDRES_MAX = SOD_stdres_max
+  SOD_R2_MIN = SOD_R2_min
+  MIN_FEATURE = min_feature
+  LR_SD_RES_FACTOR = LR_sd_res_factor
+  CAL_CONC = calculate_concentration
+  GET_LR_STATUS = get_linearity_status_samples
+  nCORE = nCORE
+  GET_OUTPUT = get_output
+  PREFIX = output_name
+  OUTPUT_DIR = output_dir
+
+
+  message("checking input arguments\n--------------------------------------------------------\n")
+  dataOrigin <- checkData()
 
 
   # progressbar
@@ -155,91 +179,124 @@ AssessLinearity <- function(
   )
 
 
-  dataOrigin <-checkData(dat = DAT, MIN_FEATURE = MIN_FEATURE, LOG_TRANSFORM = LOG_TRANSFORM, nCORE = nCORE, COLNAMES = COLNAMES)
+  # Creates full absolute paths
+  if(GET_OUTPUT %in% TRUE){
+    REPORT_OUTPUT_DIR <- R.utils::getAbsolutePath(OUTPUT_DIR)
+    # check if output dir already exist or create it
+    if (!dir.exists(REPORT_OUTPUT_DIR)){
+      dir.create(REPORT_OUTPUT_DIR)
+      print("Dir", REPORT_OUTPUT_DIR , "was created.")
+    } else {
+      print("Dir already exists!")
+    }
+  }
 
-  if(LOG_TRANSFORM %in% TRUE){
-    X = "XLog"
-    Y = "YLog"
+
+  if(TRANSFORM %in% TRUE){
+    X = ifelse(is.na(TRANSFORM_X), "X", "X_trans")
+    Y = ifelse(is.na(TRANSFORM_Y), "Y", "Y_trans")
+
   } else{
     X = "X"
     Y = "Y"
   }
 
-  if (!"REPLICATE" %in% names(COLNAMES)) {
-    COLNAMES["REPLICATE"] <- "REPLICATE"
-    dataOrigin[, REPLICATE := "1"]
+  #wording
+
+  if(TYPE %in% "target"){
+    Compounds = "Compound(s)"
+    Dilutions = "Concentrations"
+    Series = "Concentration Curves"
+    Signals = "Signals"
+  } else{
+    Compounds = "molecular feature"
+    Dilutions = "Dilutions"
+    Series = "QC dilution Curves"
+    Signals = "Signals"
   }
 
+  # if (!"REPLICATE" %in% names(COLNAMES)) {
+  #   COLNAMES["REPLICATE"] <- "REPLICATE"
+  #   dataOrigin[, REPLICATE := "1"]
+  # }
 
 
-  processingFeature <- data.table::copy(dataOrigin)
+
+  processingFeature <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% CALIBRANTS]
 
 
 
   #### normalizing, centralizing, log transforming ####
-   message("preparing data\n--------------------------------------------------------\n")
+   message("preparing serial diluted QC data\n--------------------------------------------------------\n")
 
   dataPrep <- prepareData(processingFeature)
 
   processingFeature <- data.table::copy(dataPrep)
 
-  countList <- countMinimumValue(DAT = processingFeature, MIN_FEATURE)
+  step = 1
+  countList <- countMinimumValue(DAT = processingFeature,step = step )
   processingFeature <- data.table::data.table(countList[[1]])
   processingGroup <- data.table::data.table(countList[[2]])
 
 
-   # save key numbers
+  # save key numbers
   nCompounds <- data.table::uniqueN(processingGroup, by = c("ID"))
-  nReplicates <- data.table::uniqueN(processingFeature, by = c("REPLICATE"))
-  nDilutions <- data.table::uniqueN(processingFeature[, 'DilutionPoint' := 1:.N, by = c("ID", "REPLICATE")], by = c("DilutionPoint"))
+  nReplicates <- data.table::uniqueN(processingFeature, by = c("Batch"))
+  nDilutions <- data.table::uniqueN(processingFeature[, 'DilutionPoint' := 1:.N, by = c("ID", "Batch")], by = c("DilutionPoint"))
   nSeries <- data.table::uniqueN(processingGroup, by = c("groupIndices"))
   nPeaks <- data.table::uniqueN(processingFeature, by = c("IDintern"))
 
   message(
-    "Data set with ", nCompounds, " molecular Features, ",
-    nReplicates, " REPLICATE(s) and ",
-    nDilutions, " Concentrations or Dilutions -> ",
-    format.default(nSeries, big.mark = ",", scientific = F), " Feature dilution series.",
+    "Data set with ", nCompounds, " ",Compounds, ", ",
+    nReplicates, " Batch(es) and ",
+    nDilutions, " ", Dilutions," -> ",
+    format.default(nSeries, big.mark = ",", scientific = F), " ",Series,".",
     "\n--------------------------------------------------------\n"
   )
 
-  nCompoundsNew <- data.table::uniqueN(processingGroup[enoughPeaks %in% TRUE], by = c("ID"))
-  nReplicatesNew <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("REPLICATE"))
-  nSeriesNew <- data.table::uniqueN(processingGroup[enoughPeaks %in% TRUE], by = c("groupIndices"))
+  nCompoundsNew <- data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% TRUE], by = c("ID"))
+  nReplicatesNew <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("Batch"))
+  nSeriesNew <- data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% TRUE], by = c("groupIndices"))
 
-  message("Removed ", nCompounds - nCompoundsNew, " molecular Features with less than ", MIN_FEATURE, " points.
-          New Data set with ", nCompoundsNew, " molecular Features and ", nReplicatesNew, " Replicates -> ", nSeriesNew, " Feature dilution series \n--------------------------------------------------------\n")
+  message("Removed ", nCompounds - nCompoundsNew, " ", Compounds, " with less than ", MIN_FEATURE, " Signals.
+          New Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series,"\n--------------------------------------------------------\n")
 
   stopifnot(exprs = {
-    "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[enoughPeaks %in% FALSE], by = c("ID")) > 0
-    "all Dilution/Concentration-Series were removed" = nSeriesNew - data.table::uniqueN(processingGroup[enoughPeaks %in% FALSE], by = c("groupIndices")) > 0
+    "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% FALSE], by = c("ID")) > 0
+    "all Dilution/Concentration-Series were removed" = nSeriesNew - data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% FALSE], by = c("groupIndices")) > 0
   })
 
+  cutoff <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step)) %in% FALSE, groupIndices]]
+  processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step)) %in% TRUE, groupIndices]]
+
+
+  step = step + 1
 
   # assert_that(nrow(processList$processing) == rawCompounds*n_dilution*nReplications)
 
   #### outlier ####
-
+if(FOD %in% TRUE){
   message("First Outlier Detection\n")
 
-  cutoff <- processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% FALSE, groupIndices]]
-  processingFeature <- processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% TRUE, groupIndices]]
-  startTime = Sys.time()
-
   # prints recorded time
+    startTime = Sys.time()
 
   cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+  #on.exit(parallel::stopCluster(cl))
   #options(future.globals.onReference = "error")
   dataFOD <- my_fcn(
     cl,
     #exportObjects = c("chooseModel", "X","Y", "abbr", "R2min"),
-    xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
+    xs = 1 : 4,#data.table::uniqueN(processingFeature$groupIndices),
     inputData = processingFeature,
     x = X,
     y = Y,
     func = chooseModel,
     abbr = "FOD",
-    R2min = R2min
+    R2_MIN = FOD_R2_MIN,
+    model = FOD_MODEL,
+    SDRES_MIN = FOD_SDRES_MIN,
+    STDRES = FOD_STDRES_MAX
   ) |> unlist(recursive = F)
 
   parallel::stopCluster(cl)
@@ -259,18 +316,23 @@ AssessLinearity <- function(
 
   dataFOD = purrr::map(dataFOD,5)|> plyr::ldply(.id = NULL)
 
-  processingFeature <- data.table::data.table(dplyr::full_join(dataFOD, processingFeature[!IDintern %in% dataFOD$IDintern]))
-  processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierFOD' :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]))
+  processingFeature <- data.table::data.table(dplyr::full_join(dataFOD, processingFeature[!IDintern %in% dataFOD$IDintern], by = colnames(processingFeature)))
+  processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierFOD' :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]), by = c("groupIndices"))
 
-  message("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " FDS.\n")
+  message("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,".\n")
 
-  countList <- countMinimumValue(processingFeature, MIN_FEATURE)
+  countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step)
   processingFeature <- countList[[1]]
-  subdt <- processingGroup[groupIndices %in% countList[[2]]$groupIndices, .(groupIndices, N, enoughPeaks)]
-  processingGroup[subdt, ':=' (N = countList[[2]]$N,
-                               enoughPeaks = countList[[2]]$enoughPeaks), on = "groupIndices"]
+  processingGroup <- full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
 
+  #subdt <- processingGroup[groupIndices %in% countList[[2]]$groupIndices, .(groupIndices, paste0("N_",step), paste0(enoughPeaks, step))]
+  #processingGroup[subdt, ':=' (N = countList[[2]]$N,
+                               #enoughPeaks = countList[[2]]$enoughPeaks), on = "groupIndices"]
+  step = step + 1
+
+  }
   #### trim ####
+  if(TRIMM %in% TRUE){
   message("Trim data: first Dilution should have the smallest Intensity and last point should have the biggest.")
 
   startTime = Sys.time()
@@ -326,7 +388,7 @@ message("trim: ",endTime - startTime)
     "all Compounds were removed" = remainingCompound > 0
   })
 
-
+  }
 
 
   #### Fitting ####
