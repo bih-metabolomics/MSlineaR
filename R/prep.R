@@ -30,7 +30,7 @@
 #'
 #' @examples
 #'
-checkData <- function(...){
+checkData <- function(DAT, ...){
 
   dat <- DAT
   data.table::setDT(dat)
@@ -98,7 +98,7 @@ checkData <- function(...){
       "Argument 'FOD_sdres_min' and 'FOD_stdres_max' need to be from type Integer and positive" =
         is.wholenumber(FOD_SDRES_MIN) & FOD_SDRES_MIN >= 0  & is.wholenumber(FOD_STDRES_MAX) & FOD_STDRES_MAX >= 0
       "Argument 'FOD_R2_min' needs to be from type double and in the range between 0 and 1" =
-        between(x = FOD_R2_MIN, left = 0, right = 1)
+        data.table::between(x = FOD_R2_MIN, lower = 0, upper = 1)
     })
   }
 
@@ -110,7 +110,7 @@ checkData <- function(...){
       "Argument 'SOD_sdres_min' and 'SOD_stdres_max' need to be from type Integer and positive" =
         is.wholenumber(SOD_SDRES_MIN) & SOD_SDRES_MIN >= 0  & is.wholenumber(SOD_STDRES_MAX) & SOD_STDRES_MAX >= 0
       "Argument 'SOD_R2_min' needs to be from type double and in the range between 0 and 1" =
-        between(x = SOD_R2_MIN, left = 0, right = 1)
+        data.table::between(x = SOD_R2_MIN, lower = 0, upper = 1)
     })
   }
 
@@ -197,16 +197,36 @@ data.table::setDT(dat)
 
 my_fcn <- function(xs, func, inputData, ...) {
   #parallel::clusterExport(cl, exportObjects)
+  cl <- parallel::makePSOCKcluster(nCORE)
+   doSNOW::registerDoSNOW(cl)
+  on.exit(parallel::stopCluster(cl))
+  #on.exit(closeAllConnections())
+  #on.exit(parallel::stopCluster(cl))
+  pb <- txtProgressBar(min=1, max=max(xs), style=3)
+  progress <- function(n) setTxtProgressBar(pb, n)
+   #pb <- progressr::progressor(along = xs)
+   #progress <- function(i)  pb(sprintf("x=%g", i))
+  opts <- list(progress=progress)
+  y <- foreach::foreach(i = xs,   .options.snow=opts) %dopar%
+    {func(data.table::setDT(inputData)[inputData$groupIndices %in% unique(inputData$groupIndices)[i]], ...)}
+  close(pb)
+  #parallel::stopCluster(cl)
+  #parallel::stopCluster(cl)
+  return(y)
+  }
+
+my_fcn6 <- function(xs, func, inputData, ...) {
+  #parallel::clusterExport(cl, exportObjects)
   #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
   #on.exit(parallel::stopCluster(cl))
-  doSNOW::registerDoSNOW(cl)
-  pb <- progressr::progressor(along = xs)
-  progress <- function(i)  pb(sprintf("x=%g", i))
-  opts <- list(progress=progress)
-  y <- foreach::foreach(i = xs,   .options.snow=opts) %dopar% {func(data.table::setDT(inputData)[inputData$groupIndices %in% unique(inputData$groupIndices)[i]], ...)}
+  #doSNOW::registerDoSNOW(cl)
+#  pb <- progressr::progressor(along = xs)
+#  progress <- function(i)  pb(sprintf("x=%g", i))
+ # opts <- list(progress=progress)
+  y <- foreach::foreach(i = xs) %do% {func(data.table::setDT(inputData)[inputData$groupIndices %in% unique(inputData$groupIndices)[i]], ...)}
   #parallel::stopCluster(cl)
   #return(y)
-  }
+}
 
 
 

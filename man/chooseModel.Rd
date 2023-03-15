@@ -12,7 +12,6 @@ chooseModel(
   SDRES_MIN = 1,
   STDRES = 2,
   abbr,
-  R2_MIN = 0.95,
   ...
 )
 }

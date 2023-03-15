@@ -22,15 +22,14 @@ AssessLinearity(
   FOD_model = c("logistic", "linear", "quadratic"),
   FOD_sdres_min = 1,
   FOD_stdres_max = 2,
-  FOD_R2_min = 0.9,
   trimming = c(TRUE, FALSE)[1],
   second_outlier_detection = c(TRUE, FALSE)[1],
   SOD_model = c("logistic", "linear", "quadratic"),
   SOD_sdres_min = 1,
   SOD_stdres_max = 2,
-  SOD_R2_min = 0.9,
   min_feature = 6,
   LR_sd_res_factor = 2,
+  R2_min = 0.9,
   calculate_concentration = c(TRUE, FALSE)[1],
   get_linearity_status_samples = c(TRUE, FALSE)[1],
   nCORE = 1,
@@ -98,10 +97,6 @@ Integer; Maximum value for standardized residuals of a statistically model.
 If a standardized residual is above this value.
 this point will be considered as outlier and removed for further procedere. Default to 2.}
 
-\item{FOD_R2_min, SOD_R2_min}{Only necessary if \code{first_outlier_detection}/\code{second_outlier_detection} is \code{TRUE} (default).
-Numeric, ranges from 0 to 1; Minimum coefficient of determination,
-which needs to be reached to consider the signal as linear. Default to 0.9}
-
 \item{trimming}{Boolean; Should the data be trimmed? Default to \code{TRUE}.}
 
 \item{min_feature}{Integer, ranging between 3 and maximum number of dilutions/concentrations.
@@ -132,6 +127,10 @@ which should be generated.Default all files will be generated and stored:
 
 \item{output_dir}{Only necessary if \code{get_output} is \code{TRUE}.
 custom path, where the output files should be stored.}
+
+\item{FOD_R2_min, SOD_R2_min}{Only necessary if \code{first_outlier_detection}/\code{second_outlier_detection} is \code{TRUE} (default).
+Numeric, ranges from 0 to 1; Minimum coefficient of determination,
+which needs to be reached to consider the signal as linear. Default to 0.9}
 }
 \description{
 \code{AssessLinearity()} cleans up a data set to only signals which

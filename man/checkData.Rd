@@ -4,7 +4,7 @@
 \alias{checkData}
 \title{Prepare raw data}
 \usage{
-checkData(...)
+checkData(DAT, ...)
 }
 \arguments{
 \item{dat}{Data frame with raw data. Mandatory columns are:

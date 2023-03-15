@@ -154,7 +154,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
     tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
     tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
 
-    dat$Comment[dat$IsLinear %in% TRUE] <- unlist(apply(cbind(dat$Comment, "linearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
+    dat$Comment[dat$IsLinear %in% TRUE] <- unlist(apply(cbind(dat$Comment[dat$IsLinear %in% TRUE], "linearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
 
     # linear but not positive associated?
     if(any(dat$IsPositivAssociated[tmpGroup$LRStart : tmpGroup$LREnd] %in% FALSE)){
@@ -258,12 +258,19 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
                     #ablineLimit2 = limitdown,
                     Residuals = residuals(linearRange)
         )]
-        dat$Comment[dat$IsLinear %in% FALSE] <- unlist(apply(cbind(dat$Comment, "NolinearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
+        dat$Comment[dat$IsLinear %in% FALSE] <- unlist(apply(cbind(dat$Comment[dat$IsLinear %in% FALSE], "NolinearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
 
       }
-  dat <- data.table::setorder(dplyr::full_join(dat, dats[!IDintern %in% dat$IDintern]), DilutionPoint)
-dat <- subset(dat, select = -fittingModel)
-  return(list(dat, tmpGroup))
+  dat <- data.table::setorder(dplyr::full_join(dat, dats[!IDintern %in% dat$IDintern], by = colnames(dats)), DilutionPoint)
+
+  linearY <- "Y_LR"
+  dat[[linearY]] <- dat[[y]]
+  dat[[linearY]][is.na(dat[, get(y)]) | dat$IsLinear %in% FALSE | is.na(dat$IsLinear)] <- NA
+
+
+#dat <- subset(dat, select = -fittingModel)
+  tmp <- list(dat, tmpGroup)
+  return(tmp)
 }
 
 

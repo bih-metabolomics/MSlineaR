@@ -71,7 +71,7 @@
 #' @param analysis_type String; was the analysis "targeted" or "untargeted"?
 #'
 #'
-#' @import dplyr
+#' @importFrom  dplyr %>%
 #' @return
 #'
 #'
@@ -103,7 +103,7 @@ AssessLinearity <- function(
     FOD_model = c("logistic", "linear", "quadratic"),
     FOD_sdres_min = 1,
     FOD_stdres_max = 2,
-    FOD_R2_min = 0.9,
+    #FOD_R2_min = 0.9,
 
     trimming = c(TRUE, FALSE)[1],
 
@@ -112,11 +112,12 @@ AssessLinearity <- function(
     SOD_model = c("logistic", "linear", "quadratic"),
     SOD_sdres_min = 1,
     SOD_stdres_max = 2,
-    SOD_R2_min = 0.9,
+    #SOD_R2_min = 0.9,
 
     #linear_range
     min_feature = 6,
     LR_sd_res_factor = 2,
+    R2_min = 0.9,
 
     calculate_concentration = c(TRUE, FALSE)[1],
 
@@ -128,10 +129,10 @@ AssessLinearity <- function(
     output_name = NULL,
     which_output = c("R_object", "serial_list", "samples_all", "samples_filtered", "plots")[1:5],
     output_dir = NULL
-    ) {
+) {
 
 
-# define arguments
+  # define arguments
   TYPE = analysis_type
   DAT = input_data
   #QC =  sample_type_QC
@@ -145,15 +146,16 @@ AssessLinearity <- function(
   FOD_MODEL = FOD_model
   FOD_SDRES_MIN = FOD_sdres_min
   FOD_STDRES_MAX = FOD_stdres_max
-  FOD_R2_MIN = FOD_R2_min
+  #FOD_R2_MIN = FOD_R2_min
   TRIMM = trimming
   SOD = second_outlier_detection
   SOD_MODEL = SOD_model
   SOD_SDRES_MIN = SOD_sdres_min
   SOD_STDRES_MAX = SOD_stdres_max
-  SOD_R2_MIN = SOD_R2_min
+  #SOD_R2_MIN = SOD_R2_min
   MIN_FEATURE = min_feature
   LR_SD_RES_FACTOR = LR_sd_res_factor
+  R2_MIN = R2_min
   CAL_CONC = calculate_concentration
   GET_LR_STATUS = get_linearity_status_samples
   nCORE = nCORE
@@ -163,7 +165,7 @@ AssessLinearity <- function(
 
 
   message("checking input arguments\n--------------------------------------------------------\n")
-  dataOrigin <- checkData()
+  dataOrigin <- checkData(input_data)
 
 
   # progressbar
@@ -203,7 +205,7 @@ AssessLinearity <- function(
 
   #wording
 
-  if(TYPE %in% "target"){
+  if(TYPE %in% "targeted"){
     Compounds = "Compound(s)"
     Dilutions = "Concentrations"
     Series = "Concentration Curves"
@@ -227,14 +229,14 @@ AssessLinearity <- function(
 
 
   #### normalizing, centralizing, log transforming ####
-   message("preparing serial diluted QC data\n--------------------------------------------------------\n")
+  message("preparing serial diluted QC data\n--------------------------------------------------------\n")
 
   dataPrep <- prepareData(processingFeature)
 
   processingFeature <- data.table::copy(dataPrep)
 
   step = 1
-  countList <- countMinimumValue(DAT = processingFeature,step = step )
+  countList <- countMinimumValue(DAT = processingFeature,step = step,y = Y)
   processingFeature <- data.table::data.table(countList[[1]])
   processingGroup <- data.table::data.table(countList[[2]])
 
@@ -254,266 +256,230 @@ AssessLinearity <- function(
     "\n--------------------------------------------------------\n"
   )
 
-  nCompoundsNew <- data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% TRUE], by = c("ID"))
-  nReplicatesNew <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("Batch"))
-  nSeriesNew <- data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% TRUE], by = c("groupIndices"))
-
-  message("Removed ", nCompounds - nCompoundsNew, " ", Compounds, " with less than ", MIN_FEATURE, " Signals.
-          New Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series,"\n--------------------------------------------------------\n")
-
-  stopifnot(exprs = {
-    "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% FALSE], by = c("ID")) > 0
-    "all Dilution/Concentration-Series were removed" = nSeriesNew - data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% FALSE], by = c("groupIndices")) > 0
-  })
-
-  cutoff <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step)) %in% FALSE, groupIndices]]
-  processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step)) %in% TRUE, groupIndices]]
-
+  # check length of points
+  checkData <- checkLength()
+  processingFeature <- checkData[[1]]
+  cutoff <- checkData [[2]]
 
   step = step + 1
 
   # assert_that(nrow(processList$processing) == rawCompounds*n_dilution*nReplications)
 
-  #### outlier ####
-if(FOD %in% TRUE){
-  message("First Outlier Detection\n")
+  #### first outlier detection ####
+  if(FOD %in% TRUE){
+    message("First Outlier Detection\n")
 
-  # prints recorded time
+    # prints recorded time
     startTime = Sys.time()
 
-  cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
-  #on.exit(parallel::stopCluster(cl))
-  #options(future.globals.onReference = "error")
-  dataFOD <- my_fcn(
-    cl,
-    #exportObjects = c("chooseModel", "X","Y", "abbr", "R2min"),
-    xs = 1 : 4,#data.table::uniqueN(processingFeature$groupIndices),
-    inputData = processingFeature,
-    x = X,
-    y = Y,
-    func = chooseModel,
-    abbr = "FOD",
-    R2_MIN = FOD_R2_MIN,
-    model = FOD_MODEL,
-    SDRES_MIN = FOD_SDRES_MIN,
-    STDRES = FOD_STDRES_MAX
-  ) |> unlist(recursive = F)
+    cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+    #on.exit(parallel::stopCluster(cl))
+    #options(future.globals.onReference = "error")
+    dataFOD <- my_fcn(
+      cl,
+      #exportObjects = c("chooseModel", "X","Y", "abbr", "R2min"),
+      xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
+      inputData = processingFeature,
+      x = X,
+      y = Y,
+      func = chooseModel,
+      abbr = "FOD",
+      R2_MIN = FOD_R2_MIN,
+      model = FOD_MODEL,
+      SDRES_MIN = FOD_SDRES_MIN,
+      STDRES = FOD_STDRES_MAX
+    ) |> unlist(recursive = F)
 
-  parallel::stopCluster(cl)
+    parallel::stopCluster(cl)
 
-  endTime = Sys.time()
-  total <- endTime - startTime
-  print(total)
-  message("FOD: ",total)
+    endTime = Sys.time()
+    message("FOD: ",format(round(difftime(endTime, startTime),2)))
+    Y = "Y_FOD"
 
-  dataFODModel <- tibble::tibble(
-    groupIndices = as.integer(names(purrr::map(dataFOD, 1))),
-    ModelName = purrr::map(dataFOD, 1) %>% unlist(use.names = F),
-    Model = purrr::map(dataFOD, 2),
-    #RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
-    R2 = purrr::map(dataFOD, 3) %>% unlist(use.names = F)
+    dataFODModel <- tibble::tibble(
+      groupIndices = as.integer(names(purrr::map(dataFOD, 1))),
+      ModelName = purrr::map(dataFOD, 1) %>% unlist(use.names = F),
+      Model = purrr::map(dataFOD, 2),
+      #RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
+      R2 = purrr::map(dataFOD, 3) %>% unlist(use.names = F)
     )
 
-  dataFOD = purrr::map(dataFOD,5)|> plyr::ldply(.id = NULL)
+    dataFOD = purrr::map(dataFOD,5)|> plyr::ldply(.id = NULL)
 
-  processingFeature <- data.table::data.table(dplyr::full_join(dataFOD, processingFeature[!IDintern %in% dataFOD$IDintern], by = colnames(processingFeature)))
-  processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierFOD' :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]), by = c("groupIndices"))
+    processingFeature <- data.table::data.table(dplyr::full_join(dataFOD, processingFeature[!IDintern %in% dataFOD$IDintern], by = colnames(processingFeature)))
+    processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierFOD' :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]), by = c("groupIndices"))
 
-  message("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,".\n")
+    message("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,".\n")
 
-  countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step)
-  processingFeature <- countList[[1]]
-  processingGroup <- full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+    countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
+    processingFeature <- countList[[1]]
+    processingGroup <- full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
 
-  #subdt <- processingGroup[groupIndices %in% countList[[2]]$groupIndices, .(groupIndices, paste0("N_",step), paste0(enoughPeaks, step))]
-  #processingGroup[subdt, ':=' (N = countList[[2]]$N,
-                               #enoughPeaks = countList[[2]]$enoughPeaks), on = "groupIndices"]
-  step = step + 1
+    # check length of points
+    checkData <- checkLength()
+    processingFeature <- checkData[[1]]
+    cutoff <- checkData [[2]]
+
+
+    step = step + 1
+
 
   }
   #### trim ####
   if(TRIMM %in% TRUE){
-  message("Trim data: first Dilution should have the smallest Intensity and last point should have the biggest.")
 
-  startTime = Sys.time()
-  cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
-  dataTrim <- my_fcn(
-    cl,
-    xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
-    inputData = processingFeature,
-    func = trimEnds,
-    x = X,
-    y = Y
-  ) |>
-    plyr::ldply(.id = NULL)
+    message("Trim data: first Dilution should have the smallest Intensity and last point should have the biggest.")
 
-  parallel::stopCluster(cl)
-endTime = Sys.time()
-total <- endTime - startTime
-print(total)
-message("trim: ",endTime - startTime)
+    startTime = Sys.time()
+    cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+    dataTrim <- my_fcn(
+      cl,
+      xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
+      inputData = processingFeature,
+      func = trimEnds,
+      x = X,
+      y = Y
+    ) |>
+      plyr::ldply(.id = NULL)
 
-  # setDT(dataTrim)[Y < levelnoise, color := "grey"]
-  # setDT(dataTrim)[Y < levelnoise, Comment := "below noise level"]
+    parallel::stopCluster(cl)
 
+    message("Trimming: ",format(round(difftime(Sys.time(), startTime),2)))
 
-  processingFeature <- data.table::data.table(dplyr::full_join(dataTrim, processingFeature[!IDintern %in% dataTrim$IDintern]))
-  processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'trim' :=any(trim %in% TRUE),groupIndices][,.(groupIndices, trim)]))
+    Y = "Y_trim"
 
+    processingFeature <- data.table::data.table(dplyr::full_join(dataTrim,
+                                                                 processingFeature[!IDintern %in% dataTrim$IDintern],
+                                                                 by = colnames(processingFeature)))
+    processingGroup <- dplyr::full_join(processingGroup,
+                                        unique(data.table::copy(processingFeature)[,'trim' :=any(trim %in% TRUE),groupIndices][,.(groupIndices, trim)]),
+                                        by = "groupIndices")
 
-  # check length of points
-  countList <- countMinimumValue(processingFeature, MIN_FEATURE )
-  processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern])
-  subdt <- processingGroup[groupIndices %in% countList[[2]]$groupIndices, .(groupIndices, N, enoughPeaks)]
-  processingGroup[subdt, ':=' (N = countList[[2]]$N,
-                               enoughPeaks = countList[[2]]$enoughPeaks), on = "groupIndices"]
+    TrimGroups <- data.table::uniqueN(dataTrim |> dplyr::filter(trim %in% TRUE) %>% dplyr::select(groupIndices))
+    TrimFeatures <- data.table::uniqueN(dataTrim |> dplyr::filter(trim %in% TRUE) |> dplyr::select(IDintern))
 
 
-  # assert_that(n_distinct(dataTrim$groupIndices) == n_distinct(processing$groupIndices))
+    countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
+    processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern], by = colnames(processingFeature))
+    processingGroup <- full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+
+    message("In total ", TrimFeatures," ",  Signals," in ", TrimGroups, " ",Series," were trimmed.\n")
+
+    # check length of points
+    checkData <- checkLength()
+    processingFeature <- checkData[[1]]
+    cutoff <- checkData [[2]]
+
+    step = step + 1
+    # assert_that(n_distinct(dataTrim$groupIndices) == n_distinct(processing$groupIndices))
+
+  }
+
+  #### second outlier detection ####
+
+  if(SOD %in% TRUE){
+
+    message("Second Outlier Detection\n")
 
 
+    cutoff <- dplyr::full_join(cutoff,
+                               processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% FALSE, groupIndices]],
+                               by = colnames(processingFeature))
+    processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE, groupIndices]]
 
-  TrimFeatures <- data.table::uniqueN(dataTrim |> dplyr::filter(!color %in% "black") %>% dplyr::select(groupIndices))
-  message(TrimFeatures, " individual Features were removed after trimming the data")
+    startTime = Sys.time()
+    #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+    dataSOD <- my_fcn(
+      #cl,
+      xs = 1:data.table::uniqueN(processingFeature$groupIndices),
+      inputData = processingFeature,
+      x = X,
+      y = Y,
+      func = chooseModel,
+      abbr = "SOD",
+      R2_MIN = SOD_R2_MIN,
+      model = SOD_MODEL,
+      SDRES_MIN = SOD_SDRES_MIN,
+      STDRES = SOD_STDRES_MAX
+    ) |> unlist(recursive = F)
+
+    closeAllConnections()
+
+    #rm(cl)
 
 
-  discardCompound <- length(processingGroup[enoughPeaks %in% FALSE, groupIndices])
-  remainingCompound <- length(processingGroup[enoughPeaks %in% TRUE, groupIndices])
-  message(discardCompound, " Compounds had less than ", MIN_FEATURE, " Peaks and were discarded.\n--------------------------------------------------------\n")
-  message("Data set with ", remainingCompound, " Compounds.\n--------------------------------------------------------\n")
+    endTime = Sys.time()
+    message("SOD: ",format(round(difftime(Sys.time(), startTime),2)))
+
+    Y = "Y_SOD"
 
 
+    dataSODModel <- tibble::tibble(
+      groupIndices = as.integer(names(purrr::map(dataSOD, 1))),
+      ModelName = purrr::map(dataSOD, 1) %>% unlist(use.names = F),
+      Model = purrr::map(dataSOD, 2),
+      #RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
+      R2 = purrr::map(dataSOD, 3) %>% unlist(use.names = F)
+    )
 
-  stopifnot(exprs = {
-    "all Compounds were removed" = remainingCompound > 0
-  })
+    #data.table::setDT(dataSODModel)
+    dataSOD = purrr::map(dataSOD,5)|> plyr::ldply(.id = NULL)
+
+    processingFeature <- data.table::data.table(dplyr::full_join(dataSOD, processingFeature[!IDintern %in% dataSOD$IDintern], by = colnames(processingFeature)))
+    processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierSOD' :=any(OutlierSOD %in% TRUE), groupIndices][,.(groupIndices, OutlierSOD)]), by = c("groupIndices"))
+
+    message("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierSOD %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,".\n")
+
+    countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
+    processingFeature <- countList[[1]]
+    processingGroup <- full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+
+    # check length of points
+    checkData <- checkLength()
+    processingFeature <- checkData[[1]]
+    cutoff <- checkData [[2]]
+
+
+    step = step + 1
 
   }
 
 
-  #### Fitting ####
-
-  # 1.) choose Model according to correlation threshold
-
-  message("Fitting linear, logistic and quadratic regression\n")
-
-
-  cutoff <- dplyr::full_join(cutoff, processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% FALSE, groupIndices]])
-  processingFeature <- processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% TRUE, groupIndices]]
-
-  startTime = Sys.time()
-  cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
-  dataSOD <- my_fcn(
-    cl,
-    xs = 1:data.table::uniqueN(processingFeature$groupIndices),
-    inputData = processingFeature,
-    x = X,
-    y = Y,
-    func = chooseModel,
-    abbr = "SOD",
-    #model = c("linear","logistic"),
-    R2min = R2min
-  ) |> unlist(recursive = F)
-
-parallel::stopCluster(cl)
-
-endTime = Sys.time()
-total <- endTime - startTime
-print(total)
-message("FOD: ",endTime - startTime)
-
-  dataSODModel <- tibble::tibble(
-    groupIndices = as.integer(names(purrr::map(dataSOD, 1))),
-    ModelName = purrr::map(dataSOD, 1) %>% unlist(use.names = F),
-    Model = purrr::map(dataSOD, 2)#,
-    #R2 = purrr::map(dataSOD, 3) %>% unlist(use.names = F)#,
-    #aboveMinCor = purrr::map(dataSOD, 4) %>% unlist(use.names = F)
-
-  )
-  data.table::setDT(dataSODModel)
-  dataSOD = purrr::map(dataSOD,5)|> plyr::ldply(.id = NULL)
-
-  processingFeature <- data.table::data.table(dplyr::full_join(dataSOD, processingFeature[!IDintern %in% dataSOD$IDintern]))
-  processingGroup <-  dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierSOD' :=any(OutlierSOD %in% TRUE),groupIndices][,.(groupIndices, OutlierSOD)]))
-  processingGroup <-  dplyr::full_join( processingGroup, subset(dataSODModel, select = -c(Model)), by = "groupIndices")
-
-
-  # check length of points
-  countList <- countMinimumValue(processingFeature, MIN_FEATURE )
-  processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern])
-  subdt <- processingGroup[groupIndices %in% countList[[2]]$groupIndices, .(groupIndices, N, enoughPeaks)]
-  processingGroup[subdt, ':=' (N = countList[[2]]$N,
-                               enoughPeaks = countList[[2]]$enoughPeaks), on = "groupIndices"]
-
-
-  discardCompoundFitting <- data.table::uniqueN(processingGroup[enoughPeaks %in% FALSE, groupIndices])
-  remainingCompoundFitting <- data.table::uniqueN(processingGroup[enoughPeaks %in% TRUE, groupIndices])
-
-  #message(discardCompoundFitting, " Compounds have a low R^2 (less than ", R2min, ") and will be excluded.\n")
-
-
-    #### Combining ####
-    # discardCompoundFitting <- dplyr::n_distinct(processing |> filter(aboveCorFit == FALSE) %>% dplyr::select(groupIndices))
-    # savedCompounds <- n_distinct(processing |> filter(aboveCorFit == TRUE, enoughPeaks %in% TRUE) %>% dplyr::select(groupIndices))
-    # message(savedCompounds, " of ", discardCompoundFitting, " Features have a R^2 above ", R2SOD, " after second outlier detection\n--------------------------------------------------------\n")
-
-  #   # combine data for both outlier detections
-  #   dataModelCombined <- copy(dataModel)
-  #   if (n_distinct(dataConsSOD[enoughPeaks %in% TRUE, groupIndices]) > 0) {
-  #     dataModelCombined <- dataModelCombined[
-  #       groupIndices %in% dataModelSOD[aboveMinCor %in% TRUE, groupIndices],
-  #       ":="(Model = dataModelSOD[aboveMinCor %in% TRUE, Model],
-  #         correlation = dataModelSOD[aboveMinCor %in% TRUE, correlation],
-  #         aboveMinCor = dataModelSOD[aboveMinCor %in% TRUE, aboveMinCor],
-  #         fittingModel = dataModelSOD[aboveMinCor %in% TRUE, fittingModel])
-  #     ]
-  #   }
-  # } else {
-  #   processing$outlierSOD <- NA
-  #   dataSOD <- NULL
-  #   dataConsSOD <- NULL
-  #   dataModelSOD <- NULL
-  #   dataModelCombined <- copy(dataModel)
-  # }
-  # assert_that(n_distinct(processList$processing |> filter(aboveMinCor %in% TRUE) |> dplyr::select(groupIndices)) == remainingCompoundFitting + savedCompounds )
-
-  message("Data set with ", data.table::uniqueN(processingGroup[enoughPeaks %in% TRUE, groupIndices]), " Compounds ", "\n--------------------------------------------------------\n")
-
-  ## find linear Range
+  ##### find linear Range ####
   message("Determining linear range\n--------------------------------------------------------\n")
 
-  cutoff <- dplyr::full_join(cutoff, processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% FALSE, groupIndices]])
-  processingFeature <- processingFeature[groupIndices %in% processingGroup[enoughPeaks %in% TRUE, groupIndices]]
+  cutoff <- dplyr::full_join(cutoff,
+                             processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% FALSE, groupIndices]],
+                             by = colnames(processingFeature))
+  processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE, groupIndices]]
 
   #dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[aboveMinCor %in% TRUE, groupIndices]]
-  dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[ , groupIndices]]
-  dataLin$fittingModel <- sapply(dataLin$groupIndices, function(i) dataSODModel$Model[dataSODModel$groupIndices %in% i])
+  #dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[ , groupIndices]]
+  #dataLin$fittingModel <- sapply(dataLin$groupIndices, function(i) dataSODModel$Model[dataSODModel$groupIndices %in% i])
 
   startTime = Sys.time()
-  cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+  #cl <- parallel::makeCluster(getOption("cl.cores", nCORE), type = "PSOCK")
+
+
   dataLinearRange <- my_fcn(
-    cl,
-    xs = 1 : data.table::uniqueN(dataLin$groupIndices),
-    inputData = dataLin,
+    #cl = myCluster,
+    xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
+    inputData = processingFeature,
     func = findLinearRange,
     x = X,
     y = Y,
-    modelObject = "fittingModel",
-    MIN_FEATURE = MIN_FEATURE,
-    res = res
-  ) #|>
-    #unlist(recursive = F)
-    #plyr::ldply(.id = NULL)
+    min_feature = MIN_FEATURE,
+    sd_res_factor = LR_SD_RES_FACTOR
+  )
 
-parallel::stopCluster(cl)
-endTime = Sys.time()
-total <- endTime - startTime
-print(total)
-message("fitting: ",endTime - startTime)
+  closeAllConnections()
+  message("FindLinear Range: ",format(round(difftime(Sys.time(), startTime),2)))
+
+  Y = "Y_LR"
 
   dataLRFeature = data.table::data.table(purrr::map(dataLinearRange,1)|> plyr::ldply(.id = NULL))
   dataLRGroup = data.table::data.table(purrr::map(dataLinearRange,2)|> plyr::ldply(.id = NULL))
-  dataLRGroup$aboveR2 = dataLRGroup$R2 >= R2min
+  dataLRGroup$aboveR2 = dataLRGroup$R2 >= R2_MIN
   dataLRGroup$LRFlag[dataLRGroup$aboveR2 %in% FALSE] = "small R2"
   dataLRGroup$enoughPointsWithinLR[dataLRGroup$aboveR2 %in% FALSE] = FALSE
 
@@ -524,28 +490,41 @@ message("fitting: ",endTime - startTime)
                                         Comment = paste0(Comment, "_small R2")) , on = "IDintern"]
 
 
-  processingFeature <- data.table::data.table(dplyr::full_join(dataLRFeature, processingFeature[!IDintern %in% dataLRFeature$IDintern]))
+  processingFeature <- data.table::data.table(dplyr::full_join(dataLRFeature, processingFeature[!IDintern %in% dataLRFeature$IDintern], by = colnames(processingFeature)))
   processingGroup <-  dplyr::full_join(processingGroup, dataLRGroup, by = "groupIndices")
 
+  message("For ", data.table::uniqueN(processingGroup |> dplyr::filter(aboveR2 %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,
+          " a linear Range with a minimum of ", MIN_FEATURE, " Points and an R^2 higher or equal ", R2_MIN," were found\n")
+
+  countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
+  processingFeature <- countList[[1]]
+  processingGroup <- full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+
+
+
+  # check length of points
+  checkData <- checkLength()
+  processingFeature <- checkData[[1]]
+  cutoff <- checkData [[2]]
+
+######
 
 
 
 
   # assert_that(n_distinct(processList$processing$groupIndices) == rawCompounds)
 
-  message("For ", data.table::uniqueN(processingGroup[aboveR2 %in% TRUE,groupIndices]), " Features a linear Range with a minimum of ", MIN_FEATURE, " Points and an R^2 higher or equal ", R2min," were found.\n--------------------------------------------------------\n")
-
   #
   # <!-- plotSignals(DAT = processList$Preprocessed$dataLinearRange %>% filter(ID %in% metabolitesRandomSample), x = "DilutionPoint", y = "IntensityNorm") -->
   #
   message("summarize all informations in one list\n--------------------------------------------------------\n")
 
- # processing <- full_join(processing, dataPrep[!groupIndices %in% dropNA$groupIndices, -c("pch", "color", "N", "Comment", "enoughPeaks")],
-#    by = c("groupIndices", "IDintern", "Intensity", "X", "IntensityNorm", "DilutionPoint", "IntensityLog", "ConcentrationLog")
-#  )
+  # processing <- full_join(processing, dataPrep[!groupIndices %in% dropNA$groupIndices, -c("pch", "color", "N", "Comment", "enoughPeaks")],
+  #    by = c("groupIndices", "IDintern", "Intensity", "X", "IntensityNorm", "DilutionPoint", "IntensityLog", "ConcentrationLog")
+  #  )
 
 
- # processing <- full_join(x = processingFeature, y = dataPrep[groupIndices %in% dropNA$groupIndices, -c("N")], by = names("y"))
+  # processing <- full_join(x = processingFeature, y = dataPrep[groupIndices %in% dropNA$groupIndices, -c("N")], by = names("y"))
 
 
   data.table::setorder(processingFeature, DilutionPoint)
