@@ -107,6 +107,9 @@ marked as linear to consider this signal as linear. Default to 6, according to E
 which are lower than \code{LR_sd_res_factor} times residual standard deviation are considered as linear.
 Default to 2.}
 
+\item{R2_min}{Numeric, ranges from 0 to 1; Minimum coefficient of determination,
+which needs to be reached to consider the signal as linear. Default to 0.9}
+
 \item{calculate_concentration}{Boolean; For targeted analysis. Should the
 concentration of samples in regard to the linear regression equation be calculated? Default is \code{TRUE}.}
 
@@ -127,10 +130,6 @@ which should be generated.Default all files will be generated and stored:
 
 \item{output_dir}{Only necessary if \code{get_output} is \code{TRUE}.
 custom path, where the output files should be stored.}
-
-\item{FOD_R2_min, SOD_R2_min}{Only necessary if \code{first_outlier_detection}/\code{second_outlier_detection} is \code{TRUE} (default).
-Numeric, ranges from 0 to 1; Minimum coefficient of determination,
-which needs to be reached to consider the signal as linear. Default to 0.9}
 }
 \description{
 \code{AssessLinearity()} cleans up a data set to only signals which
