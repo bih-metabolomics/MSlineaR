@@ -44,7 +44,7 @@
 #' Integer; Maximum value for standardized residuals of a statistically model.
 #' If a standardized residual is above this value.
 #' this point will be considered as outlier and removed for further procedere. Default to 2.
-#' @param FOD_R2_min,SOD_R2_min Only necessary if `first_outlier_detection`/`second_outlier_detection` is `TRUE` (default).
+#' @param R2_min
 #' Numeric, ranges from 0 to 1; Minimum coefficient of determination,
 #' which needs to be reached to consider the signal as linear. Default to 0.9
 #' @param trimming Boolean; Should the data be trimmed? Default to `TRUE`.
@@ -103,7 +103,6 @@ AssessLinearity <- function(
     FOD_model = c("logistic", "linear", "quadratic"),
     FOD_sdres_min = 1,
     FOD_stdres_max = 2,
-    #FOD_R2_min = 0.9,
 
     trimming = c(TRUE, FALSE)[1],
 
@@ -112,7 +111,6 @@ AssessLinearity <- function(
     SOD_model = c("logistic", "linear", "quadratic"),
     SOD_sdres_min = 1,
     SOD_stdres_max = 2,
-    #SOD_R2_min = 0.9,
 
     #linear_range
     min_feature = 6,
@@ -300,11 +298,11 @@ AssessLinearity <- function(
       groupIndices = as.integer(names(purrr::map(dataFOD, 1))),
       ModelName = purrr::map(dataFOD, 1) %>% unlist(use.names = F),
       Model = purrr::map(dataFOD, 2),
-      #RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
-      R2 = purrr::map(dataFOD, 3) %>% unlist(use.names = F)
+      RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
+      #R2 = purrr::map(dataFOD, 3) %>% unlist(use.names = F)
     )
 
-    dataFOD = purrr::map(dataFOD,5)|> plyr::ldply(.id = NULL)
+    dataFOD = purrr::map(dataFOD,4)|> plyr::ldply(.id = NULL)
 
     processingFeature <- data.table::data.table(dplyr::full_join(dataFOD, processingFeature[!IDintern %in% dataFOD$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierFOD' :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]), by = c("groupIndices"))
@@ -418,12 +416,12 @@ AssessLinearity <- function(
       groupIndices = as.integer(names(purrr::map(dataSOD, 1))),
       ModelName = purrr::map(dataSOD, 1) %>% unlist(use.names = F),
       Model = purrr::map(dataSOD, 2),
-      #RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
-      R2 = purrr::map(dataSOD, 3) %>% unlist(use.names = F)
+      RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
+      #R2 = purrr::map(dataSOD, 3) %>% unlist(use.names = F)
     )
 
     #data.table::setDT(dataSODModel)
-    dataSOD = purrr::map(dataSOD,5)|> plyr::ldply(.id = NULL)
+    dataSOD = purrr::map(dataSOD,4)|> plyr::ldply(.id = NULL)
 
     processingFeature <- data.table::data.table(dplyr::full_join(dataSOD, processingFeature[!IDintern %in% dataSOD$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierSOD' :=any(OutlierSOD %in% TRUE), groupIndices][,.(groupIndices, OutlierSOD)]), by = c("groupIndices"))

@@ -17,7 +17,6 @@ chooseModel <- function(dats,
                         SDRES_MIN = 1,
                         STDRES = 2,
                         abbr,
-                        #R2_MIN = 0.95,
                         ...){
  # .datatable.aware=TRUE
   data.table::setDT(dats)
@@ -140,7 +139,7 @@ chooseModel <- function(dats,
     "tmp" = list(
       "model.name" = gsub(pattern = "1", x = ModelName, replacement = ""),
       "model" = Model,
-      "R2" = cor(dat[color %in% "black",][[y]], predict(modelNew))^2,
+      #"R2" = cor(dat[color %in% "black",][[y]], predict(modelNew))^2,
       #"aboveMinCor" = cor(dat[color %in% "black",][[y]], predict(modelNew))^2 > R2_MIN,
       #"aic" = aic$AIC[ row.names(aic) %in% ModelName],
       dat = dat
