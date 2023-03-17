@@ -17,7 +17,9 @@ AssessLinearity(
   column_Y = c("Area", "Height", "Intensity")[1],
   transform = c(TRUE, FALSE)[1],
   transform_x = "log",
+  inverse_x = "exp",
   transform_y = "log",
+  inverse_y = "exp",
   first_outlier_detection = c(TRUE, FALSE)[1],
   FOD_model = c("logistic", "linear", "quadratic"),
   FOD_sdres_min = 1,
@@ -32,6 +34,7 @@ AssessLinearity(
   R2_min = 0.9,
   calculate_concentration = c(TRUE, FALSE)[1],
   get_linearity_status_samples = c(TRUE, FALSE)[1],
+  Batch_harmonization = c(TRUE, FALSE)[1],
   nCORE = 1,
   get_output = c(TRUE, FALSE)[1],
   output_name = NULL,
@@ -115,6 +118,11 @@ concentration of samples in regard to the linear regression equation be calculat
 
 \item{get_linearity_status_samples}{Boolean; If \code{TRUE} (default) the samples
 will be differentiated into linear and non linear according to their serial diluted/concentrated signal.}
+
+\item{Batch_harmonization}{Boolean; If \code{TRUE} (default),
+only serial diluted curves will be considered if they have a linear Range in
+all Batches, otherwise they will be excluded. If set to \code{FALSE} all curves with
+a linear range will be taken but flagged that in one or more batches linearity is missing}
 
 \item{nCORE}{Integer; Number of cores used for parallelization. Default to 1.}
 

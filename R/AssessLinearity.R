@@ -69,6 +69,10 @@
 #' custom path, where the output files should be stored.
 #' @param nCORE Integer; Number of cores used for parallelization. Default to 1.
 #' @param analysis_type String; was the analysis "targeted" or "untargeted"?
+#' @param Batch_harmonization Boolean; If `TRUE` (default),
+#' only serial diluted curves will be considered if they have a linear Range in
+#' all Batches, otherwise they will be excluded. If set to `FALSE` all curves with
+#' a linear range will be taken but flagged that in one or more batches linearity is missing
 #'
 #'
 #' @importFrom  dplyr %>%
@@ -96,7 +100,9 @@ AssessLinearity <- function(
     #transform_data
     transform = c(TRUE, FALSE)[1],
     transform_x = "log",
+    inverse_x = "exp",
     transform_y = "log",
+    inverse_y = "exp",
 
     #first_outlier_detection
     first_outlier_detection = c(TRUE, FALSE)[1],
@@ -121,6 +127,8 @@ AssessLinearity <- function(
 
     get_linearity_status_samples = c(TRUE, FALSE)[1],
 
+    Batch_harmonization = c(TRUE, FALSE)[1],
+
     nCORE = 1,
 
     get_output = c(TRUE, FALSE)[1],
@@ -139,7 +147,9 @@ AssessLinearity <- function(
   COLNAMES = c(ID = column_ID, Batch = column_Batch, Sample_type = column_sample_type, X = column_X,Y = column_Y)
   TRANSFORM = transform
   TRANSFORM_X = transform_x
+  INVERSE_X = inverse_x
   TRANSFORM_Y = transform_y
+  INVERSE_Y = inverse_y
   FOD = first_outlier_detection
   FOD_MODEL = FOD_model
   FOD_SDRES_MIN = FOD_sdres_min
@@ -154,6 +164,7 @@ AssessLinearity <- function(
   MIN_FEATURE = min_feature
   LR_SD_RES_FACTOR = LR_sd_res_factor
   R2_MIN = R2_min
+  BATCH_HARMONIZATION = Batch_harmonization
   CAL_CONC = calculate_concentration
   GET_LR_STATUS = get_linearity_status_samples
   nCORE = nCORE
@@ -231,6 +242,7 @@ AssessLinearity <- function(
 
   dataPrep <- prepareData(processingFeature)
 
+
   processingFeature <- data.table::copy(dataPrep)
 
   step = 1
@@ -255,9 +267,21 @@ AssessLinearity <- function(
   )
 
   # check length of points
-  checkData <- checkLength()
-  processingFeature <- checkData[[1]]
-  cutoff <- checkData [[2]]
+
+  nCompoundsNew <- data.table::uniqueN(processingGroup[enoughPeaks_1 %in% TRUE], by = c("ID"))
+  nReplicatesNew <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("Batch"))
+  nSeriesNew <- data.table::uniqueN(processingGroup[enoughPeaks_1 %in% TRUE], by = c("groupIndices"))
+
+  message(paste0("Removed ", nSeries - nSeriesNew, " ", Series, " with less than ", MIN_FEATURE, " Signals.","\n",
+                 "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series),"\n--------------------------------------------------------\n")
+
+  stopifnot(exprs = {
+    "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("ID")) > 0
+    "all Dilution/Concentration-Series were removed" = nSeriesNew - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("groupIndices")) > 0
+  })
+
+  cutoff <- processingFeature[groupIndices %in% processingGroup[enoughPeaks_1 %in% FALSE, groupIndices]]
+  processingFeature <- processingFeature[groupIndices %in% processingGroup[enoughPeaks_1 %in% TRUE, groupIndices]]
 
   step = step + 1
 
@@ -270,11 +294,11 @@ AssessLinearity <- function(
     # prints recorded time
     startTime = Sys.time()
 
-    cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+    #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
     #on.exit(parallel::stopCluster(cl))
     #options(future.globals.onReference = "error")
     dataFOD <- my_fcn(
-      cl,
+      #cl,
       #exportObjects = c("chooseModel", "X","Y", "abbr", "R2min"),
       xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
@@ -282,27 +306,27 @@ AssessLinearity <- function(
       y = Y,
       func = chooseModel,
       abbr = "FOD",
-      R2_MIN = FOD_R2_MIN,
+      #R2_MIN = FOD_R2_MIN,
       model = FOD_MODEL,
       SDRES_MIN = FOD_SDRES_MIN,
       STDRES = FOD_STDRES_MAX
     ) |> unlist(recursive = F)
 
-    parallel::stopCluster(cl)
+    #parallel::stopCluster(cl)
+    closeAllConnections()
 
-    endTime = Sys.time()
-    message("FOD: ",format(round(difftime(endTime, startTime),2)))
+    message("FOD: ",format(round(difftime(Sys.time(), startTime),2)))
     Y = "Y_FOD"
 
     dataFODModel <- tibble::tibble(
       groupIndices = as.integer(names(purrr::map(dataFOD, 1))),
       ModelName = purrr::map(dataFOD, 1) %>% unlist(use.names = F),
       Model = purrr::map(dataFOD, 2),
-      RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
+      #RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
       #R2 = purrr::map(dataFOD, 3) %>% unlist(use.names = F)
     )
 
-    dataFOD = purrr::map(dataFOD,4)|> plyr::ldply(.id = NULL)
+    dataFOD = purrr::map(dataFOD,3)|> plyr::ldply(.id = NULL)
 
     processingFeature <- data.table::data.table(dplyr::full_join(dataFOD, processingFeature[!IDintern %in% dataFOD$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierFOD' :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]), by = c("groupIndices"))
@@ -316,8 +340,9 @@ AssessLinearity <- function(
     # check length of points
     checkData <- checkLength()
     processingFeature <- checkData[[1]]
-    cutoff <- checkData [[2]]
+    cutoffNew <- checkData [[2]]
 
+    cutoff <- dplyr::full_join(cutoff, cutoffNew, by = colnames(cutoff))
 
     step = step + 1
 
@@ -329,9 +354,9 @@ AssessLinearity <- function(
     message("Trim data: first Dilution should have the smallest Intensity and last point should have the biggest.")
 
     startTime = Sys.time()
-    cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+    #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
     dataTrim <- my_fcn(
-      cl,
+     # cl,
       xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
       func = trimEnds,
@@ -340,7 +365,8 @@ AssessLinearity <- function(
     ) |>
       plyr::ldply(.id = NULL)
 
-    parallel::stopCluster(cl)
+    #parallel::stopCluster(cl)
+    closeAllConnections()
 
     message("Trimming: ",format(round(difftime(Sys.time(), startTime),2)))
 
@@ -366,7 +392,9 @@ AssessLinearity <- function(
     # check length of points
     checkData <- checkLength()
     processingFeature <- checkData[[1]]
-    cutoff <- checkData [[2]]
+    cutoffNew <- checkData [[2]]
+
+    cutoff <- dplyr::full_join(cutoff, cutoffNew, by = colnames(cutoff))
 
     step = step + 1
     # assert_that(n_distinct(dataTrim$groupIndices) == n_distinct(processing$groupIndices))
@@ -380,9 +408,6 @@ AssessLinearity <- function(
     message("Second Outlier Detection\n")
 
 
-    cutoff <- dplyr::full_join(cutoff,
-                               processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% FALSE, groupIndices]],
-                               by = colnames(processingFeature))
     processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE, groupIndices]]
 
     startTime = Sys.time()
@@ -395,7 +420,7 @@ AssessLinearity <- function(
       y = Y,
       func = chooseModel,
       abbr = "SOD",
-      R2_MIN = SOD_R2_MIN,
+      #R2_MIN = SOD_R2_MIN,
       model = SOD_MODEL,
       SDRES_MIN = SOD_SDRES_MIN,
       STDRES = SOD_STDRES_MAX
@@ -416,12 +441,12 @@ AssessLinearity <- function(
       groupIndices = as.integer(names(purrr::map(dataSOD, 1))),
       ModelName = purrr::map(dataSOD, 1) %>% unlist(use.names = F),
       Model = purrr::map(dataSOD, 2),
-      RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
+      #RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
       #R2 = purrr::map(dataSOD, 3) %>% unlist(use.names = F)
     )
 
     #data.table::setDT(dataSODModel)
-    dataSOD = purrr::map(dataSOD,4)|> plyr::ldply(.id = NULL)
+    dataSOD = purrr::map(dataSOD,3)|> plyr::ldply(.id = NULL)
 
     processingFeature <- data.table::data.table(dplyr::full_join(dataSOD, processingFeature[!IDintern %in% dataSOD$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierSOD' :=any(OutlierSOD %in% TRUE), groupIndices][,.(groupIndices, OutlierSOD)]), by = c("groupIndices"))
@@ -435,20 +460,76 @@ AssessLinearity <- function(
     # check length of points
     checkData <- checkLength()
     processingFeature <- checkData[[1]]
-    cutoff <- checkData [[2]]
+    cutoffnew <- checkData [[2]]
 
+    cutoff <- dplyr::full_join(cutoff, cutoffNew, by = colnames(cutoff))
 
     step = step + 1
 
   }
 
+  #### positive association ####
+{
+    message("Check if data curves have a positive slope")
+
+
+
+    startTime = Sys.time()
+    #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+    dataTrimPos <- my_fcn(
+      #cl,
+      xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
+      inputData = processingFeature,
+      func = trim_pos_associated,
+      x = X,
+      y = Y,
+      MIN_Feature = MIN_FEATURE
+    ) |>
+      plyr::ldply(.id = NULL)
+
+    closeAllConnections()
+
+    message("TrimmPos: ",format(round(difftime(Sys.time(), startTime),2)))
+
+    Y = "Y_trimPos"
+
+    processingFeature <- data.table::data.table(dplyr::full_join(dataTrimPos,
+                                                                 processingFeature[!IDintern %in% dataTrimPos$IDintern],
+                                                                 by = colnames(processingFeature)))
+    processingGroup <- dplyr::full_join(processingGroup,
+                                        unique(data.table::copy(processingFeature)[,'trimPos' :=any(trimPos %in% TRUE),groupIndices][,.(groupIndices, trimPos)]),
+                                        by = "groupIndices")
+
+    TrimPosGroups <- data.table::uniqueN(dataTrimPos |> dplyr::filter(trimPos %in% TRUE) %>% dplyr::select(groupIndices))
+    TrimPosFeatures <- data.table::uniqueN(dataTrimPos |> dplyr::filter(trimPos %in% TRUE) |> dplyr::select(IDintern))
+
+
+    countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
+    processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern], by = colnames(processingFeature))
+    processingGroup <- full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+
+    message("In total ", TrimPosFeatures," ",  Signals," in ", TrimPosGroups, " ",Series," were removed.\n")
+
+    # check length of points
+    checkData <- checkLength()
+    processingFeature <- checkData[[1]]
+    cutoffnew <- checkData [[2]]
+
+    cutoff <- dplyr::full_join(cutoff, cutoffNew, by = colnames(cutoff))
+
+    step = step + 1
+    # assert_that(n_distinct(dataTrim$groupIndices) == n_distinct(processing$groupIndices))
+
+
+
+}
+
+
+
 
   ##### find linear Range ####
-  message("Determining linear range\n--------------------------------------------------------\n")
+{  message("Determining linear range\n--------------------------------------------------------\n")
 
-  cutoff <- dplyr::full_join(cutoff,
-                             processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% FALSE, groupIndices]],
-                             by = colnames(processingFeature))
   processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE, groupIndices]]
 
   #dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[aboveMinCor %in% TRUE, groupIndices]]
@@ -503,9 +584,77 @@ AssessLinearity <- function(
   # check length of points
   checkData <- checkLength()
   processingFeature <- checkData[[1]]
-  cutoff <- checkData [[2]]
+  cutoffnew <- checkData [[2]]
+
+  cutoff <- dplyr::full_join(cutoff, cutoffNew, by = colnames(cutoff))
+}
 
 ######
+  message("check batch reproducibility")
+
+  if(BATCH_HARMONIZATION == TRUE){
+
+    processingGroup <-   processingGroup[, enoughPeak_allBatches := all(get(paste0("enoughPeaks_", step)) %in% TRUE), by = ID]
+    conflictBatches <- processingGroup[enoughPeak_allBatches %in% FALSE]
+    processingFeature$Y_allBatches <- processingFeature$Y_LR
+
+    if(BATCH_HARMONIZATION == TRUE){
+      processingFeature$Y_allBatches[groupIndices %in% conflictBatches$groupIndices] <- NA
+      processingFeature$color[groupIndices %in% conflictBatches$groupIndices] <- "grey"
+      }
+
+    processingFeature$Comment[groupIndices %in% conflictBatches$groupIndices] <- paste(processingFeature$Comment[groupIndices %in% conflictBatches$groupIndices],"_notEnoughPeaksInAllBatches")
+
+    message(data.table::uniqueN(conflictBatches$ID), " ", Compounds, " were excluded, because they do not show repeatable ", Series, ".\n")
+    message("Final Data set with ", data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, ID]), " ", Compounds,
+            " and ", data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, Batch]), " Batch(es) -> ",
+            data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, groupIndices]), " ", Series,"\n--------------------------------------------------------\n")
+
+  }
+
+#### Back calculation Concentration
+  if(TYPE %in% "targeted"){
+
+      getConc(dats = processingFeature, processingFeature, x, y)
+
+  }
+
+
+
+
+
+  #### biological samples ####
+  if(CAL_CONC %in% TRUE | GET_LR_STATUS %in% TRUE){
+
+    if(TYPE %in% "targeted" & CAL_CONC %in% TRUE){
+      ## Calibrants
+      Backcalc <- getConc(dats = data_tbl_cal_reg, datCal, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area.CalInput"))
+
+
+    }
+
+
+
+  SampleFeature <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% SAMPLE]
+
+
+  datCal = targetedMstarsCal$summaryFDS
+  datCalFeature <- targetedMstarsCal$summaryFFDS
+
+
+
+
+  data_Sample <- dplyr::left_join(data_tbl_Sample, unique(data_tbl_cal_reg[,c("Compound", "Batch", "all.R2", "all.LLOQ", "all.ULOQ")]), by = c("Compound", "Batch"))
+  data_Sample <- dplyr::left_join(data_Sample, unique(datCal[,c("groupIndices","Compound", "Batch","LRStartY", "LREndY", "LRStartX", "LREndX","Intercept", "slope", "R2")]),by = c("Compound", "Batch") )
+
+
+  data_Sample$Status_LR <-  data.table::between(lower = data_Sample$LRStartY, x = data_Sample[, c("Area.CorrDrift")], upper = data_Sample$LREndY, NAbounds = NA)
+  # <- MSlineaR::getLRstatus(dats = data_Sample[!is.na(data_Sample$R2)], LR_object  = targetedMstarsCal, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area.CorrDrift"))
+
+  data_Sample$Status_LR[is.na(data_Sample$ConcentrationLR)] <- NA
+
+
+  }
 
 
 
@@ -527,6 +676,13 @@ AssessLinearity <- function(
 
   data.table::setorder(processingFeature, DilutionPoint)
   #dataSummary <- getSummaryList(processingFeature)
+
+  cutoff <- dplyr::full_join(cutoffnew,
+                             processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% FALSE, groupIndices]],
+                             by = colnames(processingFeature))
+
+
+
 
   processingFeature <- dplyr::full_join(processingFeature, cutoff)
 

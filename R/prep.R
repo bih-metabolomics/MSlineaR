@@ -80,6 +80,8 @@ checkData <- function(DAT, ...){
     "Argument 'LR_sd_res_factor' needs to be from type integer and positive" = is.wholenumber(LR_SD_RES_FACTOR) & LR_SD_RES_FACTOR >= 0
     "Argument 'sample_type_serial' was not found in column 'column_sample_type'" =
         any(dat[[column_sample_type]] %in% CALIBRANTS)
+    "Argument 'R2_min' needs to be from type double and in the range between 0 and 1" =
+      data.table::between(x = R2_MIN, lower = 0, upper = 1)
 
   })
 
@@ -97,8 +99,7 @@ checkData <- function(DAT, ...){
         FOD_MODEL %in% c('linear', 'logistic', 'quadratic')
       "Argument 'FOD_sdres_min' and 'FOD_stdres_max' need to be from type Integer and positive" =
         is.wholenumber(FOD_SDRES_MIN) & FOD_SDRES_MIN >= 0  & is.wholenumber(FOD_STDRES_MAX) & FOD_STDRES_MAX >= 0
-      "Argument 'FOD_R2_min' needs to be from type double and in the range between 0 and 1" =
-        data.table::between(x = FOD_R2_MIN, lower = 0, upper = 1)
+
     })
   }
 
@@ -109,8 +110,7 @@ checkData <- function(DAT, ...){
         SOD_MODEL %in% c('linear', 'logistic', 'quadratic')
       "Argument 'SOD_sdres_min' and 'SOD_stdres_max' need to be from type Integer and positive" =
         is.wholenumber(SOD_SDRES_MIN) & SOD_SDRES_MIN >= 0  & is.wholenumber(SOD_STDRES_MAX) & SOD_STDRES_MAX >= 0
-      "Argument 'SOD_R2_min' needs to be from type double and in the range between 0 and 1" =
-        data.table::between(x = SOD_R2_MIN, lower = 0, upper = 1)
+
     })
   }
 

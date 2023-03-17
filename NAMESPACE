@@ -2,6 +2,7 @@
 
 export(AssessLinearity)
 export(checkData)
+export(checkLength)
 export(chooseModel)
 export(countMinimumValue)
 export(findLinearRange)

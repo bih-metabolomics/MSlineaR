@@ -16,7 +16,7 @@ countMinimumValue <- function(DAT, MIN_FEATURE = 3, step, y){
 
   #N <- paste0("N_",step)
   #enoughPeaks <- paste("enoughPeaks_",step)
-  dat <- unique(dat[, N := sum(color %in% "black"),groupIndices][ , enoughPeaks := ifelse( N >= MIN_FEATURE, TRUE, FALSE)#,
+  dat <- unique(dat[, N := sum(!is.na(get(y))),groupIndices][ , enoughPeaks := ifelse( N >= MIN_FEATURE, TRUE, FALSE)#,
                                                      #Comment = ifelse( N >= MIN_FEATURE, "EnoughPeaks", "notEnoughPeaks")
                                                      ][
                                                        ,list(groupIndices,ID, Batch,  N, enoughPeaks)])
@@ -32,26 +32,37 @@ countMinimumValue <- function(DAT, MIN_FEATURE = 3, step, y){
     return(list(DAT, dat))
 }
 
+#' Title
+#'
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 checkLength <- function(...){
+  peaksOld <- ifelse(step > 1, paste0("enoughPeaks_", step-1), "enoughPeaks")
 
-  nCompoundsOld <- data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE], by = c("ID"))
+  peaksNew <- paste0("enoughPeaks_", step)
+
+  nCompoundsOld <- data.table::uniqueN(processingGroup[get(peaksOld) %in% TRUE], by = c("ID"))
   nReplicatesOld <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("Batch"))
-  nSeriesOld <- data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE], by = c("groupIndices"))
+  nSeriesOld <- data.table::uniqueN(processingGroup[get(peaksOld) %in% TRUE], by = c("groupIndices"))
 
-  nCompoundsNew <- data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% TRUE], by = c("ID"))
+  nCompoundsNew <- data.table::uniqueN(processingGroup[get(peaksNew) %in% TRUE], by = c("ID"))
   nReplicatesNew <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("Batch"))
-  nSeriesNew <- data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% TRUE], by = c("groupIndices"))
+  nSeriesNew <- data.table::uniqueN(processingGroup[get(peaksNew) %in% TRUE], by = c("groupIndices"))
 
   message(paste0("Removed ", nSeriesOld - nSeriesNew, " ", Series, " with less than ", MIN_FEATURE, " Signals.","\n",
                  "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series),"\n--------------------------------------------------------\n")
 
   stopifnot(exprs = {
-    "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% FALSE], by = c("ID")) > 0
-    "all Dilution/Concentration-Series were removed" = nSeriesNew - data.table::uniqueN(processingGroup[get(paste0("enoughPeaks_", step)) %in% FALSE], by = c("groupIndices")) > 0
+    "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[get(peaksNew) %in% FALSE], by = c("ID")) > 0
+    "all Dilution/Concentration-Series were removed" = nSeriesNew - data.table::uniqueN(processingGroup[get(peaksNew) %in% FALSE], by = c("groupIndices")) > 0
   })
 
-  cutoff <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step)) %in% FALSE, groupIndices]]
-  processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step)) %in% TRUE, groupIndices]]
+  cutoff <- processingFeature[groupIndices %in% processingGroup[get(peaksNew) %in% FALSE, groupIndices]]
+  processingFeature <- processingFeature[groupIndices %in% processingGroup[get(peaksNew) %in% TRUE, groupIndices]]
 
   return(list(processingFeature, cutoff))
 

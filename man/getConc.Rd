@@ -7,7 +7,9 @@
 getConc(
   dats,
   datCal,
-  COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area")
+  COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area"),
+  INVERSE_Y,
+  TRANSFORM_Y
 )
 }
 \arguments{

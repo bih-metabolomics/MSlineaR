@@ -56,7 +56,7 @@ getLRstatus <- function(LR_object, dats, COLNAMES = c(ID = "Compound", Replicate
 #' @export
 #'
 #' @examples
-getConc <- function(dats, datCal, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area")){
+getConc <- function(dats, datCal, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area"), INVERSE_Y, TRANSFORM_Y){
 
   setDT(dats)
   setDT(datCal)
@@ -72,6 +72,8 @@ getConc <- function(dats, datCal, COLNAMES = c(ID = "Compound", Replicate = "Bat
 
   #y = b0 + b1*x
   dat[, ConcentrationLR := exp((log(get(COLNAMES[["Y"]])) - Intercept)/slope), by = .I]
+
+  #rlang::eval_tidy(rlang::parse_expr(
 
   data.table::setnames(dat,new =  COLNAMES[1:2], old = c(names(datCal)[2], names(datCal)[3]))
 

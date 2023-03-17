@@ -13,7 +13,7 @@ trimEnds <- function(dats, y="YLog", x="XLog", thresh=0){
 
   dats$trim <- FALSE
   dats$trim[is.na(dats[[y]])] <- NA # | dats$OutlierFOD %in% TRUE
-  dat <- data.table::setorder(dats,x)[!is.na(get(y))]# & !OutlierFOD %in% TRUE]
+  dat <- data.table::setorderv(dats,x)[!is.na(get(y))]# & !OutlierFOD %in% TRUE]
 
   #browser()
   if (data.table::last(dat[[y]]) != max(dat[[y]])) {
@@ -87,17 +87,19 @@ trim_pos_associated <- function(dats, y, x, MIN_Feature, ...){
 
   dats$trimPos <- FALSE
   dats$trimPos[is.na(dats[[y]])] <- NA # | dats$OutlierFOD %in% TRUE
-  dat <- data.table::setorder(dats,x)[!is.na(get(y))]# & !OutlierFOD %in% TRUE]
+  dat <- data.table::setorderv(dats,x)[!is.na(get(y))]# & !OutlierFOD %in% TRUE]
 
 
   IsPositivAssociated =rle(c(dat[[y]][1] < dat[[y]][2], (dat[[y]][-1] - data.table::shift(dat[[y]], 1, type = "lag")[-1]) > 0))
-  if(any(IsPositivAssociated$values) & IsPositivAssociated$lengths >= MIN_Feature){
+  if(any(IsPositivAssociated$values %in% TRUE & IsPositivAssociated$lengths >= MIN_Feature)){
 
-    if(length(max(IsPositivAssociated$lengths[IsPositivAssociated$values %in% TRUE])) ==1 ){
+    if(length(max(IsPositivAssociated$lengths[IsPositivAssociated$values %in% TRUE])) == 1 ){
       PA_TRUE_length_max <- max(IsPositivAssociated$lengths[IsPositivAssociated$values %in% TRUE])
       PA_TRUE_length_max_pos <- which(IsPositivAssociated$lengths %in% PA_TRUE_length_max)
 
-      PA_TRUE_range <- c((cumsum(IsPositivAssociated$lengths)[PA_TRUE_length_max_pos-1] +1):cumsum(IsPositivAssociated$lengths)[PA_TRUE_length_max_pos])
+      rangeStart = ifelse(PA_TRUE_length_max_pos == 1, 1, cumsum(IsPositivAssociated$lengths)[PA_TRUE_length_max_pos-1] +1)
+
+      PA_TRUE_range <- c(rangeStart:cumsum(IsPositivAssociated$lengths)[PA_TRUE_length_max_pos])
 
       exspected_min <- min(PA_TRUE_range)
       exspected_max <- max(PA_TRUE_range)
@@ -108,7 +110,7 @@ trim_pos_associated <- function(dats, y, x, MIN_Feature, ...){
         last_min <- which(dat[[y]] %in% min(dat[[y]][exspected_max:which.max(dat[[y]])]))
         dat <- dat[get(y) >= dat[last_min, get(y)],
                    ':=' (trimPos = TRUE,
-                         Comment = paste("trimPos",dat$Comment, sep = "_"))]
+                         Comment = paste(Comment,"trimPos", sep = "_"))]
 
       }
 
@@ -118,9 +120,11 @@ trim_pos_associated <- function(dats, y, x, MIN_Feature, ...){
         first_max <- which(dat[[y]] %in% max(dat[[y]][1: exspected_min]))
         dat <- dat[get(y) <= dat[first_max, get(y)],
                    ':=' (trimPos = TRUE,
-                         Comment = paste("trimPos",dat$Comment, sep = "_"))]
+                         Comment = paste(Comment,"trimPos", sep = "_"))]
 
       }
+
+      #if(PA_TRUE_length_max == )
 
 
 
