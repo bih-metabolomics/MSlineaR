@@ -4,20 +4,20 @@
 \alias{getConc}
 \title{Title}
 \usage{
-getConc(
-  dats,
-  datCal,
-  COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area"),
-  INVERSE_Y,
-  TRANSFORM_Y
-)
+getConc(dats, datCal, y, INVERSE_Y)
 }
 \arguments{
-\item{dats}{samples compare to the dilution series}
+\item{dats}{data table with information about the biological samples.
+Required columns are IDintern, y, groupIndices.It is necessary
+that the columns in dats and datCal have the same column names and that the
+column groupIndices is compatible between samples and dilution/concentration curve data.}
 
-\item{datCal}{\link{output object from AssessLinearity function}$summaryFDS}
+\item{datCal}{data table with dilution/concentration curve information of the linearity.
+Required columns are groupIndices, Intercept and slope. It is necessary
+that the columns in dats and datCal have the same column names and that the
+column groupIndices is compatible between samples and dilution/concentration curve data.}
 
-\item{COLNAMES}{}
+\item{INVERSE_Y}{}
 }
 \description{
 Title

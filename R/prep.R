@@ -55,7 +55,8 @@ checkData <- function(DAT, ...){
 
   data.table::setorderv(dat, c(COLNAMES[["ID"]], COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]))
   dat[ , IDintern := paste0("s", 1:.N)]
-  dat <- dat[ , c( "IDintern", COLNAMES[["ID"]], COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]), with = F]
+  dat[ , groupIndices := .GRP ,by = c(COLNAMES[["ID"]], COLNAMES[["Batch"]])]
+  dat <- dat[ , c( "IDintern", "groupIndices", COLNAMES[["ID"]], COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]), with = F]
 
   # tests for Input parameter
 
@@ -144,12 +145,12 @@ is.wholenumber <-
 prepareData <- function(dat,...){
 
   stopifnot(exprs = {
-    "data need to have 6 columns" = dim(dat)[2] == 6
+    "data need to have 7 columns" = dim(dat)[2] == 7
     })
 data.table::setDT(dat)
   processed <- data.table::copy(dat)
   # rename
-  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern", "ID","Sample.Type", "Batch", "X", "Y"))
+  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "ID","Sample.Type", "Batch", "X", "Y"))
 
   data.table::setorderv(processed, c("ID", "Batch", "X"))
 
@@ -157,8 +158,9 @@ data.table::setDT(dat)
   processed[, ":="(#YNorm = Y / max(Y, na.rm = T) * 100,
              #Y_trans = log(Y),
              #X_trans = log(X),
-             DilutionPoint = 1:.N,
-             groupIndices = .GRP), by = c("ID", "Batch")]
+             DilutionPoint = 1:.N),
+             #groupIndices = .GRP),
+            by = c("ID", "Batch")]
 
   if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_X)){
     processed$X_trans = get(TRANSFORM_X)(processed$X)

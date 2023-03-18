@@ -1,45 +1,34 @@
 #' Title
 #'
-#' @param dats samples compare to the dilution series
-#' @param datCal output object from AssessLinearity
-#' @param COLNAMES
+#' @param dats data table with information about the biological samples.
+#' Required columns are IDintern, y, groupIndices.It is necessary
+#' that the columns in dats and datCal have the same column names and that the
+#' column groupIndices is compatible between samples and dilution/concentration curve data.
+#' @param datCal data table with dilution/concentration curve information of the linearity.
+#' Required columns are groupIndices, Intercept and slope. It is necessary
+#' that the columns in dats and datCal have the same column names and that the
+#' column groupIndices is compatible between samples and dilution/concentration curve data.
+#' @param y
 #'
 #' @return
 #' @export
 #'
 #' @examples
-getLRstatus <- function(LR_object, dats, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area")){
+getLRstatus <- function(dats, datCal, y){
 
-  datCal <- data.table(LR_object[["summaryFDS"]])
   setDT(dats)
+  setDT(datCal)
 
-  data.table::set(dats, j = COLNAMES[["Replicate"]], value = as.character(dats[[COLNAMES[["Replicate"]]]]))
-  data.table::set(dats, j = COLNAMES[["Y"]], value = as.numeric(dats[[COLNAMES[["Y"]]]]))
-
-
-  dats <- getConc(dats, datCal, COLNAMES)
-
-
-  dats$uniqueID <- 1:nrow(dats)
   dat <- data.table::copy(dats)
-  data.table::setnames(dat,old =  COLNAMES[1:2], new = c(names(datCal)[2], names(datCal)[3]))
 
-  dat <- dat[datCal, on = names(datCal)[2:3]]
+  dat <- dat[datCal, on = "groupIndices"]
+
+  dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[[y]], upper = dat$LREndY)
 
 
-  #if(LR_object$Parameters$LOG_TRANSFORM %in% TRUE){
+  dats <- dats[dat[ ,.( IDintern,LRFlag, Status_LR, LRStartY, LREndY)], on = "IDintern"]
 
-   # dat$Status_LR = data.table::between(lower = exp(dat$LRStartY), x = dat[, get(COLNAMES[["Y"]])], upper = exp(dat$LREndY))
-
-    #} else{
-
-      dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[, get(COLNAMES[["Y"]])], upper = dat$LREndY)
-  #}
-
-  data.table::setnames(dat,new =  COLNAMES[1:2], old = c(names(datCal)[2], names(datCal)[3]))
-
-  dats <- dats[dat[ ,.(uniqueID, LRFlag, Status_LR)], on = "uniqueID"]
-  return(dats[, uniqueID := NULL])
+  return(dats)
 
 }
 
@@ -48,37 +37,41 @@ getLRstatus <- function(LR_object, dats, COLNAMES = c(ID = "Compound", Replicate
 
 #' Title
 #'
-#' @param dats samples compare to the dilution series
-#' @param datCal [output object from AssessLinearity function]$summaryFDS
-#' @param COLNAMES
+#' @param dats data table with information about the biological samples.
+#' Required columns are IDintern, y, groupIndices.It is necessary
+#' that the columns in dats and datCal have the same column names and that the
+#' column groupIndices is compatible between samples and dilution/concentration curve data.
+#' @param datCal data table with dilution/concentration curve information of the linearity.
+#' Required columns are groupIndices, Intercept and slope. It is necessary
+#' that the columns in dats and datCal have the same column names and that the
+#' column groupIndices is compatible between samples and dilution/concentration curve data.
+#' @param y
+#' @param INVERSE_Y
 #'
 #' @return
 #' @export
 #'
 #' @examples
-getConc <- function(dats, datCal, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area"), INVERSE_Y, TRANSFORM_Y){
+getConc <- function(dats, datCal, y, INVERSE_Y){
 
   setDT(dats)
   setDT(datCal)
 
-  dats$uniqueID <- 1:nrow(dats)
   dat <- data.table::copy(dats)
-  data.table::setnames(dat,old =  COLNAMES[1:2], new = c(names(datCal)[2], names(datCal)[3]))
 
-  data.table::set(dat, j = COLNAMES[["Replicate"]], value = as.character(dat[[COLNAMES[["Replicate"]]]]))
-  data.table::set(dat, j = COLNAMES[["Y"]], value = as.numeric(dat[[COLNAMES[["Y"]]]]))
 
-  dat <- dat[datCal, on = names(datCal)[2:3]]
+  dat <- dat[datCal, on = "groupIndices"]
 
   #y = b0 + b1*x
-  dat[, ConcentrationLR := exp((log(get(COLNAMES[["Y"]])) - Intercept)/slope), by = .I]
+  dat[, ConcentrationLR := (get(y) - Intercept)/slope, by = .I]
 
-  #rlang::eval_tidy(rlang::parse_expr(
+  if(!is.na(INVERSE_Y) & INVERSE_Y !=""){
+    dat$ConcentrationLR <- sapply(paste0(INVERSE_Y,"(",dat[[y]],")"),function(i) eval(parse(text = i)))
+  }
 
-  data.table::setnames(dat,new =  COLNAMES[1:2], old = c(names(datCal)[2], names(datCal)[3]))
 
-  dats <- dats[dat[ ,.(uniqueID, ConcentrationLR)], on = "uniqueID"]
-  return(dats[, uniqueID := NULL])
+  dats <- dats[dat[ ,.(IDintern, ConcentrationLR)], on = "IDintern"]
+  return(dats)
 
 }
 

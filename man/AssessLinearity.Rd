@@ -15,6 +15,7 @@ AssessLinearity(
   column_Batch = "Batch",
   column_X = c("Concentration", "Dilution")[2],
   column_Y = c("Area", "Height", "Intensity")[1],
+  column_Y_sample = c("Area", "Height", "Intensity")[1],
   transform = c(TRUE, FALSE)[1],
   transform_x = "log",
   inverse_x = "exp",

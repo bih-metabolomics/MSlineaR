@@ -4,18 +4,20 @@
 \alias{getLRstatus}
 \title{Title}
 \usage{
-getLRstatus(
-  LR_object,
-  dats,
-  COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area")
-)
+getLRstatus(dats, datCal, y)
 }
 \arguments{
-\item{dats}{samples compare to the dilution series}
+\item{dats}{data table with information about the biological samples.
+Required columns are IDintern, y, groupIndices.It is necessary
+that the columns in dats and datCal have the same column names and that the
+column groupIndices is compatible between samples and dilution/concentration curve data.}
 
-\item{COLNAMES}{}
+\item{datCal}{data table with dilution/concentration curve information of the linearity.
+Required columns are groupIndices, Intercept and slope. It is necessary
+that the columns in dats and datCal have the same column names and that the
+column groupIndices is compatible between samples and dilution/concentration curve data.}
 
-\item{datCal}{output object from AssessLinearity}
+\item{y}{}
 }
 \description{
 Title

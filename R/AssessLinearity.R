@@ -96,6 +96,7 @@ AssessLinearity <- function(
     column_Batch = "Batch",
     column_X = c("Concentration", "Dilution")[2],
     column_Y = c("Area","Height", "Intensity")[1],
+    column_Y_sample = c("Area","Height", "Intensity")[1],
 
     #transform_data
     transform = c(TRUE, FALSE)[1],
@@ -145,6 +146,7 @@ AssessLinearity <- function(
   SAMPLE = sample_type_sample
   CALIBRANTS = sample_type_serial
   COLNAMES = c(ID = column_ID, Batch = column_Batch, Sample_type = column_sample_type, X = column_X,Y = column_Y)
+  Y_SAMPLE = column_Y_sample
   TRANSFORM = transform
   TRANSFORM_X = transform_x
   INVERSE_X = inverse_x
@@ -233,8 +235,8 @@ AssessLinearity <- function(
 
 
 
-  processingFeature <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% CALIBRANTS]
-
+  processingFeatureCal <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% CALIBRANTS]
+  processingFeature <- data.table::copy(processingFeatureCal)
 
 
   #### normalizing, centralizing, log transforming ####
@@ -584,7 +586,7 @@ AssessLinearity <- function(
   # check length of points
   checkData <- checkLength()
   processingFeature <- checkData[[1]]
-  cutoffnew <- checkData [[2]]
+  cutoffNew <- checkData [[2]]
 
   cutoff <- dplyr::full_join(cutoff, cutoffNew, by = colnames(cutoff))
 }
@@ -592,18 +594,21 @@ AssessLinearity <- function(
 ######
   message("check batch reproducibility")
 
-  if(BATCH_HARMONIZATION == TRUE){
+  {
+    data.table::setDT(processingFeature)
+    data.table::setDT(processingGroup)
 
     processingGroup <-   processingGroup[, enoughPeak_allBatches := all(get(paste0("enoughPeaks_", step)) %in% TRUE), by = ID]
     conflictBatches <- processingGroup[enoughPeak_allBatches %in% FALSE]
     processingFeature$Y_allBatches <- processingFeature$Y_LR
 
     if(BATCH_HARMONIZATION == TRUE){
-      processingFeature$Y_allBatches[groupIndices %in% conflictBatches$groupIndices] <- NA
-      processingFeature$color[groupIndices %in% conflictBatches$groupIndices] <- "grey"
+      processingFeature[groupIndices %in% conflictBatches$groupIndices, Y_allBatches := NA]
+      processingFeature[groupIndices %in% conflictBatches$groupIndices, color := "grey"]
       }
 
-    processingFeature$Comment[groupIndices %in% conflictBatches$groupIndices] <- paste(processingFeature$Comment[groupIndices %in% conflictBatches$groupIndices],"_notEnoughPeaksInAllBatches")
+    processingFeature[groupIndices %in% conflictBatches$groupIndices,
+                      Comment := paste(processingFeature[groupIndices %in% conflictBatches$groupIndices, Comment],"_notEnoughPeaksInAllBatches")]
 
     message(data.table::uniqueN(conflictBatches$ID), " ", Compounds, " were excluded, because they do not show repeatable ", Series, ".\n")
     message("Final Data set with ", data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, ID]), " ", Compounds,
@@ -612,105 +617,106 @@ AssessLinearity <- function(
 
   }
 
-#### Back calculation Concentration
+  ### Back calculation Concentration
   if(TYPE %in% "targeted"){
-
-      getConc(dats = processingFeature, processingFeature, x, y)
+    message("Back calculation of concentration for the concentration series signals")
+    Y = ifelse(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y), "Y_trans", COLNAMES[["Y"]])
+    processingFeature = getConc(dats = processingFeature, datCal = processingGroup, Y, INVERSE_Y)
 
   }
-
-
-
+  processingFeature <- processingFeature[!is.na(IDintern)]
 
 
   #### biological samples ####
   if(CAL_CONC %in% TRUE | GET_LR_STATUS %in% TRUE){
 
-    if(TYPE %in% "targeted" & CAL_CONC %in% TRUE){
-      ## Calibrants
-      Backcalc <- getConc(dats = data_tbl_cal_reg, datCal, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area.CalInput"))
+  message("prepare biological samples")
+    SampleFeature <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% SAMPLE]
 
-
+    if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
+      SampleFeature$Y_trans = get(TRANSFORM_Y)(SampleFeature[[Y_SAMPLE]])
+      SampleFeature$Y_trans[is.infinite(SampleFeature$Y_trans)] <- NA
+      Y_SAMPLE = "Y_trans"
     }
 
+    if(TYPE %in% "targeted" & CAL_CONC %in% TRUE){
+      message("Calculate Concentration for biological Samples")
+    SampleFeature <- getConc(dats = SampleFeature, datCal = processingGroup, y = Y_SAMPLE, INVERSE_Y)
+    }
 
+    if(GET_LR_STATUS %in% TRUE){
 
-  SampleFeature <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% SAMPLE]
+      SampleFeature  <- getLRstatus(dats = SampleFeature, datCal = processingGroup,y =  column_Y_sample)
+        #data_Sample$Status_LR <-  data.table::between(lower = data_Sample$LRStartY, x = data_Sample[, c("Area.CorrDrift")], upper = data_Sample$LREndY, NAbounds = NA)
 
-
-  datCal = targetedMstarsCal$summaryFDS
-  datCalFeature <- targetedMstarsCal$summaryFFDS
-
-
-
-
-  data_Sample <- dplyr::left_join(data_tbl_Sample, unique(data_tbl_cal_reg[,c("Compound", "Batch", "all.R2", "all.LLOQ", "all.ULOQ")]), by = c("Compound", "Batch"))
-  data_Sample <- dplyr::left_join(data_Sample, unique(datCal[,c("groupIndices","Compound", "Batch","LRStartY", "LREndY", "LRStartX", "LREndX","Intercept", "slope", "R2")]),by = c("Compound", "Batch") )
-
-
-  data_Sample$Status_LR <-  data.table::between(lower = data_Sample$LRStartY, x = data_Sample[, c("Area.CorrDrift")], upper = data_Sample$LREndY, NAbounds = NA)
-  # <- MSlineaR::getLRstatus(dats = data_Sample[!is.na(data_Sample$R2)], LR_object  = targetedMstarsCal, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area.CorrDrift"))
-
-  data_Sample$Status_LR[is.na(data_Sample$ConcentrationLR)] <- NA
-
-
+    }
   }
 
 
 
 
   # assert_that(n_distinct(processList$processing$groupIndices) == rawCompounds)
+  message("prepare output files\n--------------------------------------------------------\n")
 
-  #
-  # <!-- plotSignals(DAT = processList$Preprocessed$dataLinearRange %>% filter(ID %in% metabolitesRandomSample), x = "DilutionPoint", y = "IntensityNorm") -->
-  #
-  message("summarize all informations in one list\n--------------------------------------------------------\n")
-
-  # processing <- full_join(processing, dataPrep[!groupIndices %in% dropNA$groupIndices, -c("pch", "color", "N", "Comment", "enoughPeaks")],
-  #    by = c("groupIndices", "IDintern", "Intensity", "X", "IntensityNorm", "DilutionPoint", "IntensityLog", "ConcentrationLog")
-  #  )
+  cutoff <- dplyr::full_join(cutoff,
+                             processingFeature,
+                             by = colnames(cutoff))
 
 
-  # processing <- full_join(x = processingFeature, y = dataPrep[groupIndices %in% dropNA$groupIndices, -c("N")], by = names("y"))
+  processingFeature <- dplyr::full_join(processingFeature, cutoff, by = colnames(cutoff))
+
+  assertthat::are_equal(nrow(processingFeature), nrow(processingFeatureCal))
+
+  #output:
+  data.table::setnames(processingFeature, c("ID","Sample.Type", "Batch", "Y", "X"), c(COLNAMES[["ID"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
+  data.table::setnames(processingGroup, c("ID", "Sample.Type", "Batch"), c(COLNAMES[["ID"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]]))
 
 
-  data.table::setorder(processingFeature, DilutionPoint)
-  #dataSummary <- getSummaryList(processingFeature)
+  #1)full table dilution/concentration curves - Signal based
+  output1 <- processingFeature
 
-  cutoff <- dplyr::full_join(cutoffnew,
-                             processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% FALSE, groupIndices]],
-                             by = colnames(processingFeature))
+  #2) full table dilution/concentration curves - Feature based
+  output2 <- processingGroup
+
+  #3) filtered table dilution/concentration curves - Signal based (high quality)
+  output3 <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_",step)) %in% TRUE, groupIndices]]
+  output3 <- output3 |> dplyr::group_by(groupIndices) |> dplyr::filter(!all(is.na(Y_allBatches)))
+
+  #4) full table biological Samples - Signal based
+  output4 <- SampleFeature
+
+  #5) filtered table biological Samples - Signal based (high quality)
+  output5 <- SampleFeature[Status_LR %in% TRUE]
+
+  #6) barplot summary per dilution/concentration
 
 
 
 
-  processingFeature <- dplyr::full_join(processingFeature, cutoff)
+  #7) scatter plot
 
-  processing <- dplyr::full_join(
-    x = dataOrigin, y = processingFeature,
-    by = setNames(
-      c("ID", "IDintern", "REPLICATE", "X", "Y"),
-      c(COLNAMES[["ID"]], "IDintern", COLNAMES[["REPLICATE"]], COLNAMES[["X"]], COLNAMES[["Y"]])
-    ),
-    suffix = c(".raw", ".processed")
-  )
 
-  data.table::setnames(processingGroup, c("ID", "REPLICATE"), c(COLNAMES[["ID"]],COLNAMES[["REPLICATE"]] ))
+
+  #8) barplot summary for biological samples
+
+
+
+
+
+
+  data.table::setnames(processingGroup, c("ID", "Batch", "Y", "X"), c(COLNAMES[["ID"]],COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
 
   # <!-- processList$SummaryAll <- getAllList(processList) -->
   #
 
   processList <- list(
-    "dataOrigin_1" = dataOrigin,
-    "dataPrep_2" = dataPrep,
-    "dataFOD_3" <- dataFOD,
-    "dataTrim_4" = dataTrim,
-    "dataSOD_5" = dataSOD,
-    "dataModel_6" = dataSODModel,
-    "dataLinearRange_7" = dataLinearRange,
-    "dataLR_8" = dataLRFeature,
-    "summaryFFDS" = processing,
-    "summaryFDS" = processingGroup,
+    "fullTableCurvesSignal" = output1,
+    "fullTableCurvesFeature" = output2,
+    "filteredTableCurvesSignal" = output3,
+    "fullTableBioSamplesSignal" = output4,
+    "filteredTableBioSamplesSignal" = output5,
+    "dataModel_FOD" = dataFODModel,
+    "dataModel_SOD" = dataSODModel,
     "Parameters" = list(
       data = DAT,
       COLNAMES = COLNAMES,
@@ -727,6 +733,30 @@ AssessLinearity <- function(
       Y = Y
     )
   )
+
+  if(GET_OUTPUT %in% TRUE){
+    if("allCurveSignal" %in% which_output) write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "allCurveSignal.csv" , sep = "_")))
+    if("allCurveFeature" %in% which_output) write.csv(output2, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "allCurveFeature.csv" , sep = "_")))
+    if("filteredCurveSignal" %in% which_output) write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "filteredCurveSignal.csv" , sep = "_")))
+    if("allBioSamplesSignal" %in% which_output) write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "allBioSamplesSignal.csv" , sep = "_")))
+    if("filteredBioSamplesSignal" %in% which_output) write.csv(output5, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "filteredBioSamplesSignal.csv" , sep = "_")))
+
+  }
+
+
+  # "dataOrigin_1" = dataOrigin,
+  #  "dataPrep_2" = dataPrep,
+  # "dataFOD_3" <- dataFOD,
+
+  #"dataTrim_4" = dataTrim,
+  #  "dataSOD_5" = dataSOD,
+
+   # "dataLinearRange_7" = dataLinearRange,
+    #"dataLR_8" = dataLRFeature,
+    #"summaryFFDS" = processing,
+    #"summaryFDS" = processingGroup,
+
+
 
 
   #if (!empty(dataFOD)) processList$"dataFOD_3" <- dataFOD
