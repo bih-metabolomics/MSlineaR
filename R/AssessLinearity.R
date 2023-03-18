@@ -134,7 +134,8 @@ AssessLinearity <- function(
 
     get_output = c(TRUE, FALSE)[1],
     output_name = NULL,
-    which_output = c("R_object", "serial_list", "samples_all", "samples_filtered", "plots")[1:5],
+    which_output = c("R_object", "allCurveSignal", "allCurveFeature",
+                     "filteredCurveSignal", "allBioSampleSignal", "filteredBioSampleSignal", "plots")[1:7],
     output_dir = NULL
 ) {
 
@@ -692,7 +693,6 @@ AssessLinearity <- function(
 
 
 
-
   #7) scatter plot
 
 
@@ -738,8 +738,8 @@ AssessLinearity <- function(
     if("allCurveSignal" %in% which_output) write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "allCurveSignal.csv" , sep = "_")))
     if("allCurveFeature" %in% which_output) write.csv(output2, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "allCurveFeature.csv" , sep = "_")))
     if("filteredCurveSignal" %in% which_output) write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "filteredCurveSignal.csv" , sep = "_")))
-    if("allBioSamplesSignal" %in% which_output) write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "allBioSamplesSignal.csv" , sep = "_")))
-    if("filteredBioSamplesSignal" %in% which_output) write.csv(output5, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "filteredBioSamplesSignal.csv" , sep = "_")))
+    if("allBioSampleSignal" %in% which_output) write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "allBioSamplesSignal.csv" , sep = "_")))
+    if("filteredBioSampleSignal" %in% which_output) write.csv(output5, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "filteredBioSamplesSignal.csv" , sep = "_")))
 
   }
 
