@@ -215,6 +215,9 @@ AssessLinearity <- function(
     Y = "Y"
   }
 
+  Xraw = X
+  Yraw = Y
+
   #wording
 
   if(TYPE %in% "targeted"){
@@ -670,7 +673,7 @@ AssessLinearity <- function(
 
   #output:
   data.table::setnames(processingFeature, c("ID","Sample.Type", "Batch", "Y", "X"), c(COLNAMES[["ID"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
-  data.table::setnames(processingGroup, c("ID", "Sample.Type", "Batch"), c(COLNAMES[["ID"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]]))
+  data.table::setnames(processingGroup, c("ID", "Batch"), c(COLNAMES[["ID"]], COLNAMES[["Batch"]]))
 
 
   #1)full table dilution/concentration curves - Signal based
