@@ -205,9 +205,9 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   dat[[linearY]][is.na(dat[, get(y)]) | dat$IsLinear %in% FALSE | is.na(dat$IsLinear)] <- NA
   dat$Intercept <- tmpGroup$Intercept
   dat$slope <- tmpGroup$slope
+  dat$LRStartY <- tmpGroup$LRStartY
   dat$LRStart <- tmpGroup$LRStart
-  dat$LRStart <- tmpGroup$LRStart
-  dat$LREnd <- tmpGroup$LREnd
+  dat$LREndY <- tmpGroup$LREndY
   dat$LREnd <- tmpGroup$LREnd
 
 

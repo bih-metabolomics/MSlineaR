@@ -89,7 +89,7 @@ AssessLinearity <- function(
     #input_data
     input_data = NULL,
     column_sample_type = c("Sample.Type", "Type")[1],
-    sample_type_QC = c("pooled QC", "QC")[1],
+    sample_type_QC = c("pooled QC", "QC", NULL)[3],
     sample_type_sample = "Sample",
     sample_type_serial = "Calibration Standard",
     column_ID = "Compound",
@@ -143,7 +143,7 @@ AssessLinearity <- function(
   # define arguments
   TYPE = analysis_type
   DAT = input_data
-  #QC =  sample_type_QC
+  QC =  sample_type_QC
   SAMPLE = sample_type_sample
   CALIBRANTS = sample_type_serial
   COLNAMES = c(ID = column_ID, Batch = column_Batch, Sample_type = column_sample_type, X = column_X,Y = column_Y)
@@ -638,7 +638,7 @@ AssessLinearity <- function(
     SampleFeature <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% SAMPLE]
 
     if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
-      SampleFeature$Y_trans = get(TRANSFORM_Y)(SampleFeature[[Y_SAMPLE]])
+      SampleFeature$Y_trans = get(TRANSFORM_Y)(SampleFeature[[column_Y_sample]])
       SampleFeature$Y_trans[is.infinite(SampleFeature$Y_trans)] <- NA
       Y_SAMPLE = "Y_trans"
     }
@@ -655,6 +655,42 @@ AssessLinearity <- function(
 
     }
   }
+
+#### QC samples ####
+
+  if(!is.null(QC)){
+
+    SampleQC <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% QC]
+
+
+    if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
+      SampleQC$Y_trans = get(TRANSFORM_Y)(SampleQC[[column_Y_sample]])
+      SampleQC$Y_trans[is.infinite(SampleQC$Y_trans)] <- NA
+      Y_SAMPLE = "Y_trans"
+    }
+
+
+      rsd_before <- SampleQC |>
+        group_by(Batch, Compound) |>
+        summarise(rsd = sd(Y_SAMPLE, na.rm = T)/mean(Y_SAMPLE, na.rm = T) * 100) |>
+        summarize(median_rsd = median(rsd))
+
+      SampleQC  <- getLRstatus(dats = SampleQC, datCal = processingGroup,y =  column_Y_sample)
+
+      rsd_after <- SampleQC |>
+        filter(Status_LR %in% TRUE) |>
+        group_by(Batch, Compound) |>
+        summarise(rsd = sd(Area, na.rm = T)/mean(Area, na.rm = T) * 100) |>
+        summarize(median_sd = median(rsd, na.rm = TRUE))
+
+      SampleFeature <- dplyr::full_join(SampleFeature, SampleQC, by = colnames(SampleQC))
+
+  }
+
+
+
+
+
 
 
 
@@ -697,7 +733,9 @@ AssessLinearity <- function(
 
 
   #7) scatter plot
-
+  plotFDS(inputData_Series = output1,
+          inputData_BioSamples = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+          inputData_QC = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% QC))
 
 
   #8) barplot summary for biological samples
