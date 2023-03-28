@@ -8,9 +8,12 @@ AssessLinearity(
   analysis_type = c("targeted", "untargeted", NULL)[3],
   input_data = NULL,
   column_sample_type = c("Sample.Type", "Type")[1],
-  sample_type_QC = c("pooled QC", "QC")[1],
+  sample_type_QC = c("pooled QC", "QC", NULL)[3],
+  sample_type_QC_ref = c("Reference QC", "QC", NULL)[3],
+  sample_type_blank = c("Blank", NULL)[2],
   sample_type_sample = "Sample",
   sample_type_serial = "Calibration Standard",
+  sample_ID = "Sample.Identification",
   column_ID = "Compound",
   column_Batch = "Batch",
   column_X = c("Concentration", "Dilution")[2],
@@ -39,8 +42,8 @@ AssessLinearity(
   nCORE = 1,
   get_output = c(TRUE, FALSE)[1],
   output_name = NULL,
-  which_output = c("R_object", "serial_list", "samples_all", "samples_filtered",
-    "plots")[1:5],
+  which_output = c("R_object", "allCurveSignal", "allCurveFeature",
+    "filteredCurveSignal", "allBioSampleSignal", "filteredBioSampleSignal", "plots")[1:7],
   output_dir = NULL
 )
 }

@@ -53,10 +53,10 @@ checkData <- function(DAT, ...){
   data.table::set(dat, j = COLNAMES[["Sample_type"]], value = as.character(dat[[COLNAMES[["Sample_type"]]]]))
 
 
-  data.table::setorderv(dat, c(COLNAMES[["ID"]], COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]))
+  data.table::setorderv(dat, c(COLNAMES[["ID"]], COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]))
   dat[ , IDintern := paste0("s", 1:.N)]
   dat[ , groupIndices := .GRP ,by = c(COLNAMES[["ID"]], COLNAMES[["Batch"]])]
-  dat <- dat[ , c( "IDintern", "groupIndices", COLNAMES[["ID"]], COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]), with = F]
+  dat <- dat[ , c( "IDintern", "groupIndices", COLNAMES[["ID"]],  COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]), with = F]
 
   # tests for Input parameter
 
@@ -145,12 +145,12 @@ is.wholenumber <-
 prepareData <- function(dat,...){
 
   stopifnot(exprs = {
-    "data need to have 7 columns" = dim(dat)[2] == 7
+    "data need to have 8 columns" = dim(dat)[2] == 8
     })
 data.table::setDT(dat)
   processed <- data.table::copy(dat)
   # rename
-  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "ID","Sample.Type", "Batch", "X", "Y"))
+  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "ID","Sample_ID", "Sample.Type", "Batch", "X", "Y"))
 
   data.table::setorderv(processed, c("ID", "Batch", "X"))
 

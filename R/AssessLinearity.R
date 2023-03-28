@@ -90,8 +90,11 @@ AssessLinearity <- function(
     input_data = NULL,
     column_sample_type = c("Sample.Type", "Type")[1],
     sample_type_QC = c("pooled QC", "QC", NULL)[3],
+    sample_type_QC_ref = c("Reference QC", "QC", NULL)[3],
+    sample_type_blank = c("Blank", NULL)[2],
     sample_type_sample = "Sample",
     sample_type_serial = "Calibration Standard",
+    sample_ID = "Sample.Identification",
     column_ID = "Compound",
     column_Batch = "Batch",
     column_X = c("Concentration", "Dilution")[2],
@@ -144,9 +147,12 @@ AssessLinearity <- function(
   TYPE = analysis_type
   DAT = input_data
   QC =  sample_type_QC
+  QC_REF = sample_type_QC_ref
+  BLANK = sample_type_blank
   SAMPLE = sample_type_sample
+  SAMPLE_ID = sample_ID
   CALIBRANTS = sample_type_serial
-  COLNAMES = c(ID = column_ID, Batch = column_Batch, Sample_type = column_sample_type, X = column_X,Y = column_Y)
+  COLNAMES = c(ID = column_ID, Sample_ID = sample_ID, Batch = column_Batch, Sample_type = column_sample_type, X = column_X,Y = column_Y)
   Y_SAMPLE = column_Y_sample
   TRANSFORM = transform
   TRANSFORM_X = transform_x
@@ -628,6 +634,9 @@ AssessLinearity <- function(
     processingFeature = getConc(dats = processingFeature, datCal = processingGroup, Y, INVERSE_Y)
 
   }
+
+  processingFeature  <- getLRstatus(dats =  processingFeature, datCal = processingGroup, y =  column_Y_sample)
+
   processingFeature <- processingFeature[!is.na(IDintern)]
 
 
@@ -657,6 +666,7 @@ AssessLinearity <- function(
   }
 
 #### QC samples ####
+message("check QC samples")
 
   if(!is.null(QC)){
 
@@ -672,26 +682,87 @@ AssessLinearity <- function(
 
       rsd_before <- SampleQC |>
         group_by(Batch, Compound) |>
-        summarise(rsd = sd(Y_SAMPLE, na.rm = T)/mean(Y_SAMPLE, na.rm = T) * 100) |>
-        summarize(median_rsd = median(rsd))
+        summarise(.groups = "keep", rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+        group_by(Batch) |>
+        summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
 
       SampleQC  <- getLRstatus(dats = SampleQC, datCal = processingGroup,y =  column_Y_sample)
 
       rsd_after <- SampleQC |>
         filter(Status_LR %in% TRUE) |>
         group_by(Batch, Compound) |>
-        summarise(rsd = sd(Area, na.rm = T)/mean(Area, na.rm = T) * 100) |>
-        summarize(median_sd = median(rsd, na.rm = TRUE))
+        summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+        group_by(Batch) |>
+        summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
 
       SampleFeature <- dplyr::full_join(SampleFeature, SampleQC, by = colnames(SampleQC))
+     message(QC, ":")
+     message(paste0(capture.output(cbind(rsd_before, rsd_after[,"median_rsd_after"])), collapse = "\n"))
 
   }
 
+  if(!is.null(QC_REF)){
 
+    SampleQCref <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% QC_REF]
 
+    if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
+      SampleQCref$Y_trans = get(TRANSFORM_Y)(SampleQCref[[column_Y_sample]])
+      SampleQCref$Y_trans[is.infinite(SampleQCref$Y_trans)] <- NA
+      Y_SAMPLE = "Y_trans"
+    }
 
+    rsd_before <- SampleQCref |>
+      group_by(Batch, Compound) |>
+      summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+      group_by(Batch) |>
+      summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
 
+    SampleQCref  <- getLRstatus(dats = SampleQCref, datCal = processingGroup,y =  column_Y_sample)
 
+    rsd_after <- SampleQCref |>
+      filter(Status_LR %in% TRUE) |>
+      group_by(Batch, Compound) |>
+      summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+      group_by(Batch) |>
+      summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
+
+    SampleFeature <- dplyr::full_join(SampleFeature, SampleQCref, by = colnames(SampleQCref))
+
+    message(QC_REF, ":")
+    message(paste0(capture.output(cbind(rsd_before, rsd_after[,"median_rsd_after"])), collapse = "\n"))
+
+  }
+
+  if(!is.null(BLANK)){
+
+    SampleBlank <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% BLANK]
+
+    if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
+      SampleBlank$Y_trans = get(TRANSFORM_Y)(SampleBlank[[column_Y_sample]])
+        SampleBlank$Y_trans[is.infinite(SampleBlank$Y_trans)] <- NA
+      Y_SAMPLE = "Y_trans"
+    }
+    rsd_before <- SampleBlank |>
+      group_by(Batch, Compound) |>
+      summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+      group_by(Batch) |>
+      summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
+
+    SampleBlank  <- getLRstatus(dats = SampleBlank, datCal = processingGroup,y =  column_Y_sample)
+
+    rsd_after <- SampleBlank |>
+      filter(Status_LR %in% TRUE) |>
+      group_by(Batch, Compound) |>
+      summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+      group_by(Batch) |>
+      summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
+
+    SampleFeature <- dplyr::full_join(SampleFeature, SampleBlank, by = colnames(SampleBlank))
+
+    message(BLANK, ":")
+    message(paste0(capture.output(cbind(rsd_before, rsd_after[,"median_rsd_after"])), collapse = "\n"))
+
+  }
 
 
 
@@ -730,81 +801,62 @@ AssessLinearity <- function(
 
   #6) barplot summary per dilution/concentration
 
-
+  summary_barplot <- plot_Barplot_Summary(inputData_Series = output1)
 
   #7) scatter plot
-  plotFDS(inputData_Series = output1,
-          inputData_BioSamples = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
-          inputData_QC = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% QC))
+  FDS_scatterplot <- plot_FDS(inputData_Series = output1,
+                              inputData_BioSamples = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+                              inputData_QC = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% QC),
+                              inputData_QC_ref = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% QC_REF),
+                              inputData_Blank = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% BLANK)
+  )
 
 
   #8) barplot summary for biological samples
 
 
+  summary_barplot_sample <- plot_Barplot_Summary_Sample(inputData_Samples = output4)
 
 
-
-
-  data.table::setnames(processingGroup, c("ID", "Batch", "Y", "X"), c(COLNAMES[["ID"]],COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
+  data.table::setnames(processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"), c(COLNAMES[["ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
 
   # <!-- processList$SummaryAll <- getAllList(processList) -->
   #
 
+
+
   processList <- list(
-    "fullTableCurvesSignal" = output1,
-    "fullTableCurvesFeature" = output2,
-    "filteredTableCurvesSignal" = output3,
-    "fullTableBioSamplesSignal" = output4,
-    "filteredTableBioSamplesSignal" = output5,
+    "All_DilutionCurves_Signals" = output1,
+    "All_DilutionCurves_Features" = output2,
+    "High_Quality_DilutionCurves_Signals" = output3,
+    "All_Samples_Signals" = output4,
+    "High_Quality_Samples_Signals" = output5,
     "dataModel_FOD" = dataFODModel,
-    "dataModel_SOD" = dataSODModel,
-    "Parameters" = list(
-      data = DAT,
-      COLNAMES = COLNAMES,
-      nCORE = nCORE,
-      LOG_TRANSFORM = LOG_TRANSFORM,
-      R2min = R2min,
-      res = res,
-      #calcFor = calcFor,
-      #SRES = SRES,
-      #R2FOD = R2FOD,
-      #R2SOD = R2SOD,
-      MIN_FEATURE = MIN_FEATURE,
-      X = X,
-      Y = Y
-    )
+    "dataModel_SOD" = dataSODModel#,
+    # "Parameters" = list(
+    #   data = DAT,
+    #   COLNAMES = COLNAMES,
+    #   nCORE = nCORE,
+    #   LOG_TRANSFORM = LOG_TRANSFORM,
+    #   R2min = R2min,
+    #   res = res,
+    #   #calcFor = calcFor,
+    #   #SRES = SRES,
+    #   #R2FOD = R2FOD,
+    #   #R2SOD = R2SOD,
+    #   MIN_FEATURE = MIN_FEATURE,
+    #   X = X,
+    #   Y = Y
+    # )
   )
 
   if(GET_OUTPUT %in% TRUE){
-    if("allCurveSignal" %in% which_output) write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "allCurveSignal.csv" , sep = "_")))
-    if("allCurveFeature" %in% which_output) write.csv(output2, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "allCurveFeature.csv" , sep = "_")))
-    if("filteredCurveSignal" %in% which_output) write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "filteredCurveSignal.csv" , sep = "_")))
-    if("allBioSampleSignal" %in% which_output) write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "allBioSamplesSignal.csv" , sep = "_")))
-    if("filteredBioSampleSignal" %in% which_output) write.csv(output5, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "filteredBioSamplesSignal.csv" , sep = "_")))
-
+    if("allCurveSignal" %in% which_output) write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_DilutionCurves_Signals.csv" , sep = "_")))
+    if("allCurveFeature" %in% which_output) write.csv(output2, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_DilutionCurves_Features.csv" , sep = "_")))
+    if("filteredCurveSignal" %in% which_output) write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "High_Quality_DilutionCurves_Signals.csv" , sep = "_")))
+    if("allBioSampleSignal" %in% which_output) write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_Samples_Signals.csv" , sep = "_")))
+    if("filteredBioSampleSignal" %in% which_output) write.csv(output5, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "High_Quality_Samples_Signals.csv" , sep = "_")))
   }
-
-
-  # "dataOrigin_1" = dataOrigin,
-  #  "dataPrep_2" = dataPrep,
-  # "dataFOD_3" <- dataFOD,
-
-  #"dataTrim_4" = dataTrim,
-  #  "dataSOD_5" = dataSOD,
-
-   # "dataLinearRange_7" = dataLinearRange,
-    #"dataLR_8" = dataLRFeature,
-    #"summaryFFDS" = processing,
-    #"summaryFDS" = processingGroup,
-
-
-
-
-  #if (!empty(dataFOD)) processList$"dataFOD_3" <- dataFOD
-  #if (!is.null(dataSOD) | !empty(dataSOD)) processList$"dataSOD_7" <- dataSOD
-  #if (!is.null(dataConsSOD) | !empty(dataConsSOD)) processList$"dataConsSOD_8" <- dataConsSOD
-  #if (!is.null(dataModelSOD) | !empty(dataModelSOD)) processList$"dataModelSOD_9" <- dataModelSOD
-
 
   return(processList)
 }
