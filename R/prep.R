@@ -1,7 +1,39 @@
 #' Prepare raw data
 #'
+#' @param MIN_FEATURE
+#' @param TYPE
+#' @param QC
+#' @param QC_REF
+#' @param BLANK
+#' @param SAMPLE
+#' @param SAMPLE_ID
+#' @param CALIBRANTS
+#' @param COLNAMES
+#' @param Y_SAMPLE
+#' @param TRANSFORM
+#' @param TRANSFORM_X
+#' @param INVERSE_X
+#' @param TRANSFORM_Y
+#' @param INVERSE_Y
+#' @param FOD
+#' @param FOD_MODEL
+#' @param FOD_SDRES_MIN
+#' @param FOD_STDRES_MAX
+#' @param TRIMM
+#' @param SOD
+#' @param SOD_MODEL
+#' @param SOD_SDRES_MIN
+#' @param SOD_STDRES_MAX
+#' @param LR_SD_RES_FACTOR
+#' @param R2_MIN
+#' @param BATCH_HARMONIZATION
+#' @param CAL_CONC
+#' @param GET_LR_STATUS
+#' @param nCORE
+#' @param GET_OUTPUT
+#' @param PREFIX
+#' @param OUTPUT_DIR
 #' @param dat
-#' @param ...
 #'
 #' @return Data frame with columns:
 #' - IDintern,
@@ -22,7 +54,19 @@
 #'
 #' @examples
 #'
-checkData <- function(dat, MIN_FEATURE, ...){
+checkData <- function(dat, MIN_FEATURE, TYPE, QC,
+                      QC_REF, BLANK, SAMPLE, SAMPLE_ID,
+                      CALIBRANTS, COLNAMES, Y_SAMPLE,
+                      TRANSFORM,TRANSFORM_X, INVERSE_X,
+                      TRANSFORM_Y,INVERSE_Y,
+                      FOD,FOD_MODEL, FOD_SDRES_MIN, FOD_STDRES_MAX,
+                      TRIMM,
+                      SOD,SOD_MODEL, SOD_SDRES_MIN, SOD_STDRES_MAX,
+                      LR_SD_RES_FACTOR, R2_MIN,
+                      BATCH_HARMONIZATION,
+                      CAL_CONC,GET_LR_STATUS,
+                      nCORE,
+                      GET_OUTPUT,PREFIX, OUTPUT_DIR){
 
   data.table::setDT(dat)
 

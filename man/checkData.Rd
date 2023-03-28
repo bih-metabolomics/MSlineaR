@@ -4,10 +4,45 @@
 \alias{checkData}
 \title{Prepare raw data}
 \usage{
-checkData(dat, MIN_FEATURE, ...)
+checkData(
+  dat = DAT,
+  MIN_FEATURE,
+  TYPE,
+  QC,
+  QC_REF,
+  BLANK,
+  SAMPLE,
+  SAMPLE_ID,
+  CALIBRANTS,
+  COLNAMES,
+  Y_SAMPLE,
+  TRANSFORM,
+  TRANSFORM_X,
+  INVERSE_X,
+  TRANSFORM_Y,
+  INVERSE_Y,
+  FOD,
+  FOD_MODEL,
+  FOD_SDRES_MIN,
+  FOD_STDRES_MAX,
+  TRIMM,
+  SOD,
+  SOD_MODEL,
+  SOD_SDRES_MIN,
+  SOD_STDRES_MAX,
+  LR_SD_RES_FACTOR,
+  R2_MIN,
+  BATCH_HARMONIZATION,
+  CAL_CONC,
+  GET_LR_STATUS,
+  nCORE,
+  GET_OUTPUT,
+  PREFIX,
+  OUTPUT_DIR
+)
 }
 \arguments{
-\item{...}{}
+\item{dat}{}
 }
 \value{
 Data frame with columns:
