@@ -26,6 +26,8 @@ checkData <- function(dat, ...){
 
   data.table::setDT(dat)
 
+  message(exists("MIN_FEATURE"))
+
   stopifnot(exprs = {
     "'input_dat' has less rows than 'min_feature' required" = dim(dat)[1] >= MIN_FEATURE
     "'input_dat' needs minimum 4 columns defining the ID, the x and y values and the sample type of the data" = dim(dat)[2] >= 4
