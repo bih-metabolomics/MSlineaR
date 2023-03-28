@@ -140,28 +140,28 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
   plotlinearData <-
-    ggplot2:: ggplot(data = data_Signals, mapping = aes(x = DilutionPoint, y = get(Y)), shape = Sample.Type) +
+    ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = DilutionPoint, y = get(Y)), shape = Sample.Type) +
     geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type])),colour = "black")
 
 
   if("OutlierFOD" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), aes(x = DilutionPoint, y = get(Y)), colour = "red")
+      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), ggplot2::aes(x = DilutionPoint, y = get(Y)), colour = "red")
   }
 
   if("trim" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trim %in% TRUE), aes(x = DilutionPoint, y = get(Y)), colour = "grey")
+      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trim %in% TRUE), ggplot2::aes(x = DilutionPoint, y = get(Y)), colour = "grey")
   }
 
   if("OutlierSOD" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierSOD %in% TRUE), aes(x = DilutionPoint, y = get(Y)), colour = "red")
+      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierSOD %in% TRUE), ggplot2::aes(x = DilutionPoint, y = get(Y)), colour = "red")
   }
 
   if("trimPos" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), aes(x = DilutionPoint, y = get(Y)), colour = "grey")
+      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), ggplot2::aes(x = DilutionPoint, y = get(Y)), colour = "grey")
   }
 
   if("IsLinear" %in% colnames(data_Signals)){
@@ -180,12 +180,12 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
     plotlinearData <-  plotlinearData +
-      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE), aes(x = DilutionPoint, y = get(Y)), colour = "seagreen") +
-      geom_line(data = data_Signals,aes(x = DilutionPoint, y = abline), col = "orange") +
-      geom_vline(data = data_Signals,aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted") +
-      geom_vline(data = data_Signals,aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted") +
-      geom_hline(data = data_Signals,aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted") +
-      geom_hline(data = data_Signals,aes( yintercept = Yinterend), col = "darkgrey", linetype = "dotted")
+      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE), ggplot2::aes(x = DilutionPoint, y = get(Y)), colour = "seagreen") +
+      geom_line(data = data_Signals,ggplot2::aes(x = DilutionPoint, y = abline), col = "orange") +
+      geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted") +
+      geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted") +
+      geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted") +
+      geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterend), col = "darkgrey", linetype = "dotted")
 
   }
 
@@ -201,27 +201,27 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   if(!is.null(inputData_BioSamples )){
     plotlinearData <-  plotlinearData +
       scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ), aes( x = -1, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) +#, shape = 1, col = "purple"
-      geom_vline(aes( xintercept = 0, color = "darkgrey"), linetype = "solid", col = "black") +
-      geom_text(aes(x = -2.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2)
+      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ), ggplot2::aes( x = -1, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) +#, shape = 1, col = "purple"
+      geom_vline(ggplot2::aes( xintercept = 0, color = "darkgrey"), linetype = "solid", col = "black") +
+      geom_text(ggplot2::aes(x = -2.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2)
     legend_order <- c(unique(inputData_BioSamples$Sample.Type))
   }
 
   if(!is.null(inputData_QC )){
     plotlinearData <-  plotlinearData +
       scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +
-      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC[, Sample.Type])), aes( x = -2, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) #+, shape = 5
-      #geom_vline(aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
-      #geom_text(aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
+      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC[, Sample.Type])), ggplot2::aes( x = -2, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) #+, shape = 5
+      #geom_vline(ggplot2::aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
+      #geom_text(ggplot2::aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
     legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
   }
 
   if(!is.null(inputData_QC_ref )){
     plotlinearData <-  plotlinearData +
       scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +
-      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC_ref[, Sample.Type])), aes( x = -3, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) #+ shape = 2
-    #geom_vline(aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
-    #geom_text(aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
+      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC_ref[, Sample.Type])), ggplot2::aes( x = -3, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) #+ shape = 2
+    #geom_vline(ggplot2::aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
+    #geom_text(ggplot2::aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
     legend_order <- c(legend_order, unique(inputData_QC_ref$Sample.Type))
 
   }
@@ -229,9 +229,9 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   if(!is.null(inputData_Blank )){
     plotlinearData <-  plotlinearData +
       scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Blank[, Sample.Type])), aes( x = -4, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2)# + shape = 0
-    #geom_vline(aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
-    #geom_text(aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
+      geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Blank[, Sample.Type])), ggplot2::aes( x = -4, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2)# + shape = 0
+    #geom_vline(ggplot2::aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
+    #geom_text(ggplot2::aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
     legend_order <- c(legend_order, unique(inputData_Blank$Sample.Type))
 
   }
@@ -253,7 +253,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(printR2 %in% TRUE) {plotlinearData <- plotlinearData +
     geom_text(data = subset(data_Signals, !is.na(R2)),
-              aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2,2)) ,  group = get(ID)),
+              ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2,2)) ,  group = get(ID)),
               size = 3,
               hjust = -0.1,
               vjust = 2,
@@ -344,7 +344,7 @@ plot_Barplot_Summary <- function(inputData_Series,
 
 
   plot_Summary <-
-    ggplot2::ggplot(data = data_Signals_summary, aes(x = DilutionPoint, y = count, label = count, fill = Type)) +
+    ggplot2::ggplot(data = data_Signals_summary, ggplot2::aes(x = DilutionPoint, y = count, label = count, fill = Type)) +
     geom_bar(stat="identity",
                  position="fill",
                  width = 0.5 ) +
@@ -422,7 +422,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
 
   plot_Summary_samples <-
-    ggplot2::ggplot(data = data_Signals_sample_summary, aes(x = Sample_ID, y = count, label = count, fill = Type)) +
+    ggplot2::ggplot(data = data_Signals_sample_summary, ggplot2::aes(x = Sample_ID, y = count, label = count, fill = Type)) +
     geom_bar(stat="identity",
              position="fill",
              width = 0.5 ) +
