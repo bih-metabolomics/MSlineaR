@@ -318,7 +318,7 @@ plot_Barplot_Summary <- function(inputData_Series,
 
   assertthat::not_empty(inputData_Series)
   # LR_object,statusLinear = c(TRUE, FALSE),
-  columns = c(ID = COLNAMES[["ID"]],Batch = COLNAMES[["Batch"]], X, Y)
+  columns = c(ID = COLNAMES[["ID"]],Batch = COLNAMES[["Batch"]], X = X, Y = Y)
   ID <- columns[["ID"]]
   X <- columns[["X"]]
   Y <- columns[["Y"]]
