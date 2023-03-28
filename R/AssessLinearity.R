@@ -385,7 +385,7 @@ AssessLinearity <- function(
     processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
 
     # check length of points
-    checkData <- checkLength(step, processingGroup, processingFeature)
+    checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
     processingFeature <- checkData[[1]]
     cutoffNew <- checkData [[2]]
 
@@ -438,7 +438,7 @@ AssessLinearity <- function(
     message("In total ", TrimFeatures," ",  Signals," in ", TrimGroups, " ",Series," were trimmed.\n")
 
     # check length of points
-    checkData <- checkLength(step, processingGroup, processingFeature)
+    checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
     processingFeature <- checkData[[1]]
     cutoffNew <- checkData [[2]]
 
@@ -507,7 +507,7 @@ AssessLinearity <- function(
     processingGroup <- full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
 
     # check length of points
-    checkData <- checkLength(step, processingGroup, processingFeature)
+    checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
     processingFeature <- checkData[[1]]
     cutoffnew <- checkData [[2]]
 
@@ -561,7 +561,7 @@ AssessLinearity <- function(
     message("In total ", TrimPosFeatures," ",  Signals," in ", TrimPosGroups, " ",Series," were removed.\n")
 
     # check length of points
-    checkData <- checkLength(step, processingGroup, processingFeature)
+    checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
     processingFeature <- checkData[[1]]
     cutoffnew <- checkData [[2]]
 
@@ -633,7 +633,7 @@ AssessLinearity <- function(
 
 
   # check length of points
-  checkData <- checkLength(step, processingGroup, processingFeature)
+  checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
   processingFeature <- checkData[[1]]
   cutoffNew <- checkData [[2]]
 

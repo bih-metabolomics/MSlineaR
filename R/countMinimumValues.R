@@ -40,7 +40,9 @@ countMinimumValue <- function(DAT, MIN_FEATURE = 3, step, y){
 #' @export
 #'
 #' @examples
-checkLength <- function(step, processingGroup, processingFeature){
+checkLength <- function(step, processingGroup, processingFeature, Compounds,
+                        Dilutions, Series, Signals,
+                        MIN_FEATURE){
   peaksOld <- ifelse(step > 1, paste0("enoughPeaks_", step-1), "enoughPeaks")
 
   peaksNew <- paste0("enoughPeaks_", step)
