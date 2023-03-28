@@ -155,7 +155,7 @@ if(GET_LR_STATUS %in% TRUE){
 
   stopifnot(exprs = {
     "Argument 'sample_type_sample' was not found in column 'column_sample_type'" =
-      any(dat[[TYPE]] %in% SAMPLE)
+      any(dat[[COLNAMES[["Sample_type"]]]] %in% SAMPLE)
 
   })
 }
