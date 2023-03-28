@@ -382,7 +382,7 @@ AssessLinearity <- function(
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
-    processingGroup <- full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
 
     # check length of points
     checkData <- checkLength()
@@ -433,7 +433,7 @@ AssessLinearity <- function(
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern], by = colnames(processingFeature))
-    processingGroup <- full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
 
     message("In total ", TrimFeatures," ",  Signals," in ", TrimGroups, " ",Series," were trimmed.\n")
 
@@ -556,7 +556,7 @@ AssessLinearity <- function(
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern], by = colnames(processingFeature))
-    processingGroup <- full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
 
     message("In total ", TrimPosFeatures," ",  Signals," in ", TrimPosGroups, " ",Series," were removed.\n")
 
