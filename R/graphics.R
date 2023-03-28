@@ -348,7 +348,7 @@ plot_Barplot_Summary <- function(inputData_Series,
     ggplot2::geom_bar(stat="identity",
                  position="fill",
                  width = 0.5 ) +
-    ggplot2::geom_text(size = 3, position = position_fill(vjust = 0.5)) +
+    ggplot2::geom_text(size = 3, position = ggplot2::position_fill(vjust = 0.5)) +
     ggplot2::facet_grid(.~Batch, scales = "free_x", space = "free_x")
 
   plot_Summary <- plot_Summary +
