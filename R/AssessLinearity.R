@@ -137,8 +137,8 @@ AssessLinearity <- function(
 
     get_output = c(TRUE, FALSE)[1],
     output_name = NULL,
-    which_output = c("R_object", "allCurveSignal", "allCurveFeature",
-                     "filteredCurveSignal", "allBioSampleSignal", "filteredBioSampleSignal", "plots")[1:7],
+    which_output = c("all","R_object", "allCurveSignal", "allCurveFeature",
+                     "filteredCurveSignal", "allBioSampleSignal", "filteredBioSampleSignal", "plots")[1],
     output_dir = NULL
 ) {
 
@@ -818,7 +818,7 @@ message("check QC samples")
   summary_barplot_sample <- plot_Barplot_Summary_Sample(inputData_Samples = output4)
 
 
-  data.table::setnames(processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"), c(COLNAMES[["ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
+  data.table::setnames(skip_absent = T, processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"), c(COLNAMES[["ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
 
   # <!-- processList$SummaryAll <- getAllList(processList) -->
   #
@@ -851,11 +851,11 @@ message("check QC samples")
   )
 
   if(GET_OUTPUT %in% TRUE){
-    if("allCurveSignal" %in% which_output) write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_DilutionCurves_Signals.csv" , sep = "_")))
-    if("allCurveFeature" %in% which_output) write.csv(output2, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_DilutionCurves_Features.csv" , sep = "_")))
-    if("filteredCurveSignal" %in% which_output) write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "High_Quality_DilutionCurves_Signals.csv" , sep = "_")))
-    if("allBioSampleSignal" %in% which_output) write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_Samples_Signals.csv" , sep = "_")))
-    if("filteredBioSampleSignal" %in% which_output) write.csv(output5, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "High_Quality_Samples_Signals.csv" , sep = "_")))
+    if(any(c("allCurveSignal", "all") %in% which_output)) write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_DilutionCurves_Signals.csv" , sep = "_")))
+    if(any(c("allCurveFeature", "all") %in% which_output)) write.csv(output2, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_DilutionCurves_Features.csv" , sep = "_")))
+    if(any(c("filteredCurveSignal", "all") %in% which_output)) write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "High_Quality_DilutionCurves_Signals.csv" , sep = "_")))
+    if(any(c("allBioSampleSignal", "all") %in% which_output)) write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_Samples_Signals.csv" , sep = "_")))
+    if(any(c("filteredBioSampleSignal", "all") %in% which_output)) write.csv(output5, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "High_Quality_Samples_Signals.csv" , sep = "_")))
   }
 
   return(processList)
