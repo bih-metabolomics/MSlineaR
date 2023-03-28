@@ -339,7 +339,7 @@ plot_Barplot_Summary <- function(inputData_Series,
 
 
   data_Signals_summary$Type <- factor(data_Signals_summary$Type, levels = rev(c("LR_TRUE", "LR_FALSE", "Missing", "OutlierFOD", "OutlierSOD", "Trim")))
-  data_Signals_summary <- data_Signals_summary |> filter(count > 0)
+  data_Signals_summary <- data_Signals_summary |> dplyr::filter(count > 0)
 
 
 
@@ -416,7 +416,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
 
   data_Signals_sample_summary$Type <- factor(data_Signals_sample_summary$Type, levels = rev(c("LR_TRUE", "LR_FALSE", "Missing", "OutlierFOD", "OutlierSOD", "Trim")))
-  data_Signals_sample_summary <- data_Signals_sample_summary |> filter(count > 0)
+  data_Signals_sample_summary <- data_Signals_sample_summary |> dplyr::filter(count > 0)
   setorder(data_Signals_sample_summary, Sample.Type)
   data_Signals_sample_summary$Sample_ID <- factor(data_Signals_sample_summary$Sample_ID, levels = unique(data_Signals_sample_summary$Sample_ID))
 
