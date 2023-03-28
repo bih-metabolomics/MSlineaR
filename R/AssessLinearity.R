@@ -184,8 +184,8 @@ AssessLinearity <- function(
   message(exists("MIN_FEATURE"))
 
   message("checking input arguments\n--------------------------------------------------------\n")
-  dataOrigin <- checkData(TYPE,
-                          dat = DAT,
+  dataOrigin <- checkData(dat = DAT, MIN_FEATURE,
+                          TYPE,
                           QC,
                           QC_REF,
                           BLANK,
@@ -208,7 +208,7 @@ AssessLinearity <- function(
                           SOD_MODEL,
                           SOD_SDRES_MIN,
                           SOD_STDRES_MAX,
-                          MIN_FEATURE,
+
                           LR_SD_RES_FACTOR,
                           R2_MIN,
                           BATCH_HARMONIZATION,
