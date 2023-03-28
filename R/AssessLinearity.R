@@ -844,10 +844,10 @@ message("check QC samples")
 
   #7) scatter plot
   FDS_scatterplot <- plot_FDS(inputData_Series = output1,
-                              inputData_BioSamples = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
-                              inputData_QC = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% QC),
-                              inputData_QC_ref = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% QC_REF),
-                              inputData_Blank = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% BLANK),
+                              inputData_BioSamples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+                              inputData_QC = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC),
+                              inputData_QC_ref = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC_REF),
+                              inputData_Blank = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% BLANK),
                               COLNAMES = COLNAMES, X = Xraw, Y = Yraw
   )
 
