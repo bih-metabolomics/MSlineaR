@@ -344,6 +344,7 @@ AssessLinearity <- function(
     #on.exit(parallel::stopCluster(cl))
     #options(future.globals.onReference = "error")
     dataFOD <- my_fcn(
+      nCORE,
       #cl,
       #exportObjects = c("chooseModel", "X","Y", "abbr", "R2min"),
       xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
@@ -403,6 +404,7 @@ AssessLinearity <- function(
     #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
     dataTrim <- my_fcn(
      # cl,
+      nCORE,
       xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
       func = trimEnds,
@@ -460,6 +462,7 @@ AssessLinearity <- function(
     #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
     dataSOD <- my_fcn(
       #cl,
+      nCORE,
       xs = 1:data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
       x = X,
@@ -524,6 +527,7 @@ AssessLinearity <- function(
     #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
     dataTrimPos <- my_fcn(
       #cl,
+      nCORE,
       xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
       func = trim_pos_associated,
@@ -588,6 +592,7 @@ AssessLinearity <- function(
 
   dataLinearRange <- my_fcn(
     #cl = myCluster,
+    nCORE,
     xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
     inputData = processingFeature,
     func = findLinearRange,

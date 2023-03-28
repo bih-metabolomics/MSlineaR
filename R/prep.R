@@ -233,7 +233,7 @@ data.table::setDT(dat)
 #' @examples
 #'
 
-my_fcn <- function(xs, func, inputData, ...) {
+my_fcn <- function(nCORE, xs, func, inputData, ...) {
   #parallel::clusterExport(cl, exportObjects)
   cl <- parallel::makePSOCKcluster(nCORE)
    doSNOW::registerDoSNOW(cl)
