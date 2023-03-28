@@ -184,7 +184,7 @@ AssessLinearity <- function(
 
   message("checking input arguments\n--------------------------------------------------------\n")
   dataOrigin <- checkData(TYPE,
-                          DAT,
+                          DAT = DAT,
                           QC,
                           QC_REF,
                           BLANK,
