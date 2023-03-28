@@ -286,7 +286,7 @@ AssessLinearity <- function(
   #### normalizing, centralizing, log transforming ####
   message("preparing serial diluted QC data\n--------------------------------------------------------\n")
 
-  dataPrep <- prepareData(processingFeature)
+  dataPrep <- prepareData(processingFeature, TRANSFORM, TRANSFORM_X, TRANSFORM_Y)
 
 
   processingFeature <- data.table::copy(dataPrep)

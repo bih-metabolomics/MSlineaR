@@ -178,7 +178,7 @@ is.wholenumber <-
 #' @export
 #'
 #' @examples
-prepareData <- function(dat,...){
+prepareData <- function(dat,TRANSFORM, TRANSFORM_X, TRANSFORM_Y){
 
   stopifnot(exprs = {
     "data need to have 8 columns" = dim(dat)[2] == 8
