@@ -720,19 +720,19 @@ message("check QC samples")
 
 
       rsd_before <- SampleQC |>
-        group_by(Batch, Compound) |>
-        summarise(.groups = "keep", rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-        group_by(Batch) |>
-        summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
+        dplyr::group_by(Batch, Compound) |>
+        dplyr::summarize(.groups = "keep", rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+        dplyr::group_by(Batch) |>
+        dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
 
       SampleQC  <- getLRstatus(dats = SampleQC, datCal = processingGroup,y =  column_Y_sample)
 
       rsd_after <- SampleQC |>
-        filter(Status_LR %in% TRUE) |>
-        group_by(Batch, Compound) |>
-        summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-        group_by(Batch) |>
-        summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
+        dplyr::filter(Status_LR %in% TRUE) |>
+        dplyr::group_by(Batch, Compound) |>
+        dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+        dplyr::group_by(Batch) |>
+        dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
 
       SampleFeature <- dplyr::full_join(SampleFeature, SampleQC, by = colnames(SampleQC))
      message(QC, ":")
@@ -751,19 +751,19 @@ message("check QC samples")
     }
 
     rsd_before <- SampleQCref |>
-      group_by(Batch, Compound) |>
-      summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-      group_by(Batch) |>
-      summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
+      dplyr::group_by(Batch, Compound) |>
+      dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+      dplyr::group_by(Batch) |>
+      dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
 
     SampleQCref  <- getLRstatus(dats = SampleQCref, datCal = processingGroup,y =  column_Y_sample)
 
     rsd_after <- SampleQCref |>
-      filter(Status_LR %in% TRUE) |>
-      group_by(Batch, Compound) |>
-      summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-      group_by(Batch) |>
-      summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
+      dplyr::filter(Status_LR %in% TRUE) |>
+      dplyr::group_by(Batch, Compound) |>
+      dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+      dplyr::group_by(Batch) |>
+      dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
 
     SampleFeature <- dplyr::full_join(SampleFeature, SampleQCref, by = colnames(SampleQCref))
 
@@ -782,19 +782,19 @@ message("check QC samples")
       Y_SAMPLE = "Y_trans"
     }
     rsd_before <- SampleBlank |>
-      group_by(Batch, Compound) |>
-      summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-      group_by(Batch) |>
-      summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
+      dplyr::group_by(Batch, Compound) |>
+      dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+      dplyr::group_by(Batch) |>
+      dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
 
     SampleBlank  <- getLRstatus(dats = SampleBlank, datCal = processingGroup,y =  column_Y_sample)
 
     rsd_after <- SampleBlank |>
-      filter(Status_LR %in% TRUE) |>
-      group_by(Batch, Compound) |>
-      summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-      group_by(Batch) |>
-      summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
+      dplyr::filter(Status_LR %in% TRUE) |>
+      dplyr::group_by(Batch, Compound) |>
+      dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+      dplyr::group_by(Batch) |>
+      dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
 
     SampleFeature <- dplyr::full_join(SampleFeature, SampleBlank, by = colnames(SampleBlank))
 
