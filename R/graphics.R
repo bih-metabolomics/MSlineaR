@@ -244,7 +244,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
     #ylim(c(min(data_Signals[[Y]]-100), max(data_Signals[[Y]]) + 10000)) +
     #scale_x_continuous(name = "Concentration",breaks= unique(data_Signals[[X]]), labels = scales::trans_format(get(inverse_x))) +
-    ggplot2:: scale_y_continuous(name = "Area", labels = scales::trans_format(get(inverse_y)), limits = c(NA, layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
+    ggplot2:: scale_y_continuous(name = "Area", labels = scales::trans_format(get(inverse_y)), limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
 
 
   if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
