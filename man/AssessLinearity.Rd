@@ -42,8 +42,8 @@ AssessLinearity(
   nCORE = 1,
   get_output = c(TRUE, FALSE)[1],
   output_name = NULL,
-  which_output = c("R_object", "allCurveSignal", "allCurveFeature",
-    "filteredCurveSignal", "allBioSampleSignal", "filteredBioSampleSignal", "plots")[1:7],
+  which_output = c("all", "R_object", "allCurveSignal", "allCurveFeature",
+    "filteredCurveSignal", "allBioSampleSignal", "filteredBioSampleSignal", "plots")[1],
   output_dir = NULL
 )
 }

@@ -22,7 +22,7 @@
 #'
 #' @examples
 #'
-checkData <- function(dat, ...){
+checkData <- function(dat, MIN_FEATURE, ...){
 
   data.table::setDT(dat)
 

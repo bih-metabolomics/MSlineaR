@@ -4,20 +4,10 @@
 \alias{checkData}
 \title{Prepare raw data}
 \usage{
-checkData(DAT, ...)
+checkData(dat, MIN_FEATURE, ...)
 }
 \arguments{
-\item{dat}{Data frame with raw data. Mandatory columns are:
-\itemize{
-\item ID,
-\item IDintern
-\item Batch,
-\item Replicate,
-\item MZ
-\item RT
-\item Concentration
-\item Intensity
-}}
+\item{...}{}
 }
 \value{
 Data frame with columns:
