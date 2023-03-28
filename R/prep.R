@@ -1,15 +1,7 @@
 #' Prepare raw data
 #'
-#' @param dat Data frame with raw data. Mandatory columns are:
-#' - ID,
-#' - IDintern
-#' - Batch,
-#' - Replicate,
-#' - MZ
-#' - RT
-#' - Concentration
-#' - Intensity
-#'
+#' @param DAT
+#' @param ...
 #'
 #' @return Data frame with columns:
 #' - IDintern,
