@@ -352,7 +352,7 @@ plot_Barplot_Summary <- function(inputData_Series,
     ggplot2::facet_grid(.~Batch, scales = "free_x", space = "free_x")
 
   plot_Summary <- plot_Summary +
-    ggplot2::scale_x_continuous(breaks = data_Signals$DilutionPoint) +
+    ggplot2::scale_x_continuous(breaks = data_Signals_summary$DilutionPoint) +
     ggplot2::scale_fill_discrete(name = "", ) +
     ggplot2::scale_y_continuous(labels = scales::percent) +
     ggplot2::scale_fill_manual(values = c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
