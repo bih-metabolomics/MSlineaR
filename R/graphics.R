@@ -60,7 +60,7 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC, in
 plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, inputData_QC_ref = NULL, inputData_Blank = NULL,
                     nrRow = 10, nrFeature = 50,
                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
-                    outputfileName = c("Calibrationplot"), TRANSFORM_Y,
+                    outputfileName = c("Calibrationplot"), TRANSFORM_Y, inverse_y,
                     COLNAMES, X, Y ){
 
   assertthat::not_empty(inputData_Series)
