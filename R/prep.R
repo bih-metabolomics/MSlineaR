@@ -151,11 +151,11 @@ checkData <- function(dat, MIN_FEATURE, TYPE, QC,
     })
   }
 
-if(get_linearity_status_samples %in% TRUE){
+if(GET_LR_STATUS %in% TRUE){
 
   stopifnot(exprs = {
     "Argument 'sample_type_sample' was not found in column 'column_sample_type'" =
-      any(dat[[column_sample_type]] %in% SAMPLE)
+      any(dat[[TYPE]] %in% SAMPLE)
 
   })
 }
