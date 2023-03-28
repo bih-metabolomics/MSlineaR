@@ -70,7 +70,6 @@ checkData <- function(dat, MIN_FEATURE, TYPE, QC,
 
   data.table::setDT(dat)
 
-  message(exists("MIN_FEATURE"))
 
   stopifnot(exprs = {
     "'input_dat' has less rows than 'min_feature' required" = dim(dat)[1] >= MIN_FEATURE
@@ -117,7 +116,7 @@ checkData <- function(dat, MIN_FEATURE, TYPE, QC,
     "Argument 'min_feature' needs to be greater or equal than 3" = MIN_FEATURE >= 3
     "Argument 'LR_sd_res_factor' needs to be from type integer and positive" = is.wholenumber(LR_SD_RES_FACTOR) & LR_SD_RES_FACTOR >= 0
     "Argument 'sample_type_serial' was not found in column 'column_sample_type'" =
-        any(dat[[column_sample_type]] %in% CALIBRANTS)
+        any(dat[[TYPE]] %in% CALIBRANTS)
     "Argument 'R2_min' needs to be from type double and in the range between 0 and 1" =
       data.table::between(x = R2_MIN, lower = 0, upper = 1)
 

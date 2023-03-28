@@ -181,7 +181,6 @@ AssessLinearity <- function(
   PREFIX = output_name
   OUTPUT_DIR = output_dir
 
-  message(exists("MIN_FEATURE"))
 
   message("checking input arguments\n--------------------------------------------------------\n")
   dataOrigin <- checkData(dat = DAT, MIN_FEATURE,
