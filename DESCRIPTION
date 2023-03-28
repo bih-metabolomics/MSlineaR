@@ -28,13 +28,14 @@ Imports:
     drc,
     purrr,
     dplyr,
-    DescTools
+    DescTools,
+    ggplot2
 Suggests: 
     testthat,
     tidyselect,
     lattice,
     survival,
     MASS,
-    ggplot2
+    
 Depends: 
     R (>= 2.10)
