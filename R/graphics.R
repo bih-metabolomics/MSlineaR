@@ -131,7 +131,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
   nCol = data.table::uniqueN(data_Signals[,get(columns[["Batch"]])])
-  npage = ceiling(data.table::uniqueN(data_Signals[[ID]])/nrRow)
+  npage = ceiling(as.numeric(data.table::uniqueN(data_Signals[[ID]])/nrRow))
 
   if(printPDF %in% TRUE){
 
