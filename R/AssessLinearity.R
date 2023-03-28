@@ -239,9 +239,9 @@ AssessLinearity <- function(
     # check if output dir already exist or create it
     if (!dir.exists(REPORT_OUTPUT_DIR)){
       dir.create(REPORT_OUTPUT_DIR)
-      print("Dir", REPORT_OUTPUT_DIR , "was created.")
+      message("Dir", REPORT_OUTPUT_DIR , "was created.")
     } else {
-      print("Dir already exists!")
+      message("Dir already exists!")
     }
   }
 
