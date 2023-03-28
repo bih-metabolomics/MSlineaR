@@ -1,6 +1,6 @@
 #' Prepare raw data
 #'
-#' @param DAT
+#' @param dat
 #' @param ...
 #'
 #' @return Data frame with columns:
@@ -22,9 +22,8 @@
 #'
 #' @examples
 #'
-checkData <- function(DAT, ...){
+checkData <- function(dat, ...){
 
-  dat <- DAT
   data.table::setDT(dat)
 
   stopifnot(exprs = {
