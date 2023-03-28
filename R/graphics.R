@@ -326,15 +326,15 @@ plot_Barplot_Summary <- function(inputData_Series,
   data.table::setDT(inputData_Series)
 
   data_Signals_summary <- inputData_Series |>
-    group_by(DilutionPoint, Batch) |>
-    summarize(Missing = sum(is.na(Y), na.rm = T),
+    dplyr::group_by(DilutionPoint, Batch) |>
+    dplyr::summarize(Missing = sum(is.na(Y), na.rm = T),
               OutlierFOD = sum(OutlierFOD, na.rm = T),
               Trim = sum(trim %in% TRUE, na.rm = T),
               OutlierSOD = sum(OutlierSOD, na.rm = T),
               LR_TRUE = sum(IsLinear %in% TRUE, na.rm = T),
               LR_FALSE = sum(IsLinear %in% FALSE, na.rm = T)
               ) |>
-    pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:2))
+    tidyr::pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:2))
 
 
 
@@ -405,13 +405,13 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   data.table::setDT(inputData_Samples)
 
   data_Signals_sample_summary <- inputData_Samples |>
-    group_by(Sample_ID = get(SAMPLE_ID), Batch, Sample.Type) |>
-    summarize(
+    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch, Sample.Type) |>
+    dplyr::summarize(
       Missing = sum(is.na(Y), na.rm = T),
       LR_TRUE = sum(Status_LR %in% TRUE, na.rm = T),
       LR_FALSE = sum(Status_LR %in% FALSE, na.rm = T)
     ) |>
-    pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:3))
+    tidyr::pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:3))
 
 
 
