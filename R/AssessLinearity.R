@@ -847,7 +847,8 @@ message("check QC samples")
                               inputData_BioSamples = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                               inputData_QC = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% QC),
                               inputData_QC_ref = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% QC_REF),
-                              inputData_Blank = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% BLANK)
+                              inputData_Blank = output4 |> filter(get(COLNAMES[["Sample_type"]]) %in% BLANK),
+                              COLNAMES = COLNAMES, X = Xraw, Y = Yraw
   )
 
 

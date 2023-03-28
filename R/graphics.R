@@ -61,10 +61,12 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
                     nrRow = 10, nrFeature = 50,
                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
                     outputfileName = c("Calibrationplot"),
-                    columns = c(ID = COLNAMES[["ID"]],Batch = COLNAMES[["Batch"]], X = Xraw, Y = Yraw), ...){
+                    COLNAMES, X, Y ){
 
   assertthat::not_empty(inputData_Series)
 # LR_object,statusLinear = c(TRUE, FALSE),
+
+  columns = c(ID = COLNAMES[["ID"]],Batch = COLNAMES[["Batch"]], X = X, Y = Y)
   ID <- columns[["ID"]]
   X <- columns[["X"]]
   Y <- columns[["Y"]]
