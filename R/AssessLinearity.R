@@ -840,7 +840,7 @@ message("check QC samples")
 
   #6) barplot summary per dilution/concentration
 
-  summary_barplot <- plot_Barplot_Summary(inputData_Series = output1)
+  summary_barplot <- plot_Barplot_Summary(inputData_Series = output1, COLNAMES, Xraw, Yraw)
 
   #7) scatter plot
   FDS_scatterplot <- plot_FDS(inputData_Series = output1,
