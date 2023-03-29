@@ -311,9 +311,9 @@ plot_Barplot_Summary <- function(inputData_Series,
 
   plot_Summary <- plot_Summary +
     ggplot2::scale_x_continuous(breaks = data_Signals_summary$DilutionPoint) +
-    ggplot2::scale_fill_discrete(name = "", ) +
+    #ggplot2::scale_fill_discrete(name = "", ) +
     ggplot2::scale_y_continuous(labels = scales::percent) +
-    ggplot2::scale_fill_manual(values = c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
+    ggplot2::scale_fill_manual(name = "", values = c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
     ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
@@ -325,7 +325,7 @@ plot_Barplot_Summary <- function(inputData_Series,
     pdf(file = file.path(getwd(),paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)}
 
 
-  plot( plot_Summary)
+  print( plot_Summary)
 
   if(printPDF %in% TRUE){ dev.off()}
 
