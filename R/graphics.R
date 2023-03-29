@@ -68,7 +68,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 # LR_object,statusLinear = c(TRUE, FALSE),
 
   ID <-  COLNAMES[["ID"]]
-  Batch <-  COLNAMES[["Batch"]]
+  Col_Batch <-  COLNAMES[["Batch"]]
   X <- X
   Y <- Y
 
@@ -94,7 +94,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
 
-  nCol = data.table::uniqueN(data_Signals[[Batch]])
+  nCol = data.table::uniqueN(data_Signals[[Col_Batch]])
   npage = ceiling(as.numeric(data.table::uniqueN(data_Signals[[ID]])/nrRow))
 
   if(printPDF %in% TRUE){
@@ -175,40 +175,24 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(!is.null(inputData_QC )){
     plotlinearData <-  plotlinearData +
-      #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC[, Sample.Type])), ggplot2::aes( x = -2, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) #+, shape = 5
-      #geom_vline(ggplot2::aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
-      #geom_text(ggplot2::aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
     legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
   }
 
   if(!is.null(inputData_QC_ref )){
     plotlinearData <-  plotlinearData +
-      #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC_ref[, Sample.Type])), ggplot2::aes( x = -3, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) #+ shape = 2
-    #geom_vline(ggplot2::aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
-    #geom_text(ggplot2::aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
     legend_order <- c(legend_order, unique(inputData_QC_ref$Sample.Type))
 
   }
 
   if(!is.null(inputData_Blank )){
     plotlinearData <-  plotlinearData +
-      #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Blank[, Sample.Type])), ggplot2::aes( x = -4, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2)# + shape = 0
-    #geom_vline(ggplot2::aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
-    #geom_text(ggplot2::aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
     legend_order <- c(legend_order, unique(inputData_Blank$Sample.Type))
 
   }
 
-  if(printR2 %in% TRUE) {plotlinearData <- plotlinearData +
-    ggplot2::geom_text(data = subset(data_Signals, !is.na(R2)),
-                       ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2,2)) ,  group = get(ID)),
-                       size = 3,
-                       hjust = -0.1,
-                       vjust = 2,
-                       inherit.aes = FALSE)
 
 
   plotlinearData <- plotlinearData +
@@ -217,11 +201,22 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
     plotlinearData <-  plotlinearData +
-      ggforce::facet_grid_paginate(stats::reformulate(termlabels = Batch,response = ID) ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
+      ggforce::facet_grid_paginate(stats::reformulate(termlabels = Col_Batch,response = ID) ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
     }
 
 
+  if(printR2 %in% TRUE) {
 
+    text_label <- unique(data_Signals[, .c(get(ID), get(Col_Batch), R2)])
+
+
+    plotlinearData <- plotlinearData +
+    ggplot2::geom_text(data = text_label,#subset(data_Signals, !is.na(R2)),
+              ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2,2)) ,  group = get(ID)),
+              size = 3,
+              hjust = -0.1,
+              vjust = 2,
+              inherit.aes = FALSE)
 
 
   }
@@ -282,14 +277,14 @@ plot_Barplot_Summary <- function(inputData_Series,
   assertthat::not_empty(inputData_Series)
   # LR_object,statusLinear = c(TRUE, FALSE),
   ID <- COLNAMES[["ID"]]
-  Batch = COLNAMES[["Batch"]]
+  Col_Batch = COLNAMES[["Batch"]]
   X <- X
   Y <- Y
 
   data.table::setDT(inputData_Series)
 
   data_Signals_summary <- inputData_Series |>
-    dplyr::group_by(DilutionPoint, Batch) |>
+    dplyr::group_by(DilutionPoint, Col_Batch) |>
     dplyr::summarize(Missing = sum(is.na(Y), na.rm = T),
               OutlierFOD = sum(OutlierFOD, na.rm = T),
               Trim = sum(trim %in% TRUE, na.rm = T),
@@ -312,7 +307,7 @@ plot_Barplot_Summary <- function(inputData_Series,
                  position="fill",
                  width = 0.5 ) +
     ggplot2::geom_text(size = 3, position = ggplot2::position_fill(vjust = 0.5)) +
-    ggplot2::facet_grid(stats::reformulate(termlabels = Batch,response = "."), scales = "free_x", space = "free_x")
+    ggplot2::facet_grid(stats::reformulate(termlabels = Col_Batch,response = "."), scales = "free_x", space = "free_x")
 
   plot_Summary <- plot_Summary +
     ggplot2::scale_x_continuous(breaks = data_Signals_summary$DilutionPoint) +
@@ -364,7 +359,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   assertthat::not_empty(inputData_Samples)
   # LR_object,statusLinear = c(TRUE, FALSE),
   ID <- COLNAMES[["ID"]]
-  Batch <- COLNAMES[["Batch"]]
+  Col_Batch <- COLNAMES[["Batch"]]
   X <- X
   Y <- Y
   SAMPLE_ID <- COLNAMES[["Sample_ID"]]
@@ -372,7 +367,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   data.table::setDT(inputData_Samples)
 
   data_Signals_sample_summary <- inputData_Samples |>
-    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch, Sample.Type) |>
+    dplyr::group_by(Sample_ID = get(SAMPLE_ID), get(Col_Batch), Sample.Type) |>
     dplyr::summarize(
       Missing = sum(is.na(Y), na.rm = T),
       LR_TRUE = sum(Status_LR %in% TRUE, na.rm = T),
@@ -394,7 +389,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
              position="fill",
              width = 0.5 ) +
     #geom_text(size = 3, position = position_fill(vjust = 0.5)) +
-    ggplot2::facet_grid(stats::reformulate(termlabels = Batch,response = "."), scales = "free_x", space = "free_x")
+    ggplot2::facet_grid(stats::reformulate(termlabels = Col_Batch,response = "."), scales = "free_x", space = "free_x")
 
   plot_Summary_samples <- plot_Summary_samples +
     #scale_x_continuous(breaks = data_Signals$DilutionPoint) +
