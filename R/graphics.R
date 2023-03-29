@@ -19,10 +19,14 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC, in
 
   data_Signals <- inputData_Series
 
-  if(!is.null(inputData_BioSamples)) data_Signals <- dplyr::full_join(data_Signals, inputData_BioSamples)
-  if(!is.null(inputData_QC)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC)
-  if(!is.null(inputData_QC_ref)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC_ref)
-  if(!is.null(inputData_Blank)) data_Signals <- dplyr::full_join(data_Signals, inputData_Blank)
+  if(!is.null(inputData_BioSamples)) data_Signals <- dplyr::full_join(data_Signals, inputData_BioSamples,
+                                                                      by = intersect(colnames(data_Signals), colnames(inputData_BioSamples)))
+  if(!is.null(inputData_QC)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC,
+                                                              by = intersect(colnames(data_Signals), colnames(inputData_QC)))
+  if(!is.null(inputData_QC_ref)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC_ref,
+                                                                  by = intersect(colnames(data_Signals), colnames(inputData_QC_ref)))
+  if(!is.null(inputData_Blank)) data_Signals <- dplyr::full_join(data_Signals, inputData_Blank,
+                                                                 by = intersect(colnames(data_Signals), colnames(inputData_Blank)))
 
 
 
@@ -208,10 +212,11 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
   if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
+    message("test")
     plotlinearData <-  plotlinearData +
       ggforce::facet_grid_paginate(get(ID) ~ get(Batch) ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
     }
-
+message("test2")
 
   if(printR2 %in% TRUE) {plotlinearData <- plotlinearData +
     ggplot2::geom_text(data = subset(data_Signals, !is.na(R2)),
