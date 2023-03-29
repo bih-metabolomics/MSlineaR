@@ -248,7 +248,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
            shape = ggplot2::guide_legend(order = 2))
 
 
-      #plot(plotlinearData)
+      print(plotlinearData)
 
     }
   if(printPDF %in% TRUE){dev.off()}
