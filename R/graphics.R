@@ -76,43 +76,6 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
 
-
-#
-#   if(any(GroupIndices != "all" & GroupIndices != "")){
-#     inputData_Series <- inputData_Series[groupIndices %in% GroupIndices]
-#     inputData_BioSamples <- inputData_BioSamples[groupIndices %in% GroupIndices]
-#     inputData_QC <- inputData_QC[groupIndices %in% GroupIndices]
-#     inputData_QC_ref <- inputData_QC_ref[groupIndices %in% GroupIndices]
-#     inputData_Blank <- inputData_Blank[groupIndices %in% GroupIndices]
-#
-#
-#
-#     }
-  # if(any(Feature != "all" & Feature != "")){
-  #   inputData_Series <- inputData_Series[get(ID) %in% Feature]
-  #   inputData_BioSamples <- inputData_BioSamples[get(ID) %in% Feature]
-  #   inputData_QC <- inputData_QC[get(ID) %in% Feature]
-  #   inputData_QC_ref <- inputData_QC_ref[get(ID) %in% Feature]
-  #   inputData_Blank <- inputData_Blank[get(ID) %in% Feature]
-  # }
-#
-#   if(Feature %in% "all" & GroupIndices %in% "all" & data.table::uniqueN(inputData_Series[[ID]]) > nrFeature){
-#     randomIDs <- sample(unique(inputData_Series[[ID]]), nrFeature, replace = F)
-#     inputData_Series <- inputData_Series[get(ID) %in% randomIDs]
-#     inputData_BioSamples <- inputData_BioSamples[get(ID) %in% randomIDs]
-#     inputData_QC <- inputData_QC[get(ID) %in% randomIDs]
-#     inputData_QC_ref <- inputData_QC_ref[get(ID) %in% randomIDse]
-#     inputData_Blank <- inputData_Blank[get(ID) %in% randomIDs]
-#   }
-
-  # data_Signals <- inputData_Series
-  #
-  # if(!is.null(inputData_BioSamples)) data_Signals <- dplyr::full_join(data_Signals, inputData_BioSamples)
-  # if(!is.null(inputData_QC)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC)
-  # if(!is.null(inputData_QC_ref)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC_ref)
-  # if(!is.null(inputData_Blank)) data_Signals <- dplyr::full_join(data_Signals, inputData_Blank)
-
-
   data_Signals <- combineData(inputData_Series, inputData_BioSamples, inputData_QC, inputData_QC_ref, inputData_Blank)
 
   data.table::setorderv(data_Signals, ID)
@@ -246,7 +209,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
     plotlinearData <-  plotlinearData +
-      ggforce::facet_grid_paginate(get(ID) ~ get(Batch) ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
+      ggforce::facet_grid_paginate(ID ~ Batch ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
     }
 
 
