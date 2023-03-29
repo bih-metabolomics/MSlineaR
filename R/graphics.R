@@ -214,7 +214,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
     message("test")
     plotlinearData <-  plotlinearData +
-      ggforce::facet_grid_paginate(stats::reformulate("ID ~ Batch") ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
+      ggforce::facet_grid_paginate(stats::reformulate(termlabels = Batch,response = ID) ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
     message("test2")
     }
 
@@ -235,20 +235,20 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 message("test3")
 
-  # plotlinearData <-  plotlinearData +
-  #   ggplot2::scale_color_manual(name = "In linear Range:",
-  #                      values = c("FALSE" = "red", "TRUE" = "purple")) +
-  #   ggplot2::scale_shape_manual(values = c(0, 2, 5, 1)) +
-  #   ggplot2::scale_shape_discrete(breaks=rev(legend_order)) +
-  #   ggplot2::theme_bw() +
-  #   ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
-  #   ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
-  #   ggplot2::theme(panel.background=ggplot2::element_blank()) +
-  #   ggplot2::theme(axis.line=ggplot2::element_line()) +
-  #   ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
-  #   ggplot2::theme(legend.position="top") +
-  #   ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
-  #          shape = ggplot2::guide_legend(order = 2))
+  plotlinearData <-  plotlinearData +
+    ggplot2::scale_color_manual(name = "In linear Range:",
+                       values = c("FALSE" = "red", "TRUE" = "purple")) +
+    ggplot2::scale_shape_manual(values = c(0, 2, 5, 1)) +
+    ggplot2::scale_shape_discrete(breaks=rev(legend_order)) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
+    ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
+    ggplot2::theme(panel.background=ggplot2::element_blank()) +
+    ggplot2::theme(axis.line=ggplot2::element_line()) +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
+    ggplot2::theme(legend.position="top") +
+    ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
+           shape = ggplot2::guide_legend(order = 2))
 
 
       plot(plotlinearData)
@@ -317,7 +317,7 @@ plot_Barplot_Summary <- function(inputData_Series,
                  position="fill",
                  width = 0.5 ) +
     ggplot2::geom_text(size = 3, position = ggplot2::position_fill(vjust = 0.5)) +
-    ggplot2::facet_grid(stats::reformulate(". ~ Batch"), scales = "free_x", space = "free_x")
+    ggplot2::facet_grid(stats::reformulate(termlabels = Batch,response = "."), scales = "free_x", space = "free_x")
 
   plot_Summary <- plot_Summary +
     ggplot2::scale_x_continuous(breaks = data_Signals_summary$DilutionPoint) +
@@ -398,7 +398,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
              position="fill",
              width = 0.5 ) +
     #geom_text(size = 3, position = position_fill(vjust = 0.5)) +
-    ggplot2::facet_grid(.~Batch, scales = "free_x", space = "free_x")
+    ggplot2::facet_grid(stats::reformulate(termlabels = Batch,response = "."), scales = "free_x", space = "free_x")
 
   plot_Summary_samples <- plot_Summary_samples +
     #scale_x_continuous(breaks = data_Signals$DilutionPoint) +
