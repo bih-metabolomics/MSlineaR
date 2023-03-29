@@ -14,8 +14,7 @@
 #' @export
 #'
 #' @examples
-combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC, inputData_QC_ref, inputData_Blank,
-                        columns = c(ID = COLNAMES[["ID"]],Batch = COLNAMES[["Batch"]], X = Xraw, Y = Yraw), ...
+combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC, inputData_QC_ref, inputData_Blank
                         ){
 
 
@@ -131,6 +130,9 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
   nCol = data.table::uniqueN(data_Signals[,get(columns[["Batch"]])])
+  message(is.numeric(data.table::uniqueN(data_Signals[[ID]])))
+  message(is.numeric(nrRow))
+  message(data.table::uniqueN(data_Signals[[ID]])
   npage = ceiling(as.numeric(data.table::uniqueN(data_Signals[[ID]])/nrRow))
 
   if(printPDF %in% TRUE){
