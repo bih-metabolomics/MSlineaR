@@ -219,7 +219,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(printR2 %in% TRUE) {plotlinearData <- plotlinearData +
     ggplot2::geom_text(data = subset(data_Signals, !is.na(R2)),
-              ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2,2)) ,  group = get(ID)),
+              ggplot2::aes(x = 0, y = Inf, label = unique(paste(Series,": R2 = ", round(R2,2))) ,  group = get(ID)),
               size = 3,
               hjust = -0.1,
               vjust = 2,
