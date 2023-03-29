@@ -316,7 +316,7 @@ plot_Barplot_Summary <- function(inputData_Series,
                  position="fill",
                  width = 0.5 ) +
     ggplot2::geom_text(size = 3, position = ggplot2::position_fill(vjust = 0.5)) +
-    ggplot2::facet_grid(. stats::reformulate("Batch"), scales = "free_x", space = "free_x")
+    ggplot2::facet_grid(stats::reformulate(". ~ Batch"), scales = "free_x", space = "free_x")
 
   plot_Summary <- plot_Summary +
     ggplot2::scale_x_continuous(breaks = data_Signals_summary$DilutionPoint) +
