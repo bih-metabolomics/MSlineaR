@@ -156,7 +156,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   }
 
   plotlinearData <-  plotlinearData +
-    ggplot2::scale_x_continuous(breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) #+#scales::trans_format(get(inverse_x), format = number_format())) +
+    ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) #+#scales::trans_format(get(inverse_x), format = number_format())) +
 
 # if(!is.null(inputData_BioSamples) | !is.null(inputData_QC)| !is.null(inputData_QCref) | !is.null(inputData_Blank)){
 #   nrQC <- sum(!is.null(inputData_BioSamples),!is.null(inputData_QC),!is.null(inputData_QCref), !is.null(inputData_Blank))
@@ -166,7 +166,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(!is.null(inputData_BioSamples )){
     plotlinearData <-  plotlinearData +
-      ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
+      #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ), ggplot2::aes( x = -1, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) +#, shape = 1, col = "purple"
       ggplot2::geom_vline(ggplot2::aes( xintercept = 0, color = "darkgrey"), linetype = "solid", col = "black") +
       ggplot2::geom_text(ggplot2::aes(x = -2.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2)
@@ -175,7 +175,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(!is.null(inputData_QC )){
     plotlinearData <-  plotlinearData +
-      ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +
+      #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC[, Sample.Type])), ggplot2::aes( x = -2, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) #+, shape = 5
       #geom_vline(ggplot2::aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
       #geom_text(ggplot2::aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
@@ -184,7 +184,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(!is.null(inputData_QC_ref )){
     plotlinearData <-  plotlinearData +
-      ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +
+      #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC_ref[, Sample.Type])), ggplot2::aes( x = -3, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) #+ shape = 2
     #geom_vline(ggplot2::aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
     #geom_text(ggplot2::aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
@@ -194,7 +194,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(!is.null(inputData_Blank )){
     plotlinearData <-  plotlinearData +
-      ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
+      #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Blank[, Sample.Type])), ggplot2::aes( x = -4, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2)# + shape = 0
     #geom_vline(ggplot2::aes( xintercept = min(data_Signals[[X]], na.rm = T) -3, color = "darkgrey"), linetype = "solid", col = "black") +
     #geom_text(ggplot2::aes(x = min(data_Signals[[X]], na.rm = T) -5, y = Inf, label = "Sample"), size = 3,vjust = 2)
@@ -248,7 +248,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
            shape = ggplot2::guide_legend(order = 2))
 
 
-      plot(plotlinearData)
+      #plot(plotlinearData)
 
     }
   if(printPDF %in% TRUE){dev.off()}
