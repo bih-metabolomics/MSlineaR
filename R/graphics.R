@@ -202,12 +202,16 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   }
 
+  if(printR2 %in% TRUE) {plotlinearData <- plotlinearData +
+    ggplot2::geom_text(data = subset(data_Signals, !is.na(R2)),
+                       ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2,2)) ,  group = get(ID)),
+                       size = 3,
+                       hjust = -0.1,
+                       vjust = 2,
+                       inherit.aes = FALSE)
 
 
   plotlinearData <- plotlinearData +
-
-    #ylim(c(min(data_Signals[[Y]]-100), max(data_Signals[[Y]]) + 10000)) +
-    #scale_x_continuous(name = "Concentration",breaks= unique(data_Signals[[X]]), labels = scales::trans_format(get(inverse_x))) +
     ggplot2:: scale_y_continuous(name = "Area", labels = scales::trans_format(get(inverse_y)), limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
 
 
@@ -217,13 +221,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
     }
 
 
-  if(printR2 %in% TRUE) {plotlinearData <- plotlinearData +
-    ggplot2::geom_text(data = subset(data_Signals, !is.na(R2)),
-              ggplot2::aes(x = 0, y = Inf, label = unique(paste(Series,": R2 = ", round(R2,2))) ,  group = get(ID)),
-              size = 3,
-              hjust = -0.1,
-              vjust = 2,
-              inherit.aes = FALSE)
+
 
 
   }
