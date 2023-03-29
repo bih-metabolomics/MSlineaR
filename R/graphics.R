@@ -215,8 +215,9 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
     message("test")
     plotlinearData <-  plotlinearData +
       ggforce::facet_grid_paginate(stats::reformulate("ID ~ Batch") ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
+    message("test2")
     }
-message("test2")
+
 
   if(printR2 %in% TRUE) {plotlinearData <- plotlinearData +
     ggplot2::geom_text(data = subset(data_Signals, !is.na(R2)),
@@ -232,7 +233,7 @@ message("test2")
 
 
 
-
+message("test3")
 
   plotlinearData <-  plotlinearData +
     ggplot2::scale_color_manual(name = "In linear Range:",
