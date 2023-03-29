@@ -841,7 +841,7 @@ message("check QC samples")
   #6) barplot summary per dilution/concentration
 
   summary_barplot <- plot_Barplot_Summary(inputData_Series = output1, COLNAMES = COLNAMES, X = Xraw, Y = Yraw)
-
+message("summary_barplot done")
   #7) scatter plot
   FDS_scatterplot <- plot_FDS(inputData_Series = output1,
                               inputData_BioSamples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
@@ -851,13 +851,15 @@ message("check QC samples")
                               COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,Series = Series
   )
 
-
+message("FDS_scatterplot done")
   #8) barplot summary for biological samples
 
 
   summary_barplot_sample <- plot_Barplot_Summary_Sample(inputData_Samples = output4,
                                                         COLNAMES = COLNAMES,
                                                         X = Xraw, Y = Yraw)
+
+  message("summary_barplot_sample")
 
 
   data.table::setnames(skip_absent = T, processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"), c(COLNAMES[["ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
