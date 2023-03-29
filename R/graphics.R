@@ -235,20 +235,20 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 message("test3")
 
-  plotlinearData <-  plotlinearData +
-    ggplot2::scale_color_manual(name = "In linear Range:",
-                       values = c("FALSE" = "red", "TRUE" = "purple")) +
-    ggplot2::scale_shape_manual(values = c(0, 2, 5, 1)) +
-    ggplot2::scale_shape_discrete(breaks=rev(legend_order)) +
-    ggplot2::theme_bw() +
-    ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
-    ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
-    ggplot2::theme(panel.background=ggplot2::element_blank()) +
-    ggplot2::theme(axis.line=ggplot2::element_line()) +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
-    ggplot2::theme(legend.position="top") +
-    ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
-           shape = ggplot2::guide_legend(order = 2))
+  # plotlinearData <-  plotlinearData +
+  #   ggplot2::scale_color_manual(name = "In linear Range:",
+  #                      values = c("FALSE" = "red", "TRUE" = "purple")) +
+  #   ggplot2::scale_shape_manual(values = c(0, 2, 5, 1)) +
+  #   ggplot2::scale_shape_discrete(breaks=rev(legend_order)) +
+  #   ggplot2::theme_bw() +
+  #   ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
+  #   ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
+  #   ggplot2::theme(panel.background=ggplot2::element_blank()) +
+  #   ggplot2::theme(axis.line=ggplot2::element_line()) +
+  #   ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
+  #   ggplot2::theme(legend.position="top") +
+  #   ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
+  #          shape = ggplot2::guide_legend(order = 2))
 
 
       plot(plotlinearData)
