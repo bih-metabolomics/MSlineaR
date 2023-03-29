@@ -7,7 +7,6 @@
 #' @param inputData_QC
 #' @param inputData_QC_ref
 #' @param inputData_Blank
-#' @param columns
 #' @param ...
 #'
 #' @return
@@ -48,7 +47,6 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC, in
 #' @param GroupIndices
 #' @param Feature
 #' @param printR2
-#' @param columns
 #' @param ...
 #' @param outputfileName
 #'
@@ -65,10 +63,10 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   assertthat::not_empty(inputData_Series)
 # LR_object,statusLinear = c(TRUE, FALSE),
 
-  columns = c(ID = COLNAMES[["ID"]],Batch = COLNAMES[["Batch"]], X = X, Y = Y)
-  ID <- columns[["ID"]]
-  X <- columns[["X"]]
-  Y <- columns[["Y"]]
+  ID <-  COLNAMES[["ID"]]
+  Batch <-  COLNAMES[["Batch"]]
+  X <- X
+  Y <- Y
 
   data.table::setDT(inputData_Series)
   data.table::setDT(inputData_BioSamples)
@@ -129,7 +127,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
 
-  nCol = data.table::uniqueN(data_Signals[,get(columns[["Batch"]])])
+  nCol = data.table::uniqueN(data_Signals[[Batch]])
   npage = ceiling(as.numeric(data.table::uniqueN(data_Signals[[ID]])/nrRow))
 
   if(printPDF %in% TRUE){
@@ -248,7 +246,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
     plotlinearData <-  plotlinearData +
-      ggforce::facet_grid_paginate(get(ID) ~ get(columns[["Batch"]]) ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
+      ggforce::facet_grid_paginate(get(ID) ~ get(Batch) ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
     }
 
 
@@ -319,10 +317,9 @@ plot_Barplot_Summary <- function(inputData_Series,
 
   assertthat::not_empty(inputData_Series)
   # LR_object,statusLinear = c(TRUE, FALSE),
-  columns = c(ID = COLNAMES[["ID"]],Batch = COLNAMES[["Batch"]], X = X, Y = Y)
-  ID <- columns[["ID"]]
-  X <- columns[["X"]]
-  Y <- columns[["Y"]]
+  ID <- COLNAMES[["ID"]]
+  X <- X
+  Y <- Y
 
   data.table::setDT(inputData_Series)
 
@@ -401,10 +398,10 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
   assertthat::not_empty(inputData_Samples)
   # LR_object,statusLinear = c(TRUE, FALSE),
-  columns = c(ID = COLNAMES[["ID"]],Batch = COLNAMES[["Batch"]], X = X, Y = Y)
-  ID <- columns[["ID"]]
-  X <- columns[["X"]]
-  Y <- columns[["Y"]]
+  ID <- COLNAMES[["ID"]]
+  X <- X
+  Y <- Y
+  SAMPLE_ID <- COLNAMES[["Sample_ID"]]
 
   data.table::setDT(inputData_Samples)
 
