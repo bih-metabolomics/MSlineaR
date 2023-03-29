@@ -296,15 +296,15 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 #' Title
 #'
-#' @param LR_object
-#' @param data_Sample
-#' @param groupIndices
-#' @param statusLinear
-#' @param ID
 #' @param printPDF
+#' @param inputData_Series
+#' @param GroupIndices
+#' @param Feature
+#' @param COLNAMES
+#' @param X
+#' @param Y
+#' @param ...
 #' @param outputfileName
-#' @param pdfwidth
-#' @param pdfheight
 #'
 #' @return
 #' @export
@@ -384,8 +384,10 @@ plot_Barplot_Summary <- function(inputData_Series,
 #' @param GroupIndices
 #' @param Feature
 #' @param outputfileName
-#' @param columns
 #' @param ...
+#' @param COLNAMES
+#' @param X
+#' @param Y
 #'
 #' @return
 #' @export
@@ -394,11 +396,12 @@ plot_Barplot_Summary <- function(inputData_Series,
 plot_Barplot_Summary_Sample <- function(inputData_Samples,
                                         printPDF = TRUE, GroupIndices = "all",  Feature = "all",
                                         outputfileName = c("Summary_Barplot_Samples"),
-                                        columns = c(ID = COLNAMES[["ID"]],Batch = COLNAMES[["Batch"]], X = Xraw, Y = Yraw), ...){
+                                        COLNAMES, X, Y , ...){
 
 
   assertthat::not_empty(inputData_Samples)
   # LR_object,statusLinear = c(TRUE, FALSE),
+  columns = c(ID = COLNAMES[["ID"]],Batch = COLNAMES[["Batch"]], X = X, Y = Y)
   ID <- columns[["ID"]]
   X <- columns[["X"]]
   Y <- columns[["Y"]]

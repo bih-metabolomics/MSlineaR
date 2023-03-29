@@ -855,7 +855,9 @@ message("check QC samples")
   #8) barplot summary for biological samples
 
 
-  summary_barplot_sample <- plot_Barplot_Summary_Sample(inputData_Samples = output4, COLNAMES = COLNAMES, X = Xraw, Y = Yraw,)
+  summary_barplot_sample <- plot_Barplot_Summary_Sample(inputData_Samples = output4,
+                                                        COLNAMES = COLNAMES,
+                                                        X = Xraw, Y = Yraw)
 
 
   data.table::setnames(skip_absent = T, processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"), c(COLNAMES[["ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
