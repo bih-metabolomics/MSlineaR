@@ -212,10 +212,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
   if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
-    message("test")
     plotlinearData <-  plotlinearData +
       ggforce::facet_grid_paginate(stats::reformulate(termlabels = Batch,response = ID) ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
-    message("test2")
     }
 
 
@@ -233,7 +231,6 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
 
-message("test3")
 
   plotlinearData <-  plotlinearData +
     ggplot2::scale_color_manual(name = "In linear Range:",
@@ -369,6 +366,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   assertthat::not_empty(inputData_Samples)
   # LR_object,statusLinear = c(TRUE, FALSE),
   ID <- COLNAMES[["ID"]]
+  Batch <- COLNAMES[["Batch"]]
   X <- X
   Y <- Y
   SAMPLE_ID <- COLNAMES[["Sample_ID"]]
