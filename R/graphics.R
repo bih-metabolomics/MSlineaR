@@ -209,7 +209,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
     plotlinearData <-  plotlinearData +
-      ggforce::facet_grid_paginate(ID ~ Batch ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
+      ggforce::facet_grid_paginate(get(ID) ~ get(Batch) ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
     }
 
 
@@ -281,6 +281,7 @@ plot_Barplot_Summary <- function(inputData_Series,
   assertthat::not_empty(inputData_Series)
   # LR_object,statusLinear = c(TRUE, FALSE),
   ID <- COLNAMES[["ID"]]
+  Batch = COLNAMES[["Batch"]]
   X <- X
   Y <- Y
 
@@ -310,7 +311,7 @@ plot_Barplot_Summary <- function(inputData_Series,
                  position="fill",
                  width = 0.5 ) +
     ggplot2::geom_text(size = 3, position = ggplot2::position_fill(vjust = 0.5)) +
-    ggplot2::facet_grid(.~Batch, scales = "free_x", space = "free_x")
+    ggplot2::facet_grid(.~get(Batch), scales = "free_x", space = "free_x")
 
   plot_Summary <- plot_Summary +
     ggplot2::scale_x_continuous(breaks = data_Signals_summary$DilutionPoint) +
