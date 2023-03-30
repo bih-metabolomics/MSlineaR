@@ -80,7 +80,10 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
 
-  data_Signals <- combineData(inputData_Series, inputData_BioSamples, inputData_QC, inputData_QC_ref, inputData_Blank)
+  data_Signal <- combineData(inputData_Series, inputData_BioSamples, inputData_QC, inputData_QC_ref, inputData_Blank)
+  data_Signal$ID = data_Signal[[ID]]
+  data_Signal$Batch = data_Signal[[Batch]]
+
 
   data.table::setorderv(data_Signals, ID)
 
@@ -104,6 +107,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
     pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 9, height = 15)}
   for(page in 1:npage) {
 
+    data_Signals <- data_Signal#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
 
   plotlinearData <-
     ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = DilutionPoint, y = get(Y)), shape = Sample.Type) +
@@ -168,8 +172,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
     plotlinearData <-  plotlinearData +
       #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ), ggplot2::aes( x = -1, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2, na.rm = TRUE) +#, shape = 1, col = "purple"
-      ggplot2::geom_vline(ggplot2::aes( xintercept = 0, color = "darkgrey"), linetype = "solid", col = "black", na.rm = TRUE) +
-      ggplot2::geom_text(ggplot2::aes(x = -2.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2, na.rm = TRUE)
+      ggplot2::geom_vline(ggplot2::aes( xintercept = 0, color = "darkgrey"), linetype = "solid", col = "black", na.rm = TRUE)
     legend_order <- c(unique(inputData_BioSamples$Sample.Type))
   }
 
@@ -206,30 +209,36 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
                                  limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
 
 
+
+
+
+
   if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
     plotlinearData <-  plotlinearData +
-      ggforce::facet_grid_paginate(stats::reformulate(termlabels = Col_Batch,response = ID) ,
+      ggforce::facet_grid_paginate(ID ~ Batch ,
                                    scales = "free", ncol = nCol,nrow = nrRow, page = page )
-    }
+  }
 
 
   if(printR2 %in% TRUE) {
 
-    text_label <- data_Signals[, .(ID = get(ID), Batch = get(Col_Batch), R2)]
+    text_label <- data_Signals[, .(ID, Batch, R2)]
     text_label <- text_label |> dplyr::group_by(ID, Batch) |>
-      dplyr::summarise(R2new = ifelse(any(!is.na(R2)), unique(R2[!is.na(R2)]) , NA))
+      dplyr::mutate(R2 = ifelse(any(!is.na(R2)), R2[!is.na(R2)] , NA))
+    text_label <- unique(text_label)
 
 
 
 
     plotlinearData <- plotlinearData +
-    ggplot2::geom_text(data = text_label,#subset(data_Signals, !is.na(R2)),
-              ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2new,2)) ,  group = c(ID)),
-              size = 3,
-              hjust = -0.1,
-              vjust = 2,
-              inherit.aes = FALSE
-              )
+      ggplot2::geom_text(data = text_label,
+                         #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
+                         ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2,4))),
+                         size = 3,
+                         hjust = -0.1,
+                         vjust = 2,
+                         #inherit.aes = FALSE
+      )
 
 
   }
@@ -238,7 +247,10 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
 
+
+
   plotlinearData <-  plotlinearData +
+    ggplot2::geom_text(ggplot2::aes(x = -2.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2, na.rm = TRUE)+
     ggplot2::scale_color_manual(name = "In linear Range:",
                        values = c("FALSE" = "red", "TRUE" = "purple")) +
     ggplot2::scale_shape_manual(values = c(0, 2, 5, 1), breaks=rev(legend_order)) +
