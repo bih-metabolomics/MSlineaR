@@ -215,7 +215,11 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(printR2 %in% TRUE) {
 
-    text_label <- unique(data_Signals[, .(ID = get(ID), Batch = get(Col_Batch), R2)])
+    text_label <- data_Signals[, .(ID = get(ID), Batch = get(Col_Batch), R2)]
+    text_label <- text_label |> dplyr::group_by(ID, Batch) |>
+      dplyr::summarise(R2new = ifelse(any(!is.na(R2)), unique(R2[!is.na(R2)]) , NA))
+
+
 
 
     plotlinearData <- plotlinearData +
