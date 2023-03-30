@@ -82,7 +82,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   data_Signal <- combineData(inputData_Series, inputData_BioSamples, inputData_QC, inputData_QC_ref, inputData_Blank)
   data_Signal$ID = data_Signal[[ID]]
-  data_Signal$Batch = data_Signal[[Batch]]
+  data_Signal$Batch = data_Signal[[Col_Batch]]
 
 
   data.table::setorderv(data_Signals, ID)
