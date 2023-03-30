@@ -22,14 +22,16 @@ getLRstatus <- function(dats, datCal, y){
   dat <- data.table::copy(dats)
 
   dat <- dat[datCal, on = "groupIndices"]
+  if(any(startsWith(names(dat), "i."))){
   dat <- dat[, grep("^i\\.", names(dat), value=TRUE) := NULL]
-
+}
   dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[[y]], upper = dat$LREndY, NAbounds = NA)
 
 
   dats <- dats[dat[ ,.( IDintern,LRFlag, Status_LR, LRStartY, LREndY)], on = "IDintern"]
+  if(any(startsWith(names(dats), "i."))){
   dats <- dats[, grep("^i\\.", names(dats), value=TRUE) := NULL]
-
+}
   return(dats)
 
 }

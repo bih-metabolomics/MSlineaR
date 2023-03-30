@@ -848,7 +848,7 @@ message("check QC samples")
 
   summary_barplot <- plot_Barplot_Summary(inputData_Series = output1, COLNAMES = COLNAMES, X = Xraw, Y = Yraw,
                                           output_dir = IMG_OUTPUT_DIR)
-message("summary_barplot done")
+message("summary_barplot was created")
   #7) scatter plot
   FDS_scatterplot <- plot_FDS(inputData_Series = output1,
                               inputData_BioSamples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
@@ -859,7 +859,7 @@ message("summary_barplot done")
                               Series = Series, output_dir = IMG_OUTPUT_DIR
   )
 
-message("FDS_scatterplot done")
+message("FDS_scatterplot was created")
   #8) barplot summary for biological samples
 
 
@@ -868,10 +868,11 @@ message("FDS_scatterplot done")
                                                         X = Xraw, Y = Yraw,
                                                         output_dir = IMG_OUTPUT_DIR)
 
-  message("summary_barplot_sample")
+  message("summary_barplot_sample was created")
 
 
-  data.table::setnames(skip_absent = T, processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"), c(COLNAMES[["ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
+  data.table::setnames(skip_absent = T, processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"),
+                       c(COLNAMES[["ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
 
   # <!-- processList$SummaryAll <- getAllList(processList) -->
   #
