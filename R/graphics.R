@@ -207,13 +207,12 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(printR2 %in% TRUE) {
 
-    text_label <- unique(data_Signals[, .(get(ID), get(Col_Batch), R2)])
+    text_label <- unique(data_Signals[, .(ID = get(ID), Batch = get(Col_Batch), R2)])
 
-    message(text_label)
 
     plotlinearData <- plotlinearData +
     ggplot2::geom_text(data = text_label,#subset(data_Signals, !is.na(R2)),
-              ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2,2)) ,  group = get(ID)),
+              ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2,2)) ,  group = ID),
               size = 3,
               hjust = -0.1,
               vjust = 2,
