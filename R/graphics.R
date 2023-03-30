@@ -209,6 +209,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
     text_label <- unique(data_Signals[, .(get(ID), get(Col_Batch), R2)])
 
+    message(text_label)
 
     plotlinearData <- plotlinearData +
     ggplot2::geom_text(data = text_label,#subset(data_Signals, !is.na(R2)),
@@ -228,8 +229,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   plotlinearData <-  plotlinearData +
     ggplot2::scale_color_manual(name = "In linear Range:",
                        values = c("FALSE" = "red", "TRUE" = "purple")) +
-    ggplot2::scale_shape_manual(values = c(0, 2, 5, 1)) +
-    ggplot2::scale_shape_discrete(breaks=rev(legend_order)) +
+    ggplot2::scale_shape_manual(values = c(0, 2, 5, 1), breaks=rev(legend_order)) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
     ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
