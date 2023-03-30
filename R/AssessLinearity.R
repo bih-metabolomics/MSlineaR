@@ -4,7 +4,6 @@
 #' show a linear response. The function use two outlier detections and a partially
 #' linear regression to identify the exact linear response range for each Signal.
 #'
-#'
 #' @param input_data Long format data frame or data table combining the information
 #' of samples, serial diluted/concentrated samples and optional repeated measured
 #' QC samples for all batches.
@@ -236,12 +235,19 @@ AssessLinearity <- function(
   # Creates full absolute paths
   if(GET_OUTPUT %in% TRUE){
     REPORT_OUTPUT_DIR <- R.utils::getAbsolutePath(OUTPUT_DIR)
+    IMG_OUTPUT_DIR <- R.utils::getAbsolutePath(file.path(REPORT_OUTPUT_DIR, "img"))
     # check if output dir already exist or create it
     if (!dir.exists(REPORT_OUTPUT_DIR)){
       dir.create(REPORT_OUTPUT_DIR)
       message("Dir", REPORT_OUTPUT_DIR , "was created.")
+      dir.create(file.path(IMG_OUTPUT_DIR))
+
     } else {
       message("Dir already exists!")
+      if (!dir.exists(IMG_OUTPUT_DIR)){
+        dir.create(IMG_OUTPUT_DIR)
+      }
+
     }
   }
 
@@ -840,7 +846,8 @@ message("check QC samples")
 
   #6) barplot summary per dilution/concentration
 
-  summary_barplot <- plot_Barplot_Summary(inputData_Series = output1, COLNAMES = COLNAMES, X = Xraw, Y = Yraw)
+  summary_barplot <- plot_Barplot_Summary(inputData_Series = output1, COLNAMES = COLNAMES, X = Xraw, Y = Yraw,
+                                          output_dir = IMG_OUTPUT_DIR)
 message("summary_barplot done")
   #7) scatter plot
   FDS_scatterplot <- plot_FDS(inputData_Series = output1,
@@ -848,7 +855,8 @@ message("summary_barplot done")
                               inputData_QC = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC),
                               inputData_QC_ref = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC_REF),
                               inputData_Blank = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% BLANK),
-                              COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,Series = Series
+                              COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
+                              Series = Series, output_dir = IMG_OUTPUT_DIR
   )
 
 message("FDS_scatterplot done")
@@ -857,7 +865,8 @@ message("FDS_scatterplot done")
 
   summary_barplot_sample <- plot_Barplot_Summary_Sample(inputData_Samples = output4,
                                                         COLNAMES = COLNAMES,
-                                                        X = Xraw, Y = Yraw)
+                                                        X = Xraw, Y = Yraw,
+                                                        output_dir = IMG_OUTPUT_DIR)
 
   message("summary_barplot_sample")
 

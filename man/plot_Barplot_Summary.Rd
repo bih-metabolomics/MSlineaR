@@ -10,12 +10,14 @@ plot_Barplot_Summary(
   GroupIndices = "all",
   Feature = "all",
   outputfileName = c("Summary_Barplot"),
-  columns = c(ID = COLNAMES[["ID"]], Batch = COLNAMES[["Batch"]], X = Xraw, Y = Yraw),
-  ...
+  COLNAMES,
+  X,
+  Y,
+  output_dir
 )
 }
 \arguments{
-\item{pdfheight}{}
+\item{outputfileName}{}
 }
 \description{
 Title

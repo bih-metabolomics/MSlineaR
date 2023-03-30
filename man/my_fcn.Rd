@@ -4,7 +4,7 @@
 \alias{my_fcn}
 \title{Title}
 \usage{
-my_fcn(xs, func, inputData, ...)
+my_fcn(nCORE, xs, func, inputData, ...)
 }
 \arguments{
 \item{...}{}

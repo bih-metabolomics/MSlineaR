@@ -9,9 +9,7 @@ combineData(
   inputData_BioSamples,
   inputData_QC,
   inputData_QC_ref,
-  inputData_Blank,
-  columns = c(ID = COLNAMES[["ID"]], Batch = COLNAMES[["Batch"]], X = Xraw, Y = Yraw),
-  ...
+  inputData_Blank
 )
 }
 \arguments{

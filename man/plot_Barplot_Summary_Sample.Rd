@@ -10,12 +10,14 @@ plot_Barplot_Summary_Sample(
   GroupIndices = "all",
   Feature = "all",
   outputfileName = c("Summary_Barplot_Samples"),
-  columns = c(ID = COLNAMES[["ID"]], Batch = COLNAMES[["Batch"]], X = Xraw, Y = Yraw),
-  ...
+  COLNAMES,
+  X,
+  Y,
+  output_dir
 )
 }
 \arguments{
-\item{...}{}
+\item{Y}{}
 }
 \description{
 Title

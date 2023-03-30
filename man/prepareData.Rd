@@ -5,7 +5,7 @@
 \title{Title
 normalizing, centralizing, log transforming}
 \usage{
-prepareData(dat, ...)
+prepareData(dat, TRANSFORM, TRANSFORM_X, TRANSFORM_Y)
 }
 \arguments{
 \item{dat}{}

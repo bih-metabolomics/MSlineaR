@@ -17,8 +17,13 @@ plot_FDS(
   Feature = "all",
   printR2 = TRUE,
   outputfileName = c("Calibrationplot"),
-  columns = c(ID = COLNAMES[["ID"]], Batch = COLNAMES[["Batch"]], X = Xraw, Y = Yraw),
-  ...
+  TRANSFORM_Y,
+  inverse_y,
+  COLNAMES,
+  X,
+  Y,
+  Series,
+  output_dir
 )
 }
 \arguments{

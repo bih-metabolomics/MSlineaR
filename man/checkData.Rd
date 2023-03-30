@@ -5,7 +5,7 @@
 \title{Prepare raw data}
 \usage{
 checkData(
-  dat = DAT,
+  dat,
   MIN_FEATURE,
   TYPE,
   QC,

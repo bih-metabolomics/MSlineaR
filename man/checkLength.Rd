@@ -4,7 +4,16 @@
 \alias{checkLength}
 \title{Title}
 \usage{
-checkLength(...)
+checkLength(
+  step,
+  processingGroup,
+  processingFeature,
+  Compounds,
+  Dilutions,
+  Series,
+  Signals,
+  MIN_FEATURE
+)
 }
 \arguments{
 \item{...}{}
