@@ -284,7 +284,7 @@ plot_Barplot_Summary <- function(inputData_Series,
   data.table::setDT(inputData_Series)
 
   data_Signals_summary <- inputData_Series |>
-    dplyr::group_by(DilutionPoint, get(Col_Batch)) |>
+    dplyr::group_by(DilutionPoint, Batch = get(Col_Batch)) |>
     dplyr::summarize(Missing = sum(is.na(Y), na.rm = T),
               OutlierFOD = sum(OutlierFOD, na.rm = T),
               Trim = sum(trim %in% TRUE, na.rm = T),
@@ -307,7 +307,7 @@ plot_Barplot_Summary <- function(inputData_Series,
                  position="fill",
                  width = 0.5 ) +
     ggplot2::geom_text(size = 3, position = ggplot2::position_fill(vjust = 0.5)) +
-    ggplot2::facet_grid(stats::reformulate(termlabels = Col_Batch,response = "."), scales = "free_x", space = "free_x")
+    ggplot2::facet_grid(. ~ Batch, scales = "free_x", space = "free_x")
 
   plot_Summary <- plot_Summary +
     ggplot2::scale_x_continuous(breaks = data_Signals_summary$DilutionPoint) +
@@ -367,7 +367,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   data.table::setDT(inputData_Samples)
 
   data_Signals_sample_summary <- inputData_Samples |>
-    dplyr::group_by(Sample_ID = get(SAMPLE_ID), get(Col_Batch), Sample.Type) |>
+    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), Sample.Type) |>
     dplyr::summarize(
       Missing = sum(is.na(Y), na.rm = T),
       LR_TRUE = sum(Status_LR %in% TRUE, na.rm = T),
@@ -389,7 +389,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
              position="fill",
              width = 0.5 ) +
     #geom_text(size = 3, position = position_fill(vjust = 0.5)) +
-    ggplot2::facet_grid(stats::reformulate(termlabels = Col_Batch,response = "."), scales = "free_x", space = "free_x")
+    ggplot2::facet_grid(. ~ Batch, scales = "free_x", space = "free_x")
 
   plot_Summary_samples <- plot_Summary_samples +
     #scale_x_continuous(breaks = data_Signals$DilutionPoint) +
