@@ -207,7 +207,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(printR2 %in% TRUE) {
 
-    text_label <- unique(data_Signals[, .c(get(ID), get(Col_Batch), R2)])
+    text_label <- unique(data_Signals[, .(get(ID), get(Col_Batch), R2)])
 
 
     plotlinearData <- plotlinearData +
