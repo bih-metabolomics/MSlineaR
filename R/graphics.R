@@ -217,19 +217,19 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
     text_label <- data_Signals[, .(ID = get(ID), Batch = get(Col_Batch), R2)]
     text_label <- text_label |> dplyr::group_by(ID, Batch) |>
-      dplyr::summarise(R2 = ifelse(any(!is.na(R2)), unique(R2[!is.na(R2)]) , NA))
+      dplyr::summarise(R2new = ifelse(any(!is.na(R2)), unique(R2[!is.na(R2)]) , NA))
 
 
 
 
     plotlinearData <- plotlinearData +
     ggplot2::geom_text(data = text_label,#subset(data_Signals, !is.na(R2)),
-              ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2,2)) ,  group = c(ID)),
+              ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2new,2)) ,  group = c(ID)),
               size = 3,
               hjust = -0.1,
               vjust = 2,
-              inherit.aes = FALSE,
-              na.rm = TRUE)
+              inherit.aes = FALSE
+              )
 
 
   }
