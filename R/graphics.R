@@ -85,13 +85,13 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   data_Signal$Batch = data_Signal[[Col_Batch]]
 
 
-  data.table::setorderv(data_Signals, ID)
+  data.table::setorderv(data_Signal, ID)
 
-  if(any(GroupIndices != "all" & GroupIndices != "")) data_Signals <- data_Signals[groupIndices %in% GroupIndices]
-  if(any(Feature != "all" & Feature != "")) data_Signals <- data_Signals[get(ID) %in% Feature]
-  if(Feature %in% "all" & GroupIndices %in% "all" & data.table::uniqueN(data_Signals[[ID]]) > nrFeature){
-    randomIDs <- sample(unique(data_Signals[[ID]]), nrFeature, replace = F)
-    data_Signals <- data_Signals[get(ID) %in% randomIDs]
+  if(any(GroupIndices != "all" & GroupIndices != "")) data_Signal <- data_Signal[groupIndices %in% GroupIndices]
+  if(any(Feature != "all" & Feature != "")) data_Signal <- data_Signal[get(ID) %in% Feature]
+  if(Feature %in% "all" & GroupIndices %in% "all" & data.table::uniqueN(data_Signal[[ID]]) > nrFeature){
+    randomIDs <- sample(unique(data_Signal[[ID]]), nrFeature, replace = F)
+    data_Signal <- data_Signal[get(ID) %in% randomIDs]
   }
 
 
