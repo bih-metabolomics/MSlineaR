@@ -147,11 +147,11 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
     plotlinearData <-  plotlinearData +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE), ggplot2::aes(x = DilutionPoint, y = get(Y)), colour = "seagreen") +
-      ggplot2::geom_line(data = data_Signals,ggplot2::aes(x = DilutionPoint, y = abline), col = "orange") +
-      ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted") +
-      ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted") +
-      ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted") +
-      ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterend), col = "darkgrey", linetype = "dotted")
+      ggplot2::geom_line(data = data_Signals,ggplot2::aes(x = DilutionPoint, y = abline), col = "orange", na.rm = TRUE) +
+      ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
+      ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
+      ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
+      ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE)
 
   }
 
@@ -167,28 +167,34 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   if(!is.null(inputData_BioSamples )){
     plotlinearData <-  plotlinearData +
       #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ), ggplot2::aes( x = -1, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) +#, shape = 1, col = "purple"
-      ggplot2::geom_vline(ggplot2::aes( xintercept = 0, color = "darkgrey"), linetype = "solid", col = "black") +
-      ggplot2::geom_text(ggplot2::aes(x = -2.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2)
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ), ggplot2::aes( x = -1, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2, na.rm = TRUE) +#, shape = 1, col = "purple"
+      ggplot2::geom_vline(ggplot2::aes( xintercept = 0, color = "darkgrey"), linetype = "solid", col = "black", na.rm = TRUE) +
+      ggplot2::geom_text(ggplot2::aes(x = -2.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2, na.rm = TRUE)
     legend_order <- c(unique(inputData_BioSamples$Sample.Type))
   }
 
   if(!is.null(inputData_QC )){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC[, Sample.Type])), ggplot2::aes( x = -2, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) #+, shape = 5
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC[, Sample.Type])),
+                          ggplot2::aes( x = -2, y = get(Y),  shape = Sample.Type,
+                                        color = Status_LR), size = 2, na.rm = TRUE) #+, shape = 5
     legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
   }
 
   if(!is.null(inputData_QC_ref )){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC_ref[, Sample.Type])), ggplot2::aes( x = -3, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2) #+ shape = 2
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC_ref[, Sample.Type])),
+                          ggplot2::aes( x = -3, y = get(Y),  shape = Sample.Type,
+                                        color = Status_LR), size = 2, na.rm = TRUE) #+ shape = 2
     legend_order <- c(legend_order, unique(inputData_QC_ref$Sample.Type))
 
   }
 
   if(!is.null(inputData_Blank )){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Blank[, Sample.Type])), ggplot2::aes( x = -4, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2)# + shape = 0
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Blank[, Sample.Type])),
+                          ggplot2::aes( x = -4, y = get(Y),  shape = Sample.Type,
+                                        color = Status_LR), size = 2, na.rm = TRUE)# + shape = 0
     legend_order <- c(legend_order, unique(inputData_Blank$Sample.Type))
 
   }
@@ -196,12 +202,14 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
   plotlinearData <- plotlinearData +
-    ggplot2:: scale_y_continuous(name = "Area", labels = scales::trans_format(get(inverse_y)), limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
+    ggplot2:: scale_y_continuous(name = "Area", labels = scales::trans_format(get(inverse_y)),
+                                 limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
 
 
   if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
     plotlinearData <-  plotlinearData +
-      ggforce::facet_grid_paginate(stats::reformulate(termlabels = Col_Batch,response = ID) ,  scales = "free", ncol = nCol,nrow = nrRow, page = page )
+      ggforce::facet_grid_paginate(stats::reformulate(termlabels = Col_Batch,response = ID) ,
+                                   scales = "free", ncol = nCol,nrow = nrRow, page = page )
     }
 
 
@@ -216,7 +224,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
               size = 3,
               hjust = -0.1,
               vjust = 2,
-              inherit.aes = FALSE)
+              inherit.aes = FALSE,
+              na.rm = TRUE)
 
 
   }
@@ -305,7 +314,7 @@ plot_Barplot_Summary <- function(inputData_Series,
     ggplot2::geom_bar(stat="identity",
                  position="fill",
                  width = 0.5 ) +
-    ggplot2::geom_text(size = 3, position = ggplot2::position_fill(vjust = 0.5)) +
+    ggplot2::geom_text(size = 3, position = ggplot2::position_fill(vjust = 0.5), na.rm = TRUE) +
     ggplot2::facet_grid(. ~ Batch, scales = "free_x", space = "free_x")
 
   plot_Summary <- plot_Summary +
