@@ -88,9 +88,9 @@ AssessLinearity <- function(
     #input_data
     input_data = NULL,
     column_sample_type = c("Sample.Type", "Type")[1],
-    sample_type_QC = c("pooled QC", "QC", NULL)[3],
-    sample_type_QC_ref = c("Reference QC", "QC", NULL)[3],
-    sample_type_blank = c("Blank", NULL)[2],
+    sample_type_QC = c("pooled QC", "Reference QC", "Blank", NULL)[4],
+    #sample_type_QC_ref = c("Reference QC", "QC", NULL)[3],
+    #sample_type_blank = c("Blank", NULL)[2],
     sample_type_sample = "Sample",
     sample_type_serial = "Calibration Standard",
     sample_ID = "Sample.Identification",
@@ -708,6 +708,10 @@ AssessLinearity <- function(
         #data_Sample$Status_LR <-  data.table::between(lower = data_Sample$LRStartY, x = data_Sample[, c("Area.CorrDrift")], upper = data_Sample$LREndY, NAbounds = NA)
 
     }
+
+
+
+
   }
 
 #### QC samples ####
@@ -726,18 +730,18 @@ message("check QC samples")
 
 
       rsd_before <- SampleQC |>
-        dplyr::group_by(Batch, Compound) |>
+        dplyr::group_by(Batch, Compound, Sample.Type = get(COLNAMES[["Sample_type"]])) |>
         dplyr::summarize(.groups = "keep", rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-        dplyr::group_by(Batch) |>
+        dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
 
       SampleQC  <- getLRstatus(dats = SampleQC, datCal = processingGroup,y =  column_Y_sample)
 
       rsd_after <- SampleQC |>
         dplyr::filter(Status_LR %in% TRUE) |>
-        dplyr::group_by(Batch, Compound) |>
+        dplyr::group_by(Batch, Compound, Sample.Type = get(COLNAMES[["Sample_type"]])) |>
         dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-        dplyr::group_by(Batch) |>
+        dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
 
       SampleFeature <- dplyr::full_join(SampleFeature, SampleQC, by = colnames(SampleQC))
@@ -746,68 +750,68 @@ message("check QC samples")
 
   }
 
-  if(!is.null(QC_REF)){
-
-    SampleQCref <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% QC_REF]
-
-    if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
-      SampleQCref$Y_trans = get(TRANSFORM_Y)(SampleQCref[[column_Y_sample]])
-      SampleQCref$Y_trans[is.infinite(SampleQCref$Y_trans)] <- NA
-      Y_SAMPLE = "Y_trans"
-    }
-
-    rsd_before <- SampleQCref |>
-      dplyr::group_by(Batch, Compound) |>
-      dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-      dplyr::group_by(Batch) |>
-      dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
-
-    SampleQCref  <- getLRstatus(dats = SampleQCref, datCal = processingGroup,y =  column_Y_sample)
-
-    rsd_after <- SampleQCref |>
-      dplyr::filter(Status_LR %in% TRUE) |>
-      dplyr::group_by(Batch, Compound) |>
-      dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-      dplyr::group_by(Batch) |>
-      dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
-
-    SampleFeature <- dplyr::full_join(SampleFeature, SampleQCref, by = colnames(SampleQCref))
-
-    message(QC_REF, ":")
-    message(paste0(capture.output(cbind(rsd_before, rsd_after[,"median_rsd_after"])), collapse = "\n"))
-
-  }
-
-  if(!is.null(BLANK)){
-
-    SampleBlank <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% BLANK]
-
-    if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
-      SampleBlank$Y_trans = get(TRANSFORM_Y)(SampleBlank[[column_Y_sample]])
-        SampleBlank$Y_trans[is.infinite(SampleBlank$Y_trans)] <- NA
-      Y_SAMPLE = "Y_trans"
-    }
-    rsd_before <- SampleBlank |>
-      dplyr::group_by(Batch, Compound) |>
-      dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-      dplyr::group_by(Batch) |>
-      dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
-
-    SampleBlank  <- getLRstatus(dats = SampleBlank, datCal = processingGroup,y =  column_Y_sample)
-
-    rsd_after <- SampleBlank |>
-      dplyr::filter(Status_LR %in% TRUE) |>
-      dplyr::group_by(Batch, Compound) |>
-      dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
-      dplyr::group_by(Batch) |>
-      dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
-
-    SampleFeature <- dplyr::full_join(SampleFeature, SampleBlank, by = colnames(SampleBlank))
-
-    message(BLANK, ":")
-    message(paste0(capture.output(cbind(rsd_before, rsd_after[,"median_rsd_after"])), collapse = "\n"))
-
-  }
+  # if(!is.null(QC_REF)){
+  #
+  #   SampleQCref <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% QC_REF]
+  #
+  #   if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
+  #     SampleQCref$Y_trans = get(TRANSFORM_Y)(SampleQCref[[column_Y_sample]])
+  #     SampleQCref$Y_trans[is.infinite(SampleQCref$Y_trans)] <- NA
+  #     Y_SAMPLE = "Y_trans"
+  #   }
+  #
+  #   rsd_before <- SampleQCref |>
+  #     dplyr::group_by(Batch, Compound) |>
+  #     dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+  #     dplyr::group_by(Batch) |>
+  #     dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
+  #
+  #   SampleQCref  <- getLRstatus(dats = SampleQCref, datCal = processingGroup,y =  column_Y_sample)
+  #
+  #   rsd_after <- SampleQCref |>
+  #     dplyr::filter(Status_LR %in% TRUE) |>
+  #     dplyr::group_by(Batch, Compound) |>
+  #     dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+  #     dplyr::group_by(Batch) |>
+  #     dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
+  #
+  #   SampleFeature <- dplyr::full_join(SampleFeature, SampleQCref, by = colnames(SampleQCref))
+  #
+  #   message(QC_REF, ":")
+  #   message(paste0(capture.output(cbind(rsd_before, rsd_after[,"median_rsd_after"])), collapse = "\n"))
+  #
+  # }
+  #
+  # if(!is.null(BLANK)){
+  #
+  #   SampleBlank <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% BLANK]
+  #
+  #   if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
+  #     SampleBlank$Y_trans = get(TRANSFORM_Y)(SampleBlank[[column_Y_sample]])
+  #       SampleBlank$Y_trans[is.infinite(SampleBlank$Y_trans)] <- NA
+  #     Y_SAMPLE = "Y_trans"
+  #   }
+  #   rsd_before <- SampleBlank |>
+  #     dplyr::group_by(Batch, Compound) |>
+  #     dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+  #     dplyr::group_by(Batch) |>
+  #     dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
+  #
+  #   SampleBlank  <- getLRstatus(dats = SampleBlank, datCal = processingGroup,y =  column_Y_sample)
+  #
+  #   rsd_after <- SampleBlank |>
+  #     dplyr::filter(Status_LR %in% TRUE) |>
+  #     dplyr::group_by(Batch, Compound) |>
+  #     dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+  #     dplyr::group_by(Batch) |>
+  #     dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
+  #
+  #   SampleFeature <- dplyr::full_join(SampleFeature, SampleBlank, by = colnames(SampleBlank))
+  #
+  #   message(BLANK, ":")
+  #   message(paste0(capture.output(cbind(rsd_before, rsd_after[,"median_rsd_after"])), collapse = "\n"))
+  #
+  # }
 
 
 

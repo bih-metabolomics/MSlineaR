@@ -28,8 +28,9 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
 
 
   #create linear regression line going through int50
-  we <- rep(1, length(dat[[x]]))
-  we[(int50 - 1) : (int50 + 1)] <- 1000
+  #we <- rep(1, length(dat[[x]]))
+  #we[(int50 - 1) : (int50 + 1)] <- 1000
+  we = NULL
 
 
   linearRange <- lm(dat[[y]] ~ dat[[x]], weights = we)
@@ -48,7 +49,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   consNDX$position <- cumsum(consNDX$length)
 
 
-  if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= min_feature) & any(consNDX$position[consNDX$values %in% TRUE] >= int50)){
+  if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= min_feature) ){ #& any(consNDX$position[consNDX$values %in% TRUE] >= int50)
 
     TRUEpos <- Position(function(fi) fi >= int50, consNDX$position[consNDX$values %in% TRUE], right = TRUE)
     maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE
@@ -75,7 +76,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
     dat[, ':=' (IsLinear = DilutionPoint >= tmpGroup$LRStart & DilutionPoint <= tmpGroup$LREnd,
                 IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
                 #modelFit = modelObject$fit,
-                abline = ablineIntensity,
+                abline = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])),
                 #ablineLimit1 = limitup,
                 #ablineLimit2 = limitdown,
                 Residuals = residuals(linearRange)
@@ -189,7 +190,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
         dat[, ':=' (IsLinear = FALSE,
                     IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
                     #modelFit = modelObject$fit,
-                    abline = ablineIntensity,
+                    abline = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])),
                     #ablineLimit1 = limitup,
                     #ablineLimit2 = limitdown,
                     Residuals = residuals(linearRange),

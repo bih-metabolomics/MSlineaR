@@ -23,10 +23,10 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC, in
                                                                       by = intersect(colnames(data_Signals), colnames(inputData_BioSamples)))
   if(!is.null(inputData_QC)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC,
                                                               by = intersect(colnames(data_Signals), colnames(inputData_QC)))
-  if(!is.null(inputData_QC_ref)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC_ref,
-                                                                  by = intersect(colnames(data_Signals), colnames(inputData_QC_ref)))
-  if(!is.null(inputData_Blank)) data_Signals <- dplyr::full_join(data_Signals, inputData_Blank,
-                                                                 by = intersect(colnames(data_Signals), colnames(inputData_Blank)))
+  # if(!is.null(inputData_QC_ref)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC_ref,
+  #                                                                 by = intersect(colnames(data_Signals), colnames(inputData_QC_ref)))
+  # if(!is.null(inputData_Blank)) data_Signals <- dplyr::full_join(data_Signals, inputData_Blank,
+  #                                                                by = intersect(colnames(data_Signals), colnames(inputData_Blank)))
 
 
 
@@ -69,6 +69,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   ID <-  COLNAMES[["ID"]]
   Col_Batch <-  COLNAMES[["Batch"]]
+  Sample.Type <- COLNAMES[["Sample_type"]]
   X <- X
   Y <- Y
 
@@ -80,10 +81,15 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
 
-  data_Signal <- combineData(inputData_Series, inputData_BioSamples, inputData_QC, inputData_QC_ref, inputData_Blank)
+  data_Signal <- combineData(inputData_Series, inputData_BioSamples, inputData_QC)#, inputData_QC_ref, inputData_Blank)
   data_Signal$ID = data_Signal[[ID]]
   data_Signal$Batch = data_Signal[[Col_Batch]]
 
+  QCs = data.frame(Sample.Type = unique(inputData_QC[[Type]]),
+                        x = -c(2 : (length(unique(inputData_QC[[Sample.Type]])) +1))
+  )
+
+  data_Signal <- dplyr::full_join(data_Signal, QCs, by = "Sample.Type")
 
   data.table::setorderv(data_Signal, ID)
 
@@ -178,29 +184,29 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if(!is.null(inputData_QC )){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC[, Sample.Type])),
-                          ggplot2::aes( x = -2, y = get(Y),  shape = Sample.Type,
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
+                          ggplot2::aes( x = x, y = get(Y),  shape = Sample.Type,
                                         color = Status_LR), size = 2, na.rm = TRUE) #+, shape = 5
     legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
   }
-
-  if(!is.null(inputData_QC_ref )){
-    plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC_ref[, Sample.Type])),
-                          ggplot2::aes( x = -3, y = get(Y),  shape = Sample.Type,
-                                        color = Status_LR), size = 2, na.rm = TRUE) #+ shape = 2
-    legend_order <- c(legend_order, unique(inputData_QC_ref$Sample.Type))
-
-  }
-
-  if(!is.null(inputData_Blank )){
-    plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Blank[, Sample.Type])),
-                          ggplot2::aes( x = -4, y = get(Y),  shape = Sample.Type,
-                                        color = Status_LR), size = 2, na.rm = TRUE)# + shape = 0
-    legend_order <- c(legend_order, unique(inputData_Blank$Sample.Type))
-
-  }
+#
+#   if(!is.null(inputData_QC_ref )){
+#     plotlinearData <-  plotlinearData +
+#       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC_ref[, Sample.Type])),
+#                           ggplot2::aes( x = -3, y = get(Y),  shape = Sample.Type,
+#                                         color = Status_LR), size = 2, na.rm = TRUE) #+ shape = 2
+#     legend_order <- c(legend_order, unique(inputData_QC_ref$Sample.Type))
+#
+#   }
+#
+#   if(!is.null(inputData_Blank )){
+#     plotlinearData <-  plotlinearData +
+#       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Blank[, Sample.Type])),
+#                           ggplot2::aes( x = -4, y = get(Y),  shape = Sample.Type,
+#                                         color = Status_LR), size = 2, na.rm = TRUE)# + shape = 0
+#     legend_order <- c(legend_order, unique(inputData_Blank$Sample.Type))
+#
+#   }
 
 
 
