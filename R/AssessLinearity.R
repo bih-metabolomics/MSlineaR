@@ -699,7 +699,7 @@ AssessLinearity <- function(
 
     if(TYPE %in% "targeted" & CAL_CONC %in% TRUE){
       message("Calculate Concentration for biological Samples")
-    SampleFeature <- getConc(dats = SampleFeature, datCal = processingGroup, y = Y_SAMPLE, INVERSE_Y)
+    SampleFeature <- getConc(dats = SampleFeature, datCal = processingGroup, y = Y_SAMPLE,INVERSE_Y =  INVERSE_Y)
     }
 
     if(GET_LR_STATUS %in% TRUE){
@@ -903,6 +903,25 @@ message("FDS_scatterplot was created")
     #   Y = Y
     # )
   )
+
+  if(TRANSFORM_Y %in% TRUE){
+    colnames(output1)[which(colnames(output1) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+    colnames(output2)[which(colnames(output2) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+    colnames(output3)[which(colnames(output3) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+    colnames(output4)[which(colnames(output4) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+    colnames(output5)[which(colnames(output5) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+
+  }
+
+  if(TRANSFORM_X %in% TRUE){
+    colnames(output1)[which(colnames(output1) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+    colnames(output2)[which(colnames(output2) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+    colnames(output3)[which(colnames(output3) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+    colnames(output4)[which(colnames(output4) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+    colnames(output5)[which(colnames(output5) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+
+  }
+
 
   if(GET_OUTPUT %in% TRUE){
     if(any(c("allCurveSignal", "all") %in% which_output)) write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_DilutionCurves_Signals.csv" , sep = "_")))
