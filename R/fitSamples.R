@@ -70,7 +70,7 @@ getConc <- function(dats, datCal, y, INVERSE_Y){
   dat[, ConcentrationLR := (get(y) - Intercept)/slope, by = .I]
 
   if(!is.na(INVERSE_Y) & INVERSE_Y !=""){
-    dat$ConcentrationLR <- sapply(paste0(INVERSE_Y,"(",dat[[y]],")"),function(i) eval(parse(text = i)))
+    dat$ConcentrationLR <- sapply(paste0(INVERSE_Y,"(",dat$ConcentrationLR,")"),function(i) eval(parse(text = i)))
   }
 
 
