@@ -76,7 +76,6 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
     dat[, ':=' (IsLinear = DilutionPoint >= tmpGroup$LRStart & DilutionPoint <= tmpGroup$LREnd,
                 IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
                 #modelFit = modelObject$fit,
-                abline = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])),
                 #ablineLimit1 = limitup,
                 #ablineLimit2 = limitdown,
                 Residuals = residuals(linearRange)
@@ -84,6 +83,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
     )]
     dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
     dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
+    dat$abline[dat$IsLinear %in% TRUE] = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))
     tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
     tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
     tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
@@ -111,6 +111,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
         dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
         dat$color[dat$IsLinear %in% FALSE] <- "black"
         dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
+        dat$abline[dat$IsLinear %in% TRUE] = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))
 
         tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
         tmpGroup$LRStartY = dat$Y[dat$IsLinear %in% TRUE][1]
@@ -131,6 +132,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
           dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
           dat$color[dat$IsLinear %in% FALSE] <- "black"
           dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
+          dat$abline[dat$IsLinear %in% TRUE] = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))
 
 
           tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
@@ -152,6 +154,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
           dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
           dat$color[dat$IsLinear %in% FALSE] <- "black"
           dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
+          dat$abline[dat$IsLinear %in% TRUE] = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))
 
           tmpGroup$LRStart = NA
           tmpGroup$LRStartY = NA
@@ -190,11 +193,11 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
         dat[, ':=' (IsLinear = FALSE,
                     IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
                     #modelFit = modelObject$fit,
-                    abline = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])),
                     #ablineLimit1 = limitup,
                     #ablineLimit2 = limitdown,
                     Residuals = residuals(linearRange),
-                    R2 = NA
+                    R2 = NA,
+                    abline = NA
         )]
         dat$Comment[dat$IsLinear %in% FALSE] <- unlist(apply(cbind(dat$Comment[dat$IsLinear %in% FALSE], "NolinearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
 
@@ -210,7 +213,6 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   dat$LRStart <- tmpGroup$LRStart
   dat$LREndY <- tmpGroup$LREndY
   dat$LREnd <- tmpGroup$LREnd
-
 
 
 
