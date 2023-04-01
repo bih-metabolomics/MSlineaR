@@ -871,7 +871,7 @@ message("Scatterplot was created")
   summary_barplot_all <- plot_Barplot_Summary_Sample(inputData_Samples = output4,
                                                         COLNAMES = COLNAMES,
                                                         X = Xraw, Y = Yraw,
-                                                        output_dir = IMG_OUTPUT_DI,
+                                                        output_dir = IMG_OUTPUT_DIR,
                                                      outputfileName = c("Summary_Barplot_All"))
 
   message("summary_barplot_all was created")
