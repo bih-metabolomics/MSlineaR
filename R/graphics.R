@@ -59,7 +59,7 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC#, i
 #'
 #' @examples
 plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, inputData_QC_ref = NULL, inputData_Blank = NULL,
-                    nrRow = 10, nrFeature = 50,
+                     nrFeature = 50,
                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
                     outputfileName = c("Calibrationplot"), TRANSFORM_Y, inverse_y,
                     COLNAMES, X, Y, Series, output_dir ){
@@ -103,14 +103,22 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
 
-  nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
-  npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
 
   if(printPDF %in% TRUE){
 
     #plotObj <- vector("list", npage)
+    if(data.table::uniqueN(data_Signal$Batch) <=2){
+      pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 9, height = 15)
+      nrRow = 10
+    }else {
+      pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
+      nrRow = 5
+    }
 
-    pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 9, height = 15)}
+    nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
+    npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
+
+
   for(page in 1:npage) {
 
     data_Signals <- data_Signal#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]

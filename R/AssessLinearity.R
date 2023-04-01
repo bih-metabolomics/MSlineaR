@@ -853,26 +853,50 @@ message("check QC samples")
   summary_barplot <- plot_Barplot_Summary(inputData_Series = output1, COLNAMES = COLNAMES, X = Xraw, Y = Yraw,
                                           output_dir = IMG_OUTPUT_DIR)
 message("summary_barplot was created")
+
   #7) scatter plot
   FDS_scatterplot <- plot_FDS(inputData_Series = output1,
                               inputData_BioSamples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                               inputData_QC = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC),
-                              inputData_QC_ref = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC_REF),
-                              inputData_Blank = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% BLANK),
+                              #inputData_QC_ref = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC_REF),
+                              #inputData_Blank = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% BLANK),
                               COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
                               Series = Series, output_dir = IMG_OUTPUT_DIR
   )
 
-message("FDS_scatterplot was created")
-  #8) barplot summary for biological samples
+message("Scatterplot was created")
+  #8) barplot summary for all samples
 
 
-  summary_barplot_sample <- plot_Barplot_Summary_Sample(inputData_Samples = output4,
+  summary_barplot_all <- plot_Barplot_Summary_Sample(inputData_Samples = output4,
                                                         COLNAMES = COLNAMES,
                                                         X = Xraw, Y = Yraw,
-                                                        output_dir = IMG_OUTPUT_DIR)
+                                                        output_dir = IMG_OUTPUT_DI,
+                                                     outputfileName = c("Summary_Barplot_All"))
+
+  message("summary_barplot_all was created")
+
+  #9) barplot summary for biological samples
+
+  summary_barplot_sample <- plot_Barplot_Summary_Sample(inputData_Samples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+                                                     COLNAMES = COLNAMES,
+                                                     X = Xraw, Y = Yraw,
+                                                     output_dir = IMG_OUTPUT_DIR,
+                                                     outputfileName = c("Summary_Barplot_Samples"))
 
   message("summary_barplot_sample was created")
+
+
+  #10) barplot summary for QC samples
+
+  summary_barplot_QC <- plot_Barplot_Summary_Sample(inputData_Samples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC),
+                                                        COLNAMES = COLNAMES,
+                                                        X = Xraw, Y = Yraw,
+                                                        output_dir = IMG_OUTPUT_DIR,
+                                                    outputfileName = c("Summary_Barplot_QC"))
+
+  message("summary_barplot_sample was created")
+
 
 
   data.table::setnames(skip_absent = T, processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"),
