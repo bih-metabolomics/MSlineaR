@@ -114,6 +114,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
       pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
       nrRow = 5
     }
+  }
 
     nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
     npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
