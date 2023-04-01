@@ -85,7 +85,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   data_Signal$ID = data_Signal[[ID]]
   data_Signal$Batch = data_Signal[[Col_Batch]]
 
-  QCs = data.frame(Sample.Type = unique(inputData_QC[[Type]]),
+  QCs = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
                         x = -c(2 : (length(unique(inputData_QC[[Sample.Type]])) +1))
   )
 
