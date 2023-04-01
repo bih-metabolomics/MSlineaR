@@ -55,7 +55,8 @@
 #' @examples
 #'
 checkData <- function(dat, MIN_FEATURE, TYPE, QC,
-                      QC_REF, BLANK, SAMPLE, SAMPLE_ID,
+                      #QC_REF, BLANK,
+                      SAMPLE, SAMPLE_ID,
                       CALIBRANTS, COLNAMES, Y_SAMPLE,
                       TRANSFORM,TRANSFORM_X, INVERSE_X,
                       TRANSFORM_Y,INVERSE_Y,
@@ -82,17 +83,25 @@ checkData <- function(dat, MIN_FEATURE, TYPE, QC,
     dat[, Batch := "1"]
   }
 
+
+  if (!"Class" %in% names(COLNAMES)) {
+    COLNAMES["Class"] <- "Class"
+    dat[, Class := "1"]
+  }
+
+
   data.table::set(dat, j = COLNAMES[["ID"]], value = as.character(dat[[COLNAMES[["ID"]]]]))
   data.table::set(dat, j = COLNAMES[["Batch"]], value = as.character(dat[[COLNAMES[["Batch"]]]]))
+  data.table::set(dat, j = COLNAMES[["Class"]], value = as.character(dat[[COLNAMES[["Class"]]]]))
   data.table::set(dat, j = COLNAMES[["X"]], value = as.numeric(dat[[COLNAMES[["X"]]]]))
   data.table::set(dat, j = COLNAMES[["Y"]], value = as.numeric(dat[[COLNAMES[["Y"]]]]))
   data.table::set(dat, j = COLNAMES[["Sample_type"]], value = as.character(dat[[COLNAMES[["Sample_type"]]]]))
 
 
-  data.table::setorderv(dat, c(COLNAMES[["ID"]], COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]))
+  data.table::setorderv(dat, c(COLNAMES[["ID"]], COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]],COLNAMES[["Class"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]))
   dat[ , IDintern := paste0("s", 1:.N)]
   dat[ , groupIndices := .GRP ,by = c(COLNAMES[["ID"]], COLNAMES[["Batch"]])]
-  dat <- dat[ , c( "IDintern", "groupIndices", COLNAMES[["ID"]],  COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]), with = F]
+  dat <- dat[ , c( "IDintern", "groupIndices", COLNAMES[["ID"]],  COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]],COLNAMES[["Class"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]), with = F]
 
   # tests for Input parameter
 
@@ -105,6 +114,7 @@ checkData <- function(dat, MIN_FEATURE, TYPE, QC,
       is.double(dat[[COLNAMES[["Y"]]]]) & all(dat[[COLNAMES[["Y"]]]] >= 0, na.rm = T)
     "'column_ID' needs to be from type character " = is.character(dat[[COLNAMES[["ID"]]]])
     "'column_Batch' needs to be from type character " = is.character(dat[[COLNAMES[["Batch"]]]])
+    "'column_Class' needs to be from type character " = is.character(dat[[COLNAMES[["Class"]]]])
     "Argument 'transform' needs to be from type logical" = is.logical(TRANSFORM)
     "Argument 'first_outlier_detection' needs to be from type logical" = is.logical(FOD)
     "Argument 'second_outlier_detection' needs to be from type logical" = is.logical(SOD)
@@ -181,12 +191,12 @@ is.wholenumber <-
 prepareData <- function(dat,TRANSFORM, TRANSFORM_X, TRANSFORM_Y){
 
   stopifnot(exprs = {
-    "data need to have 8 columns" = dim(dat)[2] == 8
+    "data need to have 9 columns" = dim(dat)[2] == 9
     })
 data.table::setDT(dat)
   processed <- data.table::copy(dat)
   # rename
-  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "ID","Sample_ID", "Sample.Type", "Batch", "X", "Y"))
+  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "ID","Sample_ID", "Sample.Type","Class", "Batch", "X", "Y"))
 
   data.table::setorderv(processed, c("ID", "Batch", "X"))
 

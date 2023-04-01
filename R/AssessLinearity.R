@@ -99,6 +99,7 @@ AssessLinearity <- function(
     column_X = c("Concentration", "Dilution")[2],
     column_Y = c("Area","Height", "Intensity")[1],
     column_Y_sample = c("Area","Height", "Intensity")[1],
+    column_class_sample = c("group", NULL)[2],
 
     #transform_data
     transform = c(TRUE, FALSE)[1],
@@ -151,7 +152,7 @@ AssessLinearity <- function(
   SAMPLE = sample_type_sample
   SAMPLE_ID = sample_ID
   CALIBRANTS = sample_type_serial
-  COLNAMES = c(ID = column_ID, Sample_ID = sample_ID, Batch = column_Batch, Sample_type = column_sample_type, X = column_X,Y = column_Y)
+  COLNAMES = c(ID = column_ID, Sample_ID = sample_ID, Batch = column_Batch, Sample_type = column_sample_type, X = column_X,Y = column_Y, Class = column_class_sample)
   Y_SAMPLE = column_Y_sample
   TRANSFORM = transform
   TRANSFORM_X = transform_x
@@ -185,8 +186,8 @@ AssessLinearity <- function(
   dataOrigin <- checkData(dat = DAT, MIN_FEATURE,
                           TYPE,
                           QC,
-                          QC_REF,
-                          BLANK,
+                          #QC_REF,
+                          #BLANK,
                           SAMPLE,
                           SAMPLE_ID,
                           CALIBRANTS,
@@ -848,13 +849,30 @@ message("check QC samples")
   #5) filtered table biological Samples - Signal based (high quality)
   output5 <- SampleFeature[Status_LR %in% TRUE]
 
-  #6) barplot summary per dilution/concentration
+  #6) table per Compound
+
+  output6 <- SampleFeature |>
+    #subset(get(COLNAMES[["Sample_type"]]) %in% QC) |>
+    dplyr::group_by(ID = get(ID), Batch = get(COLNAMES[["Batch"]]), "Type" = get(COLNAMES[["Sample_type"]])) |>
+    dplyr::summarize(
+      'LR_TRUE' = sum(Status_LR),
+      'LR_TRUE[%]' = sum(Status_LR)/length(Status_LR)*100,
+      rsd_all = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100,
+      rsd_LR_TRUE = sd(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T)/mean(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T) * 100,
+    ) |>
+    tidyr::pivot_wider(names_from = c(Type),
+                       values_from = c('LR_TRUE', 'LR_TRUE[%]', rsd_all, rsd_LR_TRUE)
+    )
+
+
+
+  #7) barplot summary per dilution/concentration
 
   summary_barplot <- plot_Barplot_Summary(inputData_Series = output1, COLNAMES = COLNAMES, X = Xraw, Y = Yraw,
                                           output_dir = IMG_OUTPUT_DIR)
 message("summary_barplot was created")
 
-  #7) scatter plot
+  #8) scatter plot
   FDS_scatterplot <- plot_FDS(inputData_Series = output1,
                               inputData_BioSamples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                               inputData_QC = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC),
@@ -865,7 +883,7 @@ message("summary_barplot was created")
   )
 
 message("Scatterplot was created")
-  #8) barplot summary for all samples
+  #9) barplot summary for all samples
 
 
   summary_barplot_all <- plot_Barplot_Summary_Sample(inputData_Samples = output4,
@@ -876,7 +894,7 @@ message("Scatterplot was created")
 
   message("summary_barplot_all was created")
 
-  #9) barplot summary for biological samples
+  #10) barplot summary for biological samples
 
   summary_barplot_sample <- plot_Barplot_Summary_Sample(inputData_Samples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                                                      COLNAMES = COLNAMES,
@@ -887,7 +905,7 @@ message("Scatterplot was created")
   message("summary_barplot_sample was created")
 
 
-  #10) barplot summary for QC samples
+  #11) barplot summary for QC samples
 
   summary_barplot_QC <- plot_Barplot_Summary_Sample(inputData_Samples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC),
                                                         COLNAMES = COLNAMES,
@@ -913,6 +931,7 @@ message("Scatterplot was created")
     "High_Quality_DilutionCurves_Signals" = output3,
     "All_Samples_Signals" = output4,
     "High_Quality_Samples_Signals" = output5,
+    "Summary_per_Compound" = output6,
     "dataModel_FOD" = dataFODModel,
     "dataModel_SOD" = dataSODModel#,
     # "Parameters" = list(
