@@ -78,13 +78,13 @@ checkData <- function(dat, MIN_FEATURE, TYPE, QC,
 
   })
 
-  if (!"Batch" %in% names(COLNAMES)) {
+  if (!"Batch" %in% names(COLNAMES) | is.na(COLNAMES[["Batch"]])) {
     COLNAMES["Batch"] <- "Batch"
     dat[, Batch := "1"]
   }
 
 
-  if (!"Class" %in% names(COLNAMES)) {
+  if (!"Class" %in% names(COLNAMES)| is.na(COLNAMES[["Class"]])) {
     COLNAMES["Class"] <- "Class"
     dat[, Class := "1"]
   }
