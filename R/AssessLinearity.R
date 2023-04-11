@@ -821,7 +821,7 @@ message("check QC samples")
     dplyr::select(tidyr::contains(unique(SampleFeature$Sample.Type)) ) |> dplyr::ungroup()
 
 
-  htmloutput6 <-  datatable(output6) %>%
+  htmloutput6 <-  DT::datatable(output6) %>%
     DT::formatStyle(dplyr::select(output6,tidyr::contains("%"))|> colnames(),
                 backgroundColor = DT::styleInterval(c(20,80), c('red','yellow', 'green'))
     )
@@ -837,7 +837,7 @@ message("check QC samples")
     dplyr::full_join(output6 |> dplyr::select(ID, Batch, 'LR_TRUE[%]_Sample'), . , by = c("ID", "Batch")) |>
     dplyr::select("ID", "Batch", "LR_TRUE[%]_Sample", everything())
 
-  htmloutput6.1 <-  datatable(output6.1, filter = 'top',
+  htmloutput6.1 <-  DT::datatable(output6.1, filter = 'top',
                               extensions = 'Buttons', options = list(
                                 pageLength = nrow(output6.1),
                                 dom = 'Bfrtip',
