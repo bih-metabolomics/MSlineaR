@@ -216,7 +216,7 @@ data.table::setDT(dat)
              #groupIndices = .GRP),
             by = c("ID", "Batch")]
 
-  processed$X = DILUTION_FACTOR^DilutionPoint
+  processed$X = DILUTION_FACTOR^processed$DilutionPoint
 
   if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_X)){
     processed$X_trans = get(TRANSFORM_X)(processed$X)
