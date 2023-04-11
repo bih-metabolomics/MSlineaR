@@ -175,7 +175,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   }
 
   plotlinearData <-  plotlinearData +
-    ggplot2::scale_x_continuous(limits = c(-5, NA) ,breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint +1) #+#scales::trans_format(get(inverse_x), format = number_format())) +
+    ggplot2::scale_x_continuous(name = "Dilution", limits = c(-5, NA) ,breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint +1) #+#scales::trans_format(get(inverse_x), format = number_format())) +
 
 # if(!is.null(inputData_BioSamples) | !is.null(inputData_QC)| !is.null(inputData_QCref) | !is.null(inputData_Blank)){
 #   nrQC <- sum(!is.null(inputData_BioSamples),!is.null(inputData_QC),!is.null(inputData_QCref), !is.null(inputData_Blank))
