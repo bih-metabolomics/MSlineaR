@@ -151,8 +151,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
   if("IsLinear" %in% colnames(data_Signals)){
 
-      Xinterstart = get(X)[data_Signals$LRStart]
-      Xinterend = get(X)[data_Signals$LREnd]
+      Xinterstart = data_Signals[[X]][data_Signals$LRStart]
+      Xinterend = data_Signals[[X]][data_Signals$LREnd]
 
 
     if(TRANSFORM_Y !="" & !is.na(TRANSFORM_Y)){
