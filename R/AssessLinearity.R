@@ -823,7 +823,7 @@ message("check QC samples")
 
   htmloutput6 <-  datatable(output6) %>%
     DT::formatStyle(dplyr::select(output6,tidyr::contains("%"))|> colnames(),
-                backgroundColor = styleInterval(c(20,80), c('red','yellow', 'green'))
+                backgroundColor = DT::styleInterval(c(20,80), c('red','yellow', 'green'))
     )
   htmlwidgets::saveWidget(htmloutput6, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_summary.html" , sep = "_")))
 
@@ -844,7 +844,7 @@ message("check QC samples")
                                 buttons = c('copy', 'csv', 'excel', 'print')
                               )) %>%
     DT::formatStyle("LR_TRUE[%]_Sample",
-                backgroundColor = styleInterval(c(20,80), c('red','yellow', 'green'))
+                backgroundColor = DT::styleInterval(c(20,80), c('red','yellow', 'green'))
     )
   htmlwidgets::saveWidget(htmloutput6.1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_biol_samples.html" , sep = "_")))
 
