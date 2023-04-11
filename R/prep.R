@@ -212,8 +212,8 @@ data.table::setDT(dat)
   processed[, ":="(#YNorm = Y / max(Y, na.rm = T) * 100,
              #Y_trans = log(Y),
              #X_trans = log(X),
-             DilutionPoint = 0 : (.N-1)),
-             X = DILUTION_FACTOR^DilutionPoint,
+             DilutionPoint = 0 : (.N-1),
+             X = DILUTION_FACTOR^DilutionPoint),
              #groupIndices = .GRP),
             by = c("ID", "Batch")]
 
