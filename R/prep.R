@@ -212,12 +212,11 @@ data.table::setDT(dat)
   processed[, ":="(#YNorm = Y / max(Y, na.rm = T) * 100,
              #Y_trans = log(Y),
              #X_trans = log(X),
-             DilutionPoint = 0 : (.N-1),
-             X = DILUTION_FACTOR^DilutionPoint),
+             DilutionPoint = 0 : (.N-1)),
              #groupIndices = .GRP),
             by = c("ID", "Batch")]
 
-
+  processed$X = DILUTION_FACTOR^DilutionPoint
 
   if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_X)){
     processed$X_trans = get(TRANSFORM_X)(processed$X)
