@@ -621,6 +621,7 @@ AssessLinearity <- function(
     func = findLinearRange,
     x = X,
     y = Y,
+    real_x = COLNAMES[[X]],
     min_feature = MIN_FEATURE,
     sd_res_factor = LR_SD_RES_FACTOR
   )

@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_res_factor = 2, min_feature){#modelObject
+findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_res_factor = 2, min_feature, real_x){#modelObject
   #browser()
 
   dat <- data.table::copy(dats)
