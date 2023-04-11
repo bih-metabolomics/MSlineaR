@@ -166,7 +166,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
     plotlinearData <-  plotlinearData +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "seagreen") +
-      ggplot2::geom_line(data = data_Signals,ggplot2::aes(x = get(indipendent), y = abline), col = "orange", na.rm = TRUE) +
+      ggplot2::geom_line(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),ggplot2::aes(x = get(indipendent), y = abline), col = "orange", na.rm = TRUE) +
       ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
       ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
       ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
