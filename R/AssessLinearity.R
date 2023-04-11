@@ -1,24 +1,27 @@
 #' Cleaning up a mass spectrometry data set according to the linear response of serial diluted/concentrated signals.
 #'
-#' @description `AssessLinearity()` cleans up a data set to only signals which
-#' show a linear response. The function use two outlier detections and a partially
-#' linear regression to identify the exact linear response range for each Signal.
+#' @description `AssessLinearity()` cleans up a data set of serial concentrated or diluted Compounds to only signals which
+#' show a linear response. The function use two outlier detection steps and a partially
+#' linear regression to identify the exact linear response range for each Compound.
 #'
 #' @param input_data Long format data frame or data table combining the information
-#' of samples, serial diluted/concentrated samples and optional repeated measured
+#' of biological samples, serial diluted/concentrated samples and optional repeated measured
 #' QC samples for all batches.
 #' @param column_sample_type String; Column name which distinguish between
 #' samples, QC and serial samples.
 #' @param sample_type_QC String; Identification of QC in `column_sample_type`.
-#' @param sample_type_sample String;Identification of sample in `column_sample_type`.
+#' @param sample_type_sample String;Identification of biological samples in `column_sample_type`.
 #' @param sample_type_serial String;Identification of serial data in `column_sample_type`.
-#' @param column_ID String; Column name, which identifies the measured Signals.
+#' @param column_ID String; Column name, which uniquely identifies the measured Signals.
 #' @param column_Batch String; Column name to identify the different batches.
 #' Only necessary if there are more than 1 Batch.
 #' @param column_X String; Column name of the independent variable,
-#'  e.g. Concentration, Dilution,...
+#'  e.g. Concentration, Dilution,... . Highest number should be the highest concentration or lowest dilution.
+#'  For untargeted data use a vector with consecutive numbers, e.g. c(1, 2, 3 , ...) with 1 beeing the highest dilution
+#' @param dilution_factor
 #' @param column_Y String; Column name of the dependent variable,
 #'  e.g. Intensity, Area,..
+#' @param column_class_sample String, Column name used for statistical classes
 #' @param transform Boolean; Should the data be transformed? Default is `TRUE`.
 #' @param transform_x,transformy If `transform` is `TRUE`.
 #' String; Which transformation should be used for the independent variable (concentration/dilution) or/and
@@ -85,6 +88,7 @@
 #'
 AssessLinearity <- function(
     analysis_type = c("targeted", "untargeted", NULL)[3],
+
     #input_data
     input_data = NULL,
     column_sample_type = c("Sample.Type", "Type")[1],
@@ -100,6 +104,7 @@ AssessLinearity <- function(
     column_Y = c("Area","Height", "Intensity")[1],
     column_Y_sample = c("Area","Height", "Intensity")[1],
     column_class_sample = c("group", NULL)[2],
+    dilution_factor = NULL,
 
     #transform_data
     transform = c(TRUE, FALSE)[1],
@@ -127,14 +132,17 @@ AssessLinearity <- function(
     LR_sd_res_factor = 2,
     R2_min = 0.9,
 
-    calculate_concentration = c(TRUE, FALSE)[1],
+    Batch_harmonization = c(TRUE, FALSE)[1],
 
+    #biological signals
+    calculate_concentration = c(TRUE, FALSE)[1],
     get_linearity_status_samples = c(TRUE, FALSE)[1],
 
-    Batch_harmonization = c(TRUE, FALSE)[1],
+    #filtering
 
     nCORE = 1,
 
+    #output
     get_output = c(TRUE, FALSE)[1],
     output_name = NULL,
     which_output = c("all","R_object", "allCurveSignal", "allCurveFeature",
@@ -152,7 +160,14 @@ AssessLinearity <- function(
   SAMPLE = sample_type_sample
   SAMPLE_ID = sample_ID
   CALIBRANTS = sample_type_serial
-  COLNAMES = c(ID = column_ID, Sample_ID = sample_ID, Batch = column_Batch, Sample_type = column_sample_type, X = column_X,Y = column_Y, Class = column_class_sample)
+  COLNAMES = c(ID = column_ID,
+               Sample_ID = sample_ID,
+               Batch = column_Batch,
+               Sample_type = column_sample_type,
+               X = column_X,
+               Y = column_Y,
+               Class = column_class_sample)
+  DILUTION_FACTOR = dilution_factor
   Y_SAMPLE = column_Y_sample
   TRANSFORM = transform
   TRANSFORM_X = transform_x
@@ -192,6 +207,7 @@ AssessLinearity <- function(
                           SAMPLE_ID,
                           CALIBRANTS,
                           COLNAMES,
+                          DILUTION_FACTOR,
                           Y_SAMPLE,
                           TRANSFORM,
                           TRANSFORM_X,
@@ -856,17 +872,50 @@ message("check QC samples")
     dplyr::group_by(ID = get(ID), Batch = get(COLNAMES[["Batch"]]), "Type" = get(COLNAMES[["Sample_type"]])) |>
     dplyr::summarize(
       'LR_TRUE' = sum(Status_LR),
-      'LR_TRUE[%]' = sum(Status_LR)/length(Status_LR)*100,
-      rsd_all = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100,
-      rsd_LR_TRUE = sd(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T)/mean(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T) * 100,
+      'LR_TRUE[%]' = round(sum(Status_LR)/length(Status_LR)*100,2),
+      rsd_all = round(sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100,2),
+      rsd_LR_TRUE = round(sd(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T)/mean(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T) * 100,2),
     ) |>
+
     tidyr::pivot_wider(names_from = c(Type),
                        values_from = c('LR_TRUE', 'LR_TRUE[%]', rsd_all, rsd_LR_TRUE)
+    ) |>
+
+    dplyr::select(tidyr::contains(unique(SampleFeature$Sample.Type)) ) |> dplyr::ungroup()
+
+
+  htmloutput6 <-  datatable(output6) %>%
+    formatStyle(dplyr::select(output6,tidyr::contains("%"))|> colnames(),
+                backgroundColor = styleInterval(c(20,80), c('red','yellow', 'green'))
     )
+  htmlwidgets::saveWidget(htmloutput6, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_summary.html" , sep = "_")))
+
+  output6.1 <- SampleFeature |>
+    subset(get(COLNAMES[["Sample_type"]]) %in% SAMPLE ) |>
+    dplyr::group_by(ID = get(ID), Batch = get(COLNAMES[["Batch"]])) |>
+    dplyr::select(Sample_ID = all_of(SAMPLE_ID), Y = all_of(Y_SAMPLE)) |>
+    tidyr::pivot_wider(names_from = Sample_ID,
+                       values_from = Y
+    ) |>
+    dplyr::full_join(output6 |> dplyr::select(ID, Batch, 'LR_TRUE[%]_Sample'), . , by = c("ID", "Batch")) |>
+    dplyr::select("ID", "Batch", "LR_TRUE[%]_Sample", everything())
+
+  htmloutput6.1 <-  datatable(output6.1, filter = 'top',
+                              extensions = 'Buttons', options = list(
+                                pageLength = nrow(output6.1),
+                                dom = 'Bfrtip',
+                                buttons = c('copy', 'csv', 'excel', 'print')
+                              )) %>%
+    formatStyle("LR_TRUE[%]_Sample",
+                backgroundColor = styleInterval(c(20,80), c('red','yellow', 'green'))
+    )
+  htmlwidgets::saveWidget(htmloutput6.1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_biol_samples.html" , sep = "_")))
 
 
 
-  #7) barplot summary per dilution/concentration
+
+
+  #7) bar plot summary per dilution/concentration
 
   summary_barplot <- plot_Barplot_Summary(inputData_Series = output1, COLNAMES = COLNAMES, X = Xraw, Y = Yraw,
                                           output_dir = IMG_OUTPUT_DIR)
@@ -883,7 +932,7 @@ message("summary_barplot was created")
   )
 
 message("Scatterplot was created")
-  #9) barplot summary for all samples
+  #9) bar plot summary for all samples
 
 
   summary_barplot_all <- plot_Barplot_Summary_Sample(inputData_Samples = output4,
@@ -894,7 +943,7 @@ message("Scatterplot was created")
 
   message("summary_barplot_all was created")
 
-  #10) barplot summary for biological samples
+  #10) bar plot summary for biological samples
 
   summary_barplot_sample <- plot_Barplot_Summary_Sample(inputData_Samples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                                                      COLNAMES = COLNAMES,

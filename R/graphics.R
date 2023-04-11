@@ -125,34 +125,34 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
     data_Signals <- data_Signal#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
 
   plotlinearData <-
-    ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = DilutionPoint, y = get(Y)), shape = Sample.Type) +
+    ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(X), y = get(Y)), shape = Sample.Type) +
     ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type])),colour = "black")
 
 
   if("OutlierFOD" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), ggplot2::aes(x = DilutionPoint, y = get(Y)), colour = "red")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), ggplot2::aes(x = get(X), y = get(Y)), colour = "red")
   }
 
   if("trim" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trim %in% TRUE), ggplot2::aes(x = DilutionPoint, y = get(Y)), colour = "grey")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trim %in% TRUE), ggplot2::aes(x = get(X), y = get(Y)), colour = "grey")
   }
 
   if("OutlierSOD" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierSOD %in% TRUE), ggplot2::aes(x = DilutionPoint, y = get(Y)), colour = "red")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierSOD %in% TRUE), ggplot2::aes(x = get(X), y = get(Y)), colour = "red")
   }
 
   if("trimPos" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), ggplot2::aes(x = DilutionPoint, y = get(Y)), colour = "grey")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), ggplot2::aes(x = get(X), y = get(Y)), colour = "grey")
   }
 
   if("IsLinear" %in% colnames(data_Signals)){
 
-      Xinterstart = data_Signals$DilutionPoint[data_Signals$LRStart]
-      Xinterend = data_Signals$DilutionPoint[data_Signals$LREnd]
+      Xinterstart = get(X)[data_Signals$LRStart]
+      Xinterend = get(X)[data_Signals$LREnd]
 
 
     if(TRANSFORM_Y !="" & !is.na(TRANSFORM_Y)){
@@ -165,8 +165,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE), ggplot2::aes(x = DilutionPoint, y = get(Y)), colour = "seagreen") +
-      ggplot2::geom_line(data = data_Signals,ggplot2::aes(x = DilutionPoint, y = abline), col = "orange", na.rm = TRUE) +
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE), ggplot2::aes(x = get(X), y = get(Y)), colour = "seagreen") +
+      ggplot2::geom_line(data = data_Signals,ggplot2::aes(x = get(X), y = abline), col = "orange", na.rm = TRUE) +
       ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
       ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
       ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
@@ -175,7 +175,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   }
 
   plotlinearData <-  plotlinearData +
-    ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) #+#scales::trans_format(get(inverse_x), format = number_format())) +
+    ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals[[X]],  labels = data_Signals$DilutionPoint) #+#scales::trans_format(get(inverse_x), format = number_format())) +
 
 # if(!is.null(inputData_BioSamples) | !is.null(inputData_QC)| !is.null(inputData_QCref) | !is.null(inputData_Blank)){
 #   nrQC <- sum(!is.null(inputData_BioSamples),!is.null(inputData_QC),!is.null(inputData_QCref), !is.null(inputData_Blank))

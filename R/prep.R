@@ -58,6 +58,7 @@ checkData <- function(dat, MIN_FEATURE, TYPE, QC,
                       #QC_REF, BLANK,
                       SAMPLE, SAMPLE_ID,
                       CALIBRANTS, COLNAMES, Y_SAMPLE,
+                      DILUTION_FACTOR,
                       TRANSFORM,TRANSFORM_X, INVERSE_X,
                       TRANSFORM_Y,INVERSE_Y,
                       FOD,FOD_MODEL, FOD_SDRES_MIN, FOD_STDRES_MAX,
@@ -132,6 +133,13 @@ checkData <- function(dat, MIN_FEATURE, TYPE, QC,
 
   })
 
+  if(TYPE %in% "untargeted"){
+    stopifnot(exprs = {
+      "Argument 'dilution_factor ' must be provided for untargeted analysis" =
+        !is.null(DILUTION_FACTOR) | DILUTION_FACTOR != " " | !is.na(DILUTION_FACTOR)
+    })
+  }
+
   if(TRANSFORM %in% TRUE){
     stopifnot(exprs = {
       "Argument 'transform_X' and 'transform_Y' need to be a String or NA, e.g. 'log10'" =
@@ -188,7 +196,7 @@ is.wholenumber <-
 #' @export
 #'
 #' @examples
-prepareData <- function(dat,TRANSFORM, TRANSFORM_X, TRANSFORM_Y){
+prepareData <- function(dat,TRANSFORM, TRANSFORM_X, TRANSFORM_Y, DILUTION_FACTOR, COLNAMES, TYPE){
 
   stopifnot(exprs = {
     "data need to have 9 columns" = dim(dat)[2] == 9
@@ -196,17 +204,20 @@ prepareData <- function(dat,TRANSFORM, TRANSFORM_X, TRANSFORM_Y){
 data.table::setDT(dat)
   processed <- data.table::copy(dat)
   # rename
-  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "ID","Sample_ID", "Sample.Type","Class", "Batch", "X", "Y"))
+  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "ID","Sample_ID", "Sample.Type","Class", "Batch",COLNAMES[["X"]], "Y"))
 
-  data.table::setorderv(processed, c("ID", "Batch", "X"))
+  data.table::setorderv(processed, c("ID", "Batch", COLNAMES[["X"]]))
 
   processed[, ":="(Comment = NA, pch = data.table::fcase(!is.na(Y), 19), color = data.table::fcase(!is.na(Y), "black"))]
   processed[, ":="(#YNorm = Y / max(Y, na.rm = T) * 100,
              #Y_trans = log(Y),
              #X_trans = log(X),
-             DilutionPoint = 1:.N),
+             DilutionPoint = 0 : (.N-1)),
+             X = DILUTION_FACTOR^DilutionPoint,
              #groupIndices = .GRP),
             by = c("ID", "Batch")]
+
+
 
   if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_X)){
     processed$X_trans = get(TRANSFORM_X)(processed$X)

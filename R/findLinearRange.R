@@ -63,10 +63,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
       linear = TRUE,
       LRStart = dat$DilutionPoint[maxTrueRange[1]],
       LRStartY = dat$Y[maxTrueRange[1]],
-      LRStartX = dat$X[maxTrueRange[1]],
+      LRStartX = dat[[COLNAMES[["X"]]]][maxTrueRange[1]],
       LREnd = dat$DilutionPoint[tail(maxTrueRange,1)],
       LREndY = dat$Y[tail(maxTrueRange,1)],
-      LREndX = dat$X[tail(maxTrueRange,1)],
+      LREndX = dat[[COLNAMES[["X"]]]][tail(maxTrueRange,1)],
       LRLength = length(maxTrueRange),
       enoughPointsWithinLR = LRLength >= min_feature,
       LRFlag = NA
@@ -115,10 +115,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
 
         tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
         tmpGroup$LRStartY = dat$Y[dat$IsLinear %in% TRUE][1]
-        tmpGroup$LRStartX =  dat$X[dat$IsLinear %in% TRUE][1]
+        tmpGroup$LRStartX =  dat[[COLNAMES[["X"]]]][dat$IsLinear %in% TRUE][1]
         tmpGroup$LREnd = data.table::last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
         tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
-        tmpGroup$LREndX = data.table::last(dat$X[dat$IsLinear %in% TRUE])
+        tmpGroup$LREndX = data.table::last(dat[[COLNAMES[["X"]]]][dat$IsLinear %in% TRUE])
         tmpGroup$LRLength = sum(dat$IsLinear)
         tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= min_feature
         tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
@@ -137,10 +137,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
 
           tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
           tmpGroup$LRStartY = dat$Y[dat$IsLinear %in% TRUE][1]
-          tmpGroup$LRStartX =  dat$X[dat$IsLinear %in% TRUE][1]
+          tmpGroup$LRStartX =  dat[[COLNAMES[["X"]]]][dat$IsLinear %in% TRUE][1]
           tmpGroup$LREnd = data.table::last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
           tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
-          tmpGroup$LREndX = data.table::last(dat$X[dat$IsLinear %in% TRUE])
+          tmpGroup$LREndX = data.table::last(dat[[COLNAMES[["X"]]]][dat$IsLinear %in% TRUE])
           tmpGroup$LRLength = sum(dat$IsLinear)
           tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= min_feature
           tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
