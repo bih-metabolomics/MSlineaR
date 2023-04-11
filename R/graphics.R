@@ -70,8 +70,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   ID <-  COLNAMES[["ID"]]
   Col_Batch <-  COLNAMES[["Batch"]]
   Sample.Type <- COLNAMES[["Sample_type"]]
-  X <- X
-  Y <- Y
+  indipendent <- X
+  y <- Y
 
   data.table::setDT(inputData_Series)
   data.table::setDT(inputData_BioSamples)
@@ -86,7 +86,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   data_Signal$Batch = data_Signal[[Col_Batch]]
 
   QCs = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
-                        x = -c(2 : (length(unique(inputData_QC[[Sample.Type]])) +1))
+                        x = -c(3 : (length(unique(inputData_QC[[Sample.Type]])) +2))
   )
 
   data_Signal <- dplyr::full_join(data_Signal, QCs, by = "Sample.Type")
@@ -125,34 +125,34 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
     data_Signals <- data_Signal#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
 
   plotlinearData <-
-    ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(X), y = get(Y)), shape = Sample.Type) +
+    ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(y)), shape = Sample.Type) +
     ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type])),colour = "black")
 
 
   if("OutlierFOD" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), ggplot2::aes(x = get(X), y = get(Y)), colour = "red")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "red")
   }
 
   if("trim" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trim %in% TRUE), ggplot2::aes(x = get(X), y = get(Y)), colour = "grey")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trim %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "grey")
   }
 
   if("OutlierSOD" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierSOD %in% TRUE), ggplot2::aes(x = get(X), y = get(Y)), colour = "red")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierSOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "red")
   }
 
   if("trimPos" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), ggplot2::aes(x = get(X), y = get(Y)), colour = "grey")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "grey")
   }
 
   if("IsLinear" %in% colnames(data_Signals)){
 
-      Xinterstart = data_Signals[[X]][data_Signals$LRStart]
-      Xinterend = data_Signals[[X]][data_Signals$LREnd]
+      Xinterstart = data_Signals[[indipendent]][data_Signals$LRStart +1]
+      Xinterend = data_Signals[[indipendent]][data_Signals$LREnd +1]
 
 
     if(TRANSFORM_Y !="" & !is.na(TRANSFORM_Y)){
@@ -165,8 +165,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE), ggplot2::aes(x = get(X), y = get(Y)), colour = "seagreen") +
-      ggplot2::geom_line(data = data_Signals,ggplot2::aes(x = get(X), y = abline), col = "orange", na.rm = TRUE) +
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "seagreen") +
+      ggplot2::geom_line(data = data_Signals,ggplot2::aes(x = get(indipendent), y = abline), col = "orange", na.rm = TRUE) +
       ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
       ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
       ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
@@ -175,7 +175,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   }
 
   plotlinearData <-  plotlinearData +
-    ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals[[X]],  labels = data_Signals$DilutionPoint) #+#scales::trans_format(get(inverse_x), format = number_format())) +
+    ggplot2::scale_x_continuous(limits = c(-5, NA) ,breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint +1) #+#scales::trans_format(get(inverse_x), format = number_format())) +
 
 # if(!is.null(inputData_BioSamples) | !is.null(inputData_QC)| !is.null(inputData_QCref) | !is.null(inputData_Blank)){
 #   nrQC <- sum(!is.null(inputData_BioSamples),!is.null(inputData_QC),!is.null(inputData_QCref), !is.null(inputData_Blank))
@@ -186,36 +186,18 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   if(!is.null(inputData_BioSamples )){
     plotlinearData <-  plotlinearData +
       #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ), ggplot2::aes( x = -1, y = get(Y),  shape = Sample.Type, color = Status_LR), size = 2, na.rm = TRUE) +#, shape = 1, col = "purple"
-      ggplot2::geom_vline(ggplot2::aes( xintercept = 0, color = "darkgrey"), linetype = "solid", col = "black", na.rm = TRUE)
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ), ggplot2::aes( x = -2, y = get(y),  shape = Sample.Type, color = Status_LR), size = 2, na.rm = TRUE) +#, shape = 1, col = "purple"
+      ggplot2::geom_vline(ggplot2::aes( xintercept = -1, color = "darkgrey"), linetype = "solid", col = "black", na.rm = TRUE)
     legend_order <- c(unique(inputData_BioSamples$Sample.Type))
   }
 
   if(!is.null(inputData_QC )){
     plotlinearData <-  plotlinearData +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
-                          ggplot2::aes( x = x, y = get(Y),  shape = Sample.Type,
+                          ggplot2::aes( x = x, y = get(y),  shape = Sample.Type,
                                         color = Status_LR), size = 2, na.rm = TRUE) #+, shape = 5
     legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
   }
-#
-#   if(!is.null(inputData_QC_ref )){
-#     plotlinearData <-  plotlinearData +
-#       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_QC_ref[, Sample.Type])),
-#                           ggplot2::aes( x = -3, y = get(Y),  shape = Sample.Type,
-#                                         color = Status_LR), size = 2, na.rm = TRUE) #+ shape = 2
-#     legend_order <- c(legend_order, unique(inputData_QC_ref$Sample.Type))
-#
-#   }
-#
-#   if(!is.null(inputData_Blank )){
-#     plotlinearData <-  plotlinearData +
-#       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Blank[, Sample.Type])),
-#                           ggplot2::aes( x = -4, y = get(Y),  shape = Sample.Type,
-#                                         color = Status_LR), size = 2, na.rm = TRUE)# + shape = 0
-#     legend_order <- c(legend_order, unique(inputData_Blank$Sample.Type))
-#
-#   }
 
 
 
@@ -265,7 +247,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
 
 
   plotlinearData <-  plotlinearData +
-    ggplot2::geom_text(ggplot2::aes(x = -2.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2, na.rm = TRUE)+
+    ggplot2::geom_text(ggplot2::aes(x = -3.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2, na.rm = TRUE)+
     ggplot2::scale_color_manual(name = "In linear Range:",
                        values = c("FALSE" = "red", "TRUE" = "purple")) +
     ggplot2::scale_shape_manual(values = c(0, 2, 5, 1), breaks=rev(legend_order)) +
@@ -317,14 +299,14 @@ plot_Barplot_Summary <- function(inputData_Series,
   # LR_object,statusLinear = c(TRUE, FALSE),
   ID <- COLNAMES[["ID"]]
   Col_Batch = COLNAMES[["Batch"]]
-  X <- X
-  Y <- Y
+  x <- X
+  y <- Y
 
   data.table::setDT(inputData_Series)
 
   data_Signals_summary <- inputData_Series |>
     dplyr::group_by(DilutionPoint, Batch = get(Col_Batch)) |>
-    dplyr::summarize(Missing = sum(is.na(Y), na.rm = T),
+    dplyr::summarize(Missing = sum(is.na(y), na.rm = T),
               OutlierFOD = sum(OutlierFOD, na.rm = T),
               Trim = sum(trim %in% TRUE, na.rm = T),
               OutlierSOD = sum(OutlierSOD, na.rm = T),
@@ -399,8 +381,8 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   # LR_object,statusLinear = c(TRUE, FALSE),
   ID <- COLNAMES[["ID"]]
   Col_Batch <- COLNAMES[["Batch"]]
-  X <- X
-  Y <- Y
+  x <- X
+  y <- Y
   SAMPLE_ID <- COLNAMES[["Sample_ID"]]
 
   data.table::setDT(inputData_Samples)
@@ -408,7 +390,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   data_Signals_sample_summary <- inputData_Samples |>
     dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), Sample.Type) |>
     dplyr::summarize(
-      Missing = sum(is.na(Y), na.rm = T),
+      Missing = sum(is.na(y), na.rm = T),
       LR_TRUE = sum(Status_LR %in% TRUE, na.rm = T),
       LR_FALSE = sum(Status_LR %in% FALSE, na.rm = T)
     ) |>

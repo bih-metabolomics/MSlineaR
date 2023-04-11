@@ -323,7 +323,7 @@ AssessLinearity <- function(
   # save key numbers
   nCompounds <- data.table::uniqueN(processingGroup, by = c("ID"))
   nReplicates <- data.table::uniqueN(processingFeature, by = c("Batch"))
-  nDilutions <- data.table::uniqueN(processingFeature[, 'DilutionPoint' := 1:.N, by = c("ID", "Batch")], by = c("DilutionPoint"))
+  nDilutions <- data.table::uniqueN(processingFeature, by = c("DilutionPoint"))
   nSeries <- data.table::uniqueN(processingGroup, by = c("groupIndices"))
   nPeaks <- data.table::uniqueN(processingFeature, by = c("IDintern"))
 
@@ -818,7 +818,7 @@ message("check QC samples")
                        values_from = c('LR_TRUE', 'LR_TRUE[%]', rsd_all, rsd_LR_TRUE)
     ) |>
 
-    dplyr::select(tidyr::contains(unique(SampleFeature$Sample.Type)) ) |> dplyr::ungroup()
+    dplyr::select(tidyr::contains(unique(SampleFeature$Sample.Type)) )
 
 
   htmloutput6 <-  DT::datatable(output6) %>%
