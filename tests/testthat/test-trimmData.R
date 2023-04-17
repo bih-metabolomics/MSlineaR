@@ -32,7 +32,7 @@ testthat::test_that("function trimEnds works", {
 
   datOut2 <- chooseModel(dat2, y., x., abbr = "FOD")$`1`$dat
 
-  testthat::expect_true(all(trimEnds(datOut2,y = "Y_FOD", x)$trim[2:4]))
+  testthat::expect_true(all(trimEnds(datOut2,y = "Y_FOD", x.)$trim[2:4]))
   testthat::expect_equal(trimEnds(datOut2,y = "Y_FOD", x.)$trim[1], NA)
   testthat::expect_match(trimEnds(datOut2,y = "Y_FOD", x.)$Comment[2], "trim: firstPoint")
   testthat::expect_match(trimEnds(datOut2,y = "Y_FOD", x.)$Comment[3], "trim: <firstPoint")
