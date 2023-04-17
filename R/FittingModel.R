@@ -11,13 +11,12 @@
 #' @examples
 #'
 chooseModel <- function(dats,
-                        y = "Intensity",
-                        x = "Concentration",
+                        y = parent.frame()$Y,
+                        x = parent.frame()$X,
                         model = c("logistic", "linear", "quadratic"),
                         SDRES_MIN = 1,
                         STDRES = 2,
-                        abbr,
-                        ...){
+                        abbr){
  # .datatable.aware=TRUE
   data.table::setDT(dats)
   dat <- data.table::copy(dats)[dats$color %in% "black",]
