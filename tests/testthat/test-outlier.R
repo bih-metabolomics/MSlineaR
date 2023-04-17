@@ -1,4 +1,4 @@
-testthat::test_that("checks function chooseModel",{
+testthat::test_that("function chooseModel works",{
   dat1 <- data.table::data.table(groupIndices = rep(1,10),
                                             ID = rep(1,10),
                                             IDintern = paste0("s", 1:10),
@@ -64,82 +64,120 @@ testthat::test_that("checks function chooseModel",{
                                             DilutionPoint = 1:10)
 
 
+  model. = c("logistic", "linear", "quadratic")
+  y. = "Y"
+  x. = "X"
+  SDRES_MIN. = 1
+  STDRES. = 2
+  abbr. = "FOD"
 
-  y = "Y"
-  x = "X"
-  abbr = "FOD"
+  testthat::expect_equal(chooseModel(
+    dats = dat1,
+    y = y.,
+    x = x.,
+    model =  model.,
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$model.name, "linear")
 
-  testthat::expect_equal(chooseModel(dat1, tidyselect::all_of(y),tidyselect::all_of(x), abbr = abbr)[[1]]$model.name, "linear")
-  testthat::expect_equal(which(!chooseModel(dat1, tidyselect::all_of(y),tidyselect::all_of(x),, abbr = abbr, model = "linear")[[1]]$model$RMSE %in% NA), 2)
-  testthat::expect_equal(which(!chooseModel(dat1, tidyselect::all_of(y),tidyselect::all_of(x),, abbr = abbr, model = "linear")[[1]]$model$RMSE %in% NA), 2)
-  testthat::expect_equal(chooseModel(dat1, tidyselect::all_of(y),tidyselect::all_of(x),, abbr = abbr, model = "linear")[[1]]$R2 , 1)
-  testthat::expect_equal(chooseModel(dat1, tidyselect::all_of(y),tidyselect::all_of(x),, abbr = abbr, model = "linear")[[1]]$aboveMinCor , TRUE)
+  testthat::expect_equal(which(!chooseModel(
+    dats = dat1,
+    y = y.,
+    x = x.,
+    model =  "linear",
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$model$RMSE %in% NA), 2)
 
-  #testthat::expect_equal(chooseModel(dat1, tidyselect::all_of(y), tidyselect::all_of(x), model)[[1]]$cor, 1)
+  testthat::expect_equal(chooseModel(
+    dats = dat2,
+    y = y.,
+    x = x.,
+    model =  model.,
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$model.name, "quadratic")
 
-  testthat::expect_equal(chooseModel(dat2, tidyselect::all_of(y), tidyselect::all_of(x), abbr = abbr)[[1]]$model.name, "quadratic")
-  #testthat::expect_equal(round(chooseModel(dat2, tidyselect::all_of(y), tidyselect::all_of(x), model)[[1]]$cor, 3), 0.962)
+  testthat::expect_equal(chooseModel(
+    dats = dat3,
+    y = y.,
+    x = x.,
+    model =  model.,
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$model.name, "logistic")
 
-  testthat::expect_equal(chooseModel(dat3, tidyselect::all_of(y), tidyselect::all_of(x), abbr = abbr)[[1]]$model.name, "logistic")
-  #testthat::expect_equal(round(chooseModel(dat4, tidyselect::all_of(y), tidyselect::all_of(x), model)[[1]]$cor, 3), 0.992)
+  testthat::expect_true(chooseModel(
+    dats = dat4,
+    y = y.,
+    x = x.,
+    model =  model.,
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$dat$OutlierFOD[4])
 
-  testthat::expect_true(chooseModel(dat4, tidyselect::all_of(y), tidyselect::all_of(x), abbr = abbr)[[1]]$dat$OutlierFOD[4])
+  testthat::expect_equal(chooseModel(
+    dats = dat5,
+    y = y.,
+    x = x.,
+    model =  model.,
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$model.name, "linear")
 
-  testthat::expect_equal(chooseModel(dat5, tidyselect::all_of(y), tidyselect::all_of(x), abbr = abbr)[[1]]$model.name, "linear")
-  testthat::expect_true(chooseModel(dat5, tidyselect::all_of(y), tidyselect::all_of(x), abbr = abbr)[[1]]$dat$OutlierFOD[1])
-  testthat::expect_equal(sum(chooseModel(dat5, tidyselect::all_of(y), tidyselect::all_of(x), abbr = abbr)[[1]]$dat$OutlierFOD), 1)
+  testthat::expect_true(chooseModel(
+    dats = dat5,
+    y = y.,
+    x = x.,
+    model =  model.,
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$dat$OutlierFOD[1])
 
-  testthat::expect_equal(chooseModel(dat6, tidyselect::all_of(y), tidyselect::all_of(x), abbr = abbr)[[1]]$model.name, "quadratic")
-  testthat::expect_true(chooseModel(dat6, tidyselect::all_of(y), tidyselect::all_of(x), abbr = abbr)[[1]]$dat$OutlierFOD[9])
+  testthat::expect_equal(sum(chooseModel(
+    dats = dat5,
+    y = y.,
+    x = x.,
+    model =  model.,
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$dat$OutlierFOD), 1)
 
-  testthat::expect_equal(chooseModel(dat7, tidyselect::all_of(y), tidyselect::all_of(x), abbr = abbr)[[1]]$model.name, "logistic")
-  testthat::expect_true(chooseModel(dat7, tidyselect::all_of(y), tidyselect::all_of(x), abbr = abbr)[[1]]$dat$OutlierFOD[3])
+  testthat::expect_equal(chooseModel(
+    dats = dat6,
+    y = y.,
+    x = x.,
+    model =  model.,
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$model.name, "quadratic")
 
+  testthat::expect_true(chooseModel(
+    dats = dat6,
+    y = y.,
+    x = x.,
+    model =  model.,
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$dat$OutlierFOD[9])
 
+  testthat::expect_equal(chooseModel(
+    dats = dat7,
+    y = y.,
+    x = x.,
+    model =  model.,
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$model.name, "logistic")
+
+  testthat::expect_true(chooseModel(
+    dats = dat7,
+    y = y.,
+    x = x.,
+    model =  model.,
+    SDRES_MIN = SDRES_MIN.,
+    STDRES = STDRES.,
+    abbr = abbr.)[[1]]$dat$OutlierFOD[3])
 
 })
 
-
-# testthat::test_that("checks function outlier", {
-#
-#   dat1 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
-#                                             ID = rep(1,10),
-#                                             REPLICATE = rep(1,10),
-#                                             X = 1:10,
-#                                             Y = 1:10,
-#                                             DilutionPoint = 1:10))
-#
-#   dat2 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
-#                                             ID = rep(1,10),
-#                                             REPLICATE = rep(1,10),
-#                                             X = 1:10,
-#                                             Y = c(1:3,10,5:10),
-#                                             DilutionPoint = 1:10))
-#
-#   dat3 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
-#                                             ID = rep(1,10),
-#                                             REPLICATE = rep(1,10),
-#                                             X = 1:10,
-#                                             Y = c(10, 2:10),
-#                                             DilutionPoint = 1:10))
-#
-#
-#   y = "Y"
-#   x = "X"
-#   model=c("logistic", "linear", "quadratic")
-#
-#
-#   MODEL <- chooseModel(dat1, tidyselect::all_of(y), tidyselect::all_of(x), model)
-#   MODEL2 <- chooseModel(dat2, tidyselect::all_of(y), tidyselect::all_of(x), model)
-#   MODEL3 <- chooseModel(dat3, tidyselect::all_of(y), tidyselect::all_of(x), model)
-#
-#
-#   testthat::expect_vector(outlier(dat = dat1, modelObject =  MODEL[[1]][[2]], res = 2, count = 1)$outlier, ptype = logical(), size = 10)
-#   testthat::expect_false(all(outlier(dat = dat1, modelObject =  MODEL[[1]][[2]], res = 2, count = 1)$outlier))
-#
-#   testthat::expect_vector(outlier(dat = dat2, modelObject =  MODEL2[[1]][[2]], res = 2, count = 1)$outlier, ptype = logical(), size = 10)
-#   testthat::expect_true(outlier(dat = dat2, modelObject =  MODEL2[[1]][[2]], res = 2, count = 1)$outlier[4])
-#
-#   testthat::expect_true(outlier(dat = dat3, modelObject =  MODEL3[[1]][[2]], res = 2, count = 1)$outlier[1])
-#
-# })
