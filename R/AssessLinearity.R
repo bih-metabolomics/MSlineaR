@@ -231,8 +231,7 @@ AssessLinearity <- function(
                           GET_LR_STATUS,
                           nCORE,
                           GET_OUTPUT,
-                          PREFIX,
-                          OUTPUT_DIR
+                          PREFIX
                           )
 
 
