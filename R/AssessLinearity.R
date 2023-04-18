@@ -290,7 +290,7 @@ AssessLinearity <- function(
   nSeries <- data.table::uniqueN(processingGroup, by = c("groupIndices"))
   nPeaks <- data.table::uniqueN(processingFeature, by = c("IDintern"))
 
-  rlang::inform(paste()
+  rlang::inform(paste(
     "Data set with ", nCompounds, " ",Compounds, ", ",
     nReplicates, " Batch(es) and ",
     nDilutions, " ", Dilutions," -> ",
