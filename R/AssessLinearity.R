@@ -196,40 +196,7 @@ AssessLinearity <- function(
 
 
   message("checking input arguments\n--------------------------------------------------------\n")
-  dataOrigin <- checkData(dat = DAT, MIN_FEATURE,
-                          TYPE,
-                          QC,
-                          #QC_REF,
-                          #BLANK,
-                          SAMPLE,
-                          SAMPLE_ID,
-                          CALIBRANTS,
-                          COLNAMES,
-                          DILUTION_FACTOR,
-                          Y_SAMPLE,
-                          TRANSFORM,
-                          TRANSFORM_X,
-                          INVERSE_X,
-                          TRANSFORM_Y,
-                          INVERSE_Y,
-                          FOD,
-                          FOD_MODEL,
-                          FOD_SDRES_MIN,
-                          FOD_STDRES_MAX,
-                          TRIMM,
-                          SOD,
-                          SOD_MODEL,
-                          SOD_SDRES_MIN,
-                          SOD_STDRES_MAX,
-
-                          LR_SD_RES_FACTOR,
-                          R2_MIN,
-                          BATCH_HARMONIZATION,
-                          CAL_CONC,
-                          GET_LR_STATUS,
-                          nCORE,
-                          GET_OUTPUT
-                          )
+  dataOrigin <- checkData(dat = DAT)
 
 
   # progressbar
