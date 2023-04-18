@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-trimEnds <- function(dats, y="YLog", x="XLog", thresh=0){
+trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, thresh=0){
 
   dats$trim <- FALSE
   dats$trim[is.na(dats[[y]])] <- NA # | dats$OutlierFOD %in% TRUE
@@ -83,7 +83,7 @@ trimEnds <- function(dats, y="YLog", x="XLog", thresh=0){
 #' @export
 #'
 #' @examples
-trim_pos_associated <- function(dats, y, x, MIN_Feature, ...){
+trim_pos_associated <- function(dats, y, x, MIN_Feature){
 
   dats$trimPos <- FALSE
   dats$trimPos[is.na(dats[[y]])] <- NA # | dats$OutlierFOD %in% TRUE
