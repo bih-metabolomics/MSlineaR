@@ -228,8 +228,7 @@ AssessLinearity <- function(
                           CAL_CONC,
                           GET_LR_STATUS,
                           nCORE,
-                          GET_OUTPUT,
-                          PREFIX
+                          GET_OUTPUT
                           )
 
 
