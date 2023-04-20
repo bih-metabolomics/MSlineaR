@@ -195,7 +195,7 @@ AssessLinearity <- function(
 
   rlang::inform("checking input arguments\n--------------------------------------------------------\n")
   dataOrigin <- data.table::copy(DAT)
-  checkData(dat = dataOrigin)
+  dataOrigin <- checkData(dat = dataOrigin)
 
 
   # progressbar
