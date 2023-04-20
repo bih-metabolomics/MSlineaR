@@ -24,6 +24,8 @@ After these steps for each dilution/concentration curve are the information avai
 
 ## Installation
 
+`MSlineaR` requires GNU R version \>= 4.1.2 installed.
+
 To get the latest development version from `MSlineaR` from [GitHub](https://github.com/) you can use the [`devtools`](https://github.com/r-lib/devtools) package:
 
 ``` r
@@ -31,71 +33,46 @@ To get the latest development version from `MSlineaR` from [GitHub](https://gith
 devtools::install_github("bih-metabolomics/MSlineaR")
 ```
 
+As long as `MSlineaR` is not a public package, it's probably the most simple to install it from a local source package on our group share. Please check `S:/_BIH_/Software/MetaProc` for newer versions (in case I forget to update the version number in here).
+
+Install MetaProc by running the following in R:
+
+    if (!requireNamespace("remotes"))
+      install.packages("remotes")
+
+    remotes::install_local("S:/_BIH_/Software/MetaProc/metaproc_0.1.19.tar.gz")
+
 ## Example
 
 Finding the linear Range for an targeted tryptophan Calibration data set:
 
 ``` r
 library(MSlineaR)
-library(data.table)
 
-# read in example data
-MSData <- MSlineaR::TryptophanData
-Calibrants <- MSlineaR::TryptophanCalibration
-
-# select samples used for concentration or dilution series
-data_tbl_cal <- data.table::data.table(MSData)[Sample.Type %in% "Calibration Standard", ]
-
-# combine samples and concentrations
-data_tbl_cal <- data_tbl_cal[Calibrants, on = c(Sample.Identification = "Sample Identification", Compound = "Metabolite" )]
-data_tbl_cal <- na.omit(data_tbl_cal, c("Concentration", "Batch"))
+data_tbl <- MSlineaR::targeted_MS
 
 
 targetedMSCal <- AssessLinearity(
+  dilution_factor = 3,
+  analysis_type ="targeted",
+  input_data = data_tbl,
+  column_sample_type = "Sample.Type" ,
+  sample_type_QC = c("Pooled QC","Reference QC","Blank"),
+  #sample_type_QC_ref = "Reference QC",
+  #sample_type_blank = "Blank",
+  sample_type_sample = "Sample",
+  sample_type_serial = "Calibration Standard",
+  sample_ID = "Sample.Identification",
 
-  DAT = data_tbl_cal,
-  COLNAMES = c(
-    ID =  "Compound",
-    REPLICATE = "Batch",
-    X = "Concentration",
-    Y =   "Area"
-  ),
-  nCORE = 4,
-  MIN_FEATURE = 5,
-  LOG_TRANSFORM = TRUE,
-  R2min = 0.9,
-  res = 10
+  column_ID = "Compound",
+  column_Batch = "Batch",
+  column_X = "Concentration",
+  column_Y = "Area",
+  column_Y_sample = "Area",
+  min_feature = 5,
+  output_name = "Test_targeted",
+  output_dir = "S:/Projects/2022/MSTARS/Janine_linearity_project/Benchmark data/targeted/230419",
+  nCORE = 4
+
 )
-
-# select samples
-data_tbl_Sample = MSData[Sample.Type %in% "Sample"]
-
-# check if samples within linear range or not
-data_tbl_Sample = getLRstatus(dats = data_tbl_Sample, datCal = targetedMSCal$summaryFDS, COLNAMES = c(ID = "Compound", Replicate = "Batch", Y = "Area"))
-
-
-
-
-# plot all FDS
-plotFDS(LR_object = targetedMSCal,
-        groupIndices = "all", 
-        statusLinear = c(TRUE, FALSE), 
-        ID = "all", 
-        printPDF = TRUE, 
-        outputfileName = c("Calibrationplot"), 
-        pdfwidth = 9, 
-        pdfheight = 60)
-        
-        
-# plot all FDS plus Samples
-
-plotSamples(LR_object = targetedMSCal,
-            data_Sample = data_tbl_Sample,
-            groupIndices = "all", 
-            statusLinear = c(TRUE, FALSE), 
-            ID = "all", 
-            printPDF = TRUE, 
-            outputfileName = c("Sampleplot"), 
-            pdfwidth = 9, 
-            pdfheight = 60)
 ```

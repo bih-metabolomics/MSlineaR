@@ -159,7 +159,7 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
    if(!is.null(SAMPLE)) if(!any(dat[[COLNAMES[["Sample_type"]]]] %in% SAMPLE))rlang::abort("Argument 'sample_type_sample' was not found in column 'column_sample_type'")
   if(!is.null(SAMPLE)) if(!any(colnames(dat) %in% Y_SAMPLE))rlang::abort("Column 'column_Y_sample' was not found in input data.")
 
-  if(!is.null(QC)) if(!any(dat[[COLNAMES[["Sample_type"]]]] %in% QC)) rlang::abort("Argument 'sample_type_QC' was not found in column 'column_sample_type'")
+  if(!is.null(QC)) if(!all(dat[[COLNAMES[["Sample_type"]]]] %in% QC)) rlang::abort("Argument 'sample_type_QC' was not found in column 'column_sample_type'")
   if(!is.numeric(DILUTION_FACTOR)) rlang::abort("Argument 'dilution_factor' needs to be from type numeric.")
   if(!is.logical(BATCH_HARMONIZATION) | is.na(BATCH_HARMONIZATION)) rlang::abort("Argument 'Batch_harmonization' needs to be from type logical")
 
