@@ -58,7 +58,7 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC#, i
 #' @export
 #'
 #' @examples
-plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, inputData_QC_ref = NULL, inputData_Blank = NULL,
+plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,
                      nrFeature = 50,
                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
                     outputfileName = c("Calibrationplot"), TRANSFORM_Y, inverse_y,
@@ -76,8 +76,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC, input
   data.table::setDT(inputData_Series)
   data.table::setDT(inputData_BioSamples)
   data.table::setDT(inputData_QC)
-  data.table::setDT(inputData_QC_ref)
-  data.table::setDT(inputData_Blank)
+
 
 
 

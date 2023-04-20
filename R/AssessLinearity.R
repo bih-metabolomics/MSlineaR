@@ -93,8 +93,6 @@ AssessLinearity <- function(
     input_data = NULL,
     column_sample_type = c("Sample.Type", "Type")[1],
     sample_type_QC = c("pooled QC", "Reference QC", "Blank", NULL)[4],
-    #sample_type_QC_ref = c("Reference QC", "QC", NULL)[3],
-    #sample_type_blank = c("Blank", NULL)[2],
     sample_type_sample = "Sample",
     sample_type_serial = "Calibration Standard",
     sample_ID = "Sample.Identification",
@@ -196,7 +194,8 @@ AssessLinearity <- function(
 
 
   rlang::inform("checking input arguments\n--------------------------------------------------------\n")
-  dataOrigin <- checkData(dat = DAT)
+  dataOrigin <- copy(DAT)
+  checkData(dat = dataOrigin)
 
 
   # progressbar
@@ -233,29 +232,29 @@ AssessLinearity <- function(
 
 
   if(TRANSFORM %in% TRUE){
-    X = ifelse(is.na(TRANSFORM_X), "X", "X_trans")
-    Y = ifelse(is.na(TRANSFORM_Y), "Y", "Y_trans")
+    X <- ifelse(is.na(TRANSFORM_X), "X", "X_trans")
+    Y <- ifelse(is.na(TRANSFORM_Y), "Y", "Y_trans")
 
   } else{
-    X = "X"
-    Y = "Y"
+    X <- "X"
+    Y <- "Y"
   }
 
-  Xraw = X
-  Yraw = Y
+  Xraw <- X
+  Yraw <- Y
 
   #wording
 
   if(TYPE %in% "targeted"){
-    Compounds = "Compound(s)"
-    Dilutions = "Concentrations"
-    Series = "Concentration Curves"
-    Signals = "Signals"
+    Compounds <- "Compound(s)"
+    Dilutions <- "Concentrations"
+    Series <- "Concentration Curves"
+    Signals <- "Signals"
   } else{
-    Compounds = "molecular feature"
-    Dilutions = "Dilutions"
-    Series = "QC dilution Curves"
-    Signals = "Signals"
+    Compounds <- "molecular feature"
+    Dilutions <- "Dilutions"
+    Series <- "QC dilution Curves"
+    Signals <- "Signals"
   }
 
   # if (!"REPLICATE" %in% names(COLNAMES)) {
@@ -277,7 +276,7 @@ AssessLinearity <- function(
 
   processingFeature <- data.table::copy(dataPrep)
 
-  step = 1
+  step <- 1
   countList <- countMinimumValue(DAT = processingFeature,step = step,y = Y)
   processingFeature <- data.table::data.table(countList[[1]])
   processingGroup <- data.table::data.table(countList[[2]])
@@ -315,7 +314,7 @@ AssessLinearity <- function(
   cutoff <- processingFeature[groupIndices %in% processingGroup[enoughPeaks_1 %in% FALSE, groupIndices]]
   processingFeature <- processingFeature[groupIndices %in% processingGroup[enoughPeaks_1 %in% TRUE, groupIndices]]
 
-  step = step + 1
+  step <- step + 1
 
   # assert_that(nrow(processList$processing) == rawCompounds*n_dilution*nReplications)
 
@@ -656,8 +655,8 @@ AssessLinearity <- function(
   ### Back calculation Concentration
   if(TYPE %in% "targeted"){
     rlang::inform("Back calculation of concentration for the concentration series signals")
-    Y = ifelse(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y), "Y_trans", COLNAMES[["Y"]])
-    processingFeature = getConc(dats = processingFeature, datCal = processingGroup, Y, INVERSE_Y)
+    Y <- ifelse(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y), "Y_trans", COLNAMES[["Y"]])
+    processingFeature <- getConc(dats = processingFeature, datCal = processingGroup, Y, INVERSE_Y)
 
   }
 
@@ -673,9 +672,9 @@ AssessLinearity <- function(
     SampleFeature <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% SAMPLE]
 
     if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
-      SampleFeature$Y_trans = get(TRANSFORM_Y)(SampleFeature[[column_Y_sample]])
+      SampleFeature$Y_trans <- get(TRANSFORM_Y)(SampleFeature[[column_Y_sample]])
       SampleFeature$Y_trans[is.infinite(SampleFeature$Y_trans)] <- NA
-      Y_SAMPLE = "Y_trans"
+      Y_SAMPLE <- "Y_trans"
     }
 
     if(TYPE %in% "targeted" & CAL_CONC %in% TRUE){
@@ -704,9 +703,9 @@ rlang::inform("check QC samples")
 
 
     if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
-      SampleQC$Y_trans = get(TRANSFORM_Y)(SampleQC[[column_Y_sample]])
+      SampleQC$Y_trans <- get(TRANSFORM_Y)(SampleQC[[column_Y_sample]])
       SampleQC$Y_trans[is.infinite(SampleQC$Y_trans)] <- NA
-      Y_SAMPLE = "Y_trans"
+      Y_SAMPLE <- "Y_trans"
     }
 
 
@@ -927,5 +926,7 @@ rlang::inform("Scatterplot was created")
     if(any(c("filteredBioSampleSignal", "all") %in% which_output)) write.csv(output5, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "High_Quality_Samples_Signals.csv" , sep = "_")))
   }
 
+
   return(processList)
+
 }
