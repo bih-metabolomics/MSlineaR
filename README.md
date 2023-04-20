@@ -33,14 +33,50 @@ To get the latest development version from `MSlineaR` from [GitHub](https://gith
 devtools::install_github("bih-metabolomics/MSlineaR")
 ```
 
-As long as `MSlineaR` is not a public package, it's probably the most simple to install it from a local source package on our group share. Please check `S:/_BIH_/Software/MetaProc` for newer versions (in case I forget to update the version number in here).
+As long as `MSlineaR` is not a public package, you need to have access to my repository and additionally you need create a personal access token in github. Ask me if you have trouble with installing the package.
 
-Install MetaProc by running the following in R:
+Install `MSlineaR` by running the following commands in R:
 
-    if (!requireNamespace("remotes"))
-      install.packages("remotes")
+    if (!requireNamespace("usethis")) install.packages("usethis")
+      
+    # set config
+    # add github user name and email adress, which you are using for github
+    usethis::use_git_config(user.name = "USERNAME", user.email = "EMAIL")
 
-    remotes::install_local("S:/_BIH_/Software/MetaProc/metaproc_0.1.19.tar.gz")
+    #Go to github page to generate token only for first time
+    usethis::create_github_token()
+
+    #paste your PAT into pop-up that follows...
+    credentials::set_github_pat()
+
+    # install.packages("devtools")
+    devtools::install_github("bih-metabolomics/MSlineaR")
+
+## Input Data
+
+The input data needs at least 5 columns, indicating:
+
+-   the Identification of the samples
+
+-   the type of the samples, e.g. Calibrants, samples, pooled QC etc
+
+-   the Identification of the compounds
+
+-   the Instrument response( y) , e.g. Area, Intensity etc
+
+-   the dilution step (1, 2, 3...) of a pooled QC for untargeted analysis and the Concentration of Calibrants for targeted analysis
+
+| Sample_ID |  Type   | Compound_ID |  Area  | Dilution |
+|:---------:|:-------:|:-----------:|:------:|:--------:|
+|   cal1    | QC pool |  compound1  | 13578  |    1     |
+|   cal2    | QC pool |  compound1  | 157898 |    2     |
+|    s25    | sample  |  compound1  | 136789 |    NA    |
+
+Optional the data table could include:
+
+-   a column to distinguish between different Batches
+
+-   a column to distinguish between different statistical classes e.g. healthy and treatment
 
 ## Example
 
@@ -58,8 +94,6 @@ targetedMSCal <- AssessLinearity(
   input_data = data_tbl,
   column_sample_type = "Sample.Type" ,
   sample_type_QC = c("Pooled QC","Reference QC","Blank"),
-  #sample_type_QC_ref = "Reference QC",
-  #sample_type_blank = "Blank",
   sample_type_sample = "Sample",
   sample_type_serial = "Calibration Standard",
   sample_ID = "Sample.Identification",

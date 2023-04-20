@@ -388,78 +388,118 @@ biological samples can be classified into signals which are in the
 linear range and signals which are outside of the linear range.</p>
 <div id="installation" class="section level2">
 <h2>Installation</h2>
+<p><code>MSlineaR</code> requires GNU R version &gt;= 4.1.2
+installed.</p>
 <p>To get the latest development version from <code>MSlineaR</code> from
 <a href="https://github.com/">GitHub</a> you can use the <a href="https://github.com/r-lib/devtools"><code>devtools</code></a>
 package:</p>
 <pre class="r"><code># install.packages(&quot;devtools&quot;)
 devtools::install_github(&quot;bih-metabolomics/MSlineaR&quot;)</code></pre>
+<p>As long as <code>MSlineaR</code> is not a public package, you need to
+have access to my repository and additionally you need create a personal
+access token in github. Ask me if you have trouble with installing the
+package.</p>
+<p>Install <code>MSlineaR</code> by running the following commands in
+R:</p>
+<pre><code>if (!requireNamespace(&quot;usethis&quot;)) install.packages(&quot;usethis&quot;)
+  
+# set config
+# add github user name and email adress, which you are using for github
+usethis::use_git_config(user.name = &quot;USERNAME&quot;, user.email = &quot;EMAIL&quot;)
+
+#Go to github page to generate token only for first time
+usethis::create_github_token()
+
+#paste your PAT into pop-up that follows...
+credentials::set_github_pat()
+
+# install.packages(&quot;devtools&quot;)
+devtools::install_github(&quot;bih-metabolomics/MSlineaR&quot;)</code></pre>
+</div>
+<div id="input-data" class="section level2">
+<h2>Input Data</h2>
+<p>The input data needs at least 5 columns, indicating:</p>
+<ul>
+<li><p>the Identification of the samples</p></li>
+<li><p>the type of the samples, e.g. Calibrants, samples, pooled QC
+etc</p></li>
+<li><p>the Identification of the compounds</p></li>
+<li><p>the Instrument response( y) , e.g. Area, Intensity etc</p></li>
+<li><p>the dilution step (1, 2, 3…) of a pooled QC for untargeted
+analysis and the Concentration of Calibrants for targeted
+analysis</p></li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th align="center">Sample_ID</th>
+<th align="center">Type</th>
+<th align="center">Compound_ID</th>
+<th align="center">Area</th>
+<th align="center">Dilution</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">cal1</td>
+<td align="center">QC pool</td>
+<td align="center">compound1</td>
+<td align="center">13578</td>
+<td align="center">1</td>
+</tr>
+<tr class="even">
+<td align="center">cal2</td>
+<td align="center">QC pool</td>
+<td align="center">compound1</td>
+<td align="center">157898</td>
+<td align="center">2</td>
+</tr>
+<tr class="odd">
+<td align="center">s25</td>
+<td align="center">sample</td>
+<td align="center">compound1</td>
+<td align="center">136789</td>
+<td align="center">NA</td>
+</tr>
+</tbody>
+</table>
+<p>Optional the data table could include:</p>
+<ul>
+<li><p>a column to distinguish between different Batches</p></li>
+<li><p>a column to distinguish between different statistical classes
+e.g. healthy and treatment</p></li>
+</ul>
 </div>
 <div id="example" class="section level2">
 <h2>Example</h2>
 <p>Finding the linear Range for an targeted tryptophan Calibration data
 set:</p>
 <pre class="r"><code>library(MSlineaR)
-library(data.table)
 
-# read in example data
-MSData &lt;- MSlineaR::TryptophanData
-Calibrants &lt;- MSlineaR::TryptophanCalibration
-
-# select samples used for concentration or dilution series
-data_tbl_cal &lt;- data.table::data.table(MSData)[Sample.Type %in% &quot;Calibration Standard&quot;, ]
-
-# combine samples and concentrations
-data_tbl_cal &lt;- data_tbl_cal[Calibrants, on = c(Sample.Identification = &quot;Sample Identification&quot;, Compound = &quot;Metabolite&quot; )]
-data_tbl_cal &lt;- na.omit(data_tbl_cal, c(&quot;Concentration&quot;, &quot;Batch&quot;))
+data_tbl &lt;- MSlineaR::targeted_MS
 
 
 targetedMSCal &lt;- AssessLinearity(
+  dilution_factor = 3,
+  analysis_type =&quot;targeted&quot;,
+  input_data = data_tbl,
+  column_sample_type = &quot;Sample.Type&quot; ,
+  sample_type_QC = c(&quot;Pooled QC&quot;,&quot;Reference QC&quot;,&quot;Blank&quot;),
+  sample_type_sample = &quot;Sample&quot;,
+  sample_type_serial = &quot;Calibration Standard&quot;,
+  sample_ID = &quot;Sample.Identification&quot;,
 
-  DAT = data_tbl_cal,
-  COLNAMES = c(
-    ID =  &quot;Compound&quot;,
-    REPLICATE = &quot;Batch&quot;,
-    X = &quot;Concentration&quot;,
-    Y =   &quot;Area&quot;
-  ),
-  nCORE = 4,
-  MIN_FEATURE = 5,
-  LOG_TRANSFORM = TRUE,
-  R2min = 0.9,
-  res = 10
-)
+  column_ID = &quot;Compound&quot;,
+  column_Batch = &quot;Batch&quot;,
+  column_X = &quot;Concentration&quot;,
+  column_Y = &quot;Area&quot;,
+  column_Y_sample = &quot;Area&quot;,
+  min_feature = 5,
+  output_name = &quot;Test_targeted&quot;,
+  output_dir = &quot;S:/Projects/2022/MSTARS/Janine_linearity_project/Benchmark data/targeted/230419&quot;,
+  nCORE = 4
 
-# select samples
-data_tbl_Sample = MSData[Sample.Type %in% &quot;Sample&quot;]
-
-# check if samples within linear range or not
-data_tbl_Sample = getLRstatus(dats = data_tbl_Sample, datCal = targetedMSCal$summaryFDS, COLNAMES = c(ID = &quot;Compound&quot;, Replicate = &quot;Batch&quot;, Y = &quot;Area&quot;))
-
-
-
-
-# plot all FDS
-plotFDS(LR_object = targetedMSCal,
-        groupIndices = &quot;all&quot;, 
-        statusLinear = c(TRUE, FALSE), 
-        ID = &quot;all&quot;, 
-        printPDF = TRUE, 
-        outputfileName = c(&quot;Calibrationplot&quot;), 
-        pdfwidth = 9, 
-        pdfheight = 60)
-        
-        
-# plot all FDS plus Samples
-
-plotSamples(LR_object = targetedMSCal,
-            data_Sample = data_tbl_Sample,
-            groupIndices = &quot;all&quot;, 
-            statusLinear = c(TRUE, FALSE), 
-            ID = &quot;all&quot;, 
-            printPDF = TRUE, 
-            outputfileName = c(&quot;Sampleplot&quot;), 
-            pdfwidth = 9, 
-            pdfheight = 60)</code></pre>
+)</code></pre>
 </div>
 </div>
 
