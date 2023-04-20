@@ -29,7 +29,8 @@ Imports:
     purrr,
     dplyr,
     DescTools,
-    ggplot2
+    ggplot2,
+    DT
 Suggests: 
     testthat,
     tidyselect,
