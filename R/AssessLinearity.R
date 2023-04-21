@@ -789,7 +789,7 @@ rlang::inform("check QC samples")
     )
   htmlwidgets::saveWidget(htmloutput6,
                           file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_summary.html" , sep = "_")),
-                          selfcontained = FALSE)
+                          selfcontained = TRUE)
 
   output6.1 <- SampleFeature |>
     subset(get(COLNAMES[["Sample_type"]]) %in% SAMPLE ) |>
