@@ -787,7 +787,9 @@ rlang::inform("check QC samples")
     DT::formatStyle(dplyr::select(output6,tidyr::contains("%"))|> colnames(),
                 backgroundColor = DT::styleInterval(c(20,80), c('red','yellow', 'green'))
     )
-  htmlwidgets::saveWidget(htmloutput6, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_summary.html" , sep = "_")))
+  htmlwidgets::saveWidget(htmloutput6,
+                          file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_summary.html" , sep = "_")),
+                          selfcontained = FALSE)
 
   output6.1 <- SampleFeature |>
     subset(get(COLNAMES[["Sample_type"]]) %in% SAMPLE ) |>
@@ -808,7 +810,7 @@ rlang::inform("check QC samples")
     DT::formatStyle("LR_TRUE[%]_Sample",
                 backgroundColor = DT::styleInterval(c(20,80), c('red','yellow', 'green'))
     )
-  htmlwidgets::saveWidget(htmloutput6.1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_biol_samples.html" , sep = "_")))
+  htmlwidgets::saveWidget(htmloutput6.1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_biol_samples.html" , sep = "_")), selfcontained = FALSE)
 
 
 
