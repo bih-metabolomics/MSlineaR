@@ -799,8 +799,8 @@ AssessLinearity <- function(
         dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
 
       SampleFeature <- dplyr::full_join(SampleFeature, SampleQC, by = colnames(SampleQC))
-     rlang::inform(paste(QC, ":"))
-     rlang::inform(paste0(capture.output(cbind(rsd_before, rsd_after[,"median_rsd_after"])), collapse = "\n"))
+     rlang::inform(paste("QC", ":"))
+     rlang::inform(paste0(capture.output(dplyr::full_join(rsd_before, rsd_after, by = c("Batch","Sample.Type"))), collapse = "\n"))
 
   }
 
