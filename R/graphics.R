@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples
-combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC, inputData_Blank#, inputData_QC_ref, inputData_Blank
+combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC, #inputData_Blank#, inputData_QC_ref, inputData_Blank
                         ){
 
 
@@ -25,8 +25,8 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC, in
                                                               by = intersect(colnames(data_Signals), colnames(inputData_QC)))
   # if(!is.null(inputData_QC_ref)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC_ref,
   #                                                                 by = intersect(colnames(data_Signals), colnames(inputData_QC_ref)))
-  if(!is.null(inputData_Blank)) data_Signals <- dplyr::full_join(data_Signals, inputData_Blank,
-                                                                  by = intersect(colnames(data_Signals), colnames(inputData_Blank)))
+  #if(!is.null(inputData_Blank)) data_Signals <- dplyr::full_join(data_Signals, inputData_Blank,
+  #                                                                by = intersect(colnames(data_Signals), colnames(inputData_Blank)))
 
 
 
@@ -58,7 +58,7 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC, in
 #' @export
 #'
 #' @examples
-plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,inputData_Blank,
+plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#inputData_Blank,
                      nrFeature = 50,
                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
                     outputfileName = c("Calibrationplot"), TRANSFORM_Y, inverse_y,
@@ -86,11 +86,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,inputD
   data_Signal$Batch = data_Signal[[Col_Batch]]
 
   QCs = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
-                        x = -c(4 : (length(unique(inputData_QC[[Sample.Type]])) + 3))
+                        x = -c(3 : (length(unique(inputData_QC[[Sample.Type]])) + 2))
   )
-
-  BL = data.frame(Sample.Type = unique(inputData_Blank[[Sample.Type]]),
-                  x = -3)
 
 
 
@@ -201,13 +198,6 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,inputD
     legend_order <- c(unique(inputData_BioSamples$Sample.Type))
   }
 
-  if(!is.null(inputData_Blank )){
-    plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% BL$Sample.Type),
-                          ggplot2::aes( x = x, y = get(y),  shape = Sample.Type,
-                                        color = Status_LR), size = 2, na.rm = TRUE) #+, shape = 5
-    legend_order <- c(legend_order, unique(inputData_Blank$Sample.Type))
-  }
 
   if(!is.null(inputData_QC )){
     plotlinearData <-  plotlinearData +
