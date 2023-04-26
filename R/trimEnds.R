@@ -1,6 +1,46 @@
 #' Title
 #'
 #' @param dats
+#' @param blanks
+#' @param y
+#' @param noise
+#'
+#' @return
+#' @export
+#'
+#' @examples
+trimm_signalBlank <- function(dats, blanks, y, noise){
+
+  setDT(dats)
+  setDT(blanks)
+
+  dat <- data.table::copy(dats)
+  blank <- data.table::copy(blanks)
+  dat$'s/b' <- FALSE
+
+  medblank <- blank[, median := median(get(y), na.rm = T)]
+
+  dat$'s/b'[dat[[y]] <= medblank * noise] <- TRUE
+  dat$color[dat$'s/b' %in% TRUE] <- "grey"
+  dat$Comment[dat$'s/b' %in% FALSE] <- paste0(dat$Comment[dat$'s/b'], "_>s/b")
+  dat$Comment[dat$'s/b' %in% TRUE] <- paste0(dat$Comment[dat$'s/b'], "_<s/b")
+  dat$'s/b'[is.na(dat[[y]])] <- NA
+  dat$Y_sb <- dat[[y]]
+  dat$Y_sb[dat$'s/b' %in% TRUE] <- NA
+
+  return(dat)
+
+}
+
+
+
+
+
+
+
+#' Title
+#'
+#' @param dats
 #' @param y
 #' @param x
 #' @param thresh

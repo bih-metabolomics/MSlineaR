@@ -92,9 +92,11 @@ AssessLinearity <- function(
     #input_data
     input_data = NULL,
     column_sample_type = c("Sample.Type", "Type")[1],
-    sample_type_QC = c("pooled QC", "Reference QC", "Blank", NULL)[4],
+    sample_type_QC = c("pooled QC", "Reference QC", NULL)[4],
     sample_type_sample = "Sample",
     sample_type_serial = "Calibration Standard",
+    sample_type_blank = c("Blank", NULL)[1],
+    signal_blank_ratio = 5,
     sample_ID = "Sample.Identification",
     column_ID = "Compound",
     column_Batch = "Batch",
@@ -153,6 +155,7 @@ AssessLinearity <- function(
   TYPE = analysis_type
   DAT = input_data
   QC =  sample_type_QC
+  BLANK = sample_type_blank
   SAMPLE = sample_type_sample
   SAMPLE_ID = sample_ID
   CALIBRANTS = sample_type_serial
@@ -164,6 +167,7 @@ AssessLinearity <- function(
                Y = column_Y,
                Class = column_class_sample)
   DILUTION_FACTOR = dilution_factor
+  NOISE = signal_blank_ratio
   Y_SAMPLE = column_Y_sample
   TRANSFORM = transform
   TRANSFORM_X = transform_x
@@ -195,7 +199,7 @@ AssessLinearity <- function(
 
   rlang::inform("checking input arguments\n--------------------------------------------------------\n")
   dataOrigin <- data.table::copy(DAT)
-  dataOrigin <- checkData(dat = dataOrigin)
+  dataOrigin <- checkData(dat = dataOrigin) # function in prep.R
 
 
   # progressbar
@@ -257,20 +261,13 @@ AssessLinearity <- function(
     Signals <- "Signals"
   }
 
-  # if (!"REPLICATE" %in% names(COLNAMES)) {
-  #   COLNAMES["REPLICATE"] <- "REPLICATE"
-  #   dataOrigin[, REPLICATE := "1"]
-  # }
-
-
-
   processingFeatureCal <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% CALIBRANTS]
   processingFeature <- data.table::copy(processingFeatureCal)
 
 
   #### normalizing, centralizing, log transforming ####
  rlang::inform("preparing serial diluted QC data\n--------------------------------------------------------\n")
-
+# function in prep.R
   dataPrep <- prepareData(processingFeature, TRANSFORM, TRANSFORM_X, TRANSFORM_Y, DILUTION_FACTOR, COLNAMES, TYPE)
 
 
@@ -318,6 +315,61 @@ AssessLinearity <- function(
 
   # assert_that(nrow(processList$processing) == rawCompounds*n_dilution*nReplications)
 
+  #### remove Features < signal to blank ration
+  if(!is.null(NOISE)){
+    rlang::inform("remove Features below signal to blank ratio\n")
+
+    blanks <-  dataOrigin[get(COLNAMES[["Sample_type"]]) %in% BLANK]
+
+    if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
+      blanks$Y_trans <- get(TRANSFORM_Y)(blanks[[column_Y_sample]])
+      blanks$Y_trans[is.infinite(blanks$Y_trans)] <- NA
+      Y <- "Y_trans"
+    }
+
+
+
+    # prints recorded time
+    startTime = Sys.time()
+
+    dataSB <- my_fcn(
+      nCORE,
+      xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
+      inputData = processingFeature,
+      y = Y,
+      func = trimm_signalBlank,#(function in trimmEnds.R)
+      blanks = blanks,
+      noise = NOISE
+    ) |> unlist(recursive = F)
+
+    closeAllConnections()
+
+    rlang::inform("signal/blank: ",format(round(difftime(Sys.time(), startTime),2)))
+    Y = "Y_sb"
+
+    processingFeature <- data.table::data.table(dplyr::full_join(dataSB, processingFeature[!IDintern %in% dataSB$IDintern], by = colnames(processingFeature)))
+    processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'SignalBlank' :=any('s/b' %in% TRUE), groupIndices][,.(groupIndices, 's/b')]), by = c("groupIndices"))
+
+    rlang::inform(paste(data.table::uniqueN(processingFeature |> dplyr::filter('s/b' %in% TRUE) %>% dplyr::select(IDintern)), " Signals were removed according to the Signal to blank ratio of ",NOISE,".\n"))
+
+    countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
+    processingFeature <- countList[[1]]
+    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+
+    # check length of points
+    checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
+    processingFeature <- checkData[[1]]
+    cutoffNew <- checkData [[2]]
+
+    cutoff <- dplyr::full_join(cutoff, cutoffNew, by = colnames(cutoff))
+
+    step = step + 1
+
+
+
+  }
+
+
   #### first outlier detection ####
   if(FOD %in% TRUE){
     rlang::inform("First Outlier Detection\n")
@@ -325,26 +377,19 @@ AssessLinearity <- function(
     # prints recorded time
     startTime = Sys.time()
 
-    #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
-    #on.exit(parallel::stopCluster(cl))
-    #options(future.globals.onReference = "error")
     dataFOD <- my_fcn(
       nCORE,
-      #cl,
-      #exportObjects = c("chooseModel", "X","Y", "abbr", "R2min"),
       xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
       x = X,
       y = Y,
-      func = chooseModel,
+      func = chooseModel,#(function in FittingModel.R)
       abbr = "FOD",
-      #R2_MIN = FOD_R2_MIN,
       model = FOD_MODEL,
       SDRES_MIN = FOD_SDRES_MIN,
       STDRES = FOD_STDRES_MAX
     ) |> unlist(recursive = F)
 
-    #parallel::stopCluster(cl)
     closeAllConnections()
 
     rlang::inform("FOD: ",format(round(difftime(Sys.time(), startTime),2)))
@@ -354,8 +399,6 @@ AssessLinearity <- function(
       groupIndices = as.integer(names(purrr::map(dataFOD, 1))),
       ModelName = purrr::map(dataFOD, 1) %>% unlist(use.names = F),
       Model = purrr::map(dataFOD, 2),
-      #RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
-      #R2 = purrr::map(dataFOD, 3) %>% unlist(use.names = F)
     )
 
     dataFOD = purrr::map(dataFOD,3)|> plyr::ldply(.id = NULL)
