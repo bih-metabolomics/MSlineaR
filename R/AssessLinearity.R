@@ -157,7 +157,7 @@ AssessLinearity <- function(
   QC =  sample_type_QC
   BLANK = sample_type_blank
   SAMPLE = sample_type_sample
-  SAMPLE_ID = colum_sample_ID
+  SAMPLE_ID = column_sample_ID
   CALIBRANTS = sample_type_serial
   COLNAMES = c(ID = column_compound_ID,
                Sample_ID = column_sample_ID,
