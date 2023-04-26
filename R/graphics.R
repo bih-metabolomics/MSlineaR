@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples
-combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC, #inputData_Blank#, inputData_QC_ref, inputData_Blank
+combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #inputData_Blank#, inputData_QC_ref, inputData_Blank
                         ){
 
 
