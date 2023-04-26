@@ -108,7 +108,7 @@ Additional columns will be ignored for calculations, but will be present in the 
 
 -   *output_name*: name of the output file
 
--   *output_dir: directory where the output files should be saved*
+-   *output_dir:* directory where the output files should be saved
 
 ### With these arguments you can run the example data set:
 

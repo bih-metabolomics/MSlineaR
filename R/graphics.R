@@ -89,7 +89,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,inputD
                         x = -c(4 : (length(unique(inputData_QC[[Sample.Type]])) + 3))
   )
 
-  BL = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
+  BL = data.frame(Sample.Type = unique(inputData_Blank[[Sample.Type]]),
                   x = -3)
 
 
