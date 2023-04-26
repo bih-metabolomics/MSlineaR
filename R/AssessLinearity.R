@@ -339,13 +339,13 @@ AssessLinearity <- function(
 
     closeAllConnections()
 
-    rlang::inform("signal/blank: ",format(round(difftime(Sys.time(), startTime),2)))
+    rlang::inform(paste("signal/blank: ",format(round(difftime(Sys.time(), startTime),2))))
     Y = "Y_sb"
 
     processingFeature <- data.table::data.table(dplyr::full_join(dataSB, processingFeature[!IDintern %in% dataSB$IDintern], by = colnames(processingFeature)))
-    processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'SignalBlank' :=any('s/b' %in% TRUE), groupIndices][,.(groupIndices, 's/b')]), by = c("groupIndices"))
+    processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'SignalBlank' :=any(signalBlankRatio %in% TRUE), groupIndices][,.(groupIndices, signalBlankRatio)]), by = c("groupIndices"))
 
-    rlang::inform(paste(data.table::uniqueN(processingFeature |> dplyr::filter('s/b' %in% TRUE) %>% dplyr::select(IDintern)), " Signals were removed according to the Signal to blank ratio of ",NOISE,".\n"))
+    rlang::inform(paste(data.table::uniqueN(processingFeature |> dplyr::filter(signalBlankRatio %in% TRUE) %>% dplyr::select(IDintern)), " Signals were removed according to the Signal to blank ratio of ",NOISE,".\n"))
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]

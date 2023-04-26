@@ -17,17 +17,17 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
   dat <- data.table::copy(dats)
   blank <- data.table::copy(blanks)
   blank <- dplyr::filter(blank, groupIndices %in% dat$groupIndices)
-  dat$'s/b' <- FALSE
+  dat$'signalBlankRatio' <- FALSE
 
   medblank <- median(blank[[y]], na.rm = T)
 
-  dat$'s/b'[dat$Y <= (medblank * noise)] <- TRUE
-  dat$color[dat$'s/b' %in% TRUE] <- "grey"
-  dat$Comment[dat$'s/b' %in% FALSE] <- paste0(dat$Comment[dat$'s/b'], "_>s/b")
-  dat$Comment[dat$'s/b' %in% TRUE] <- paste0(dat$Comment[dat$'s/b'], "_<s/b")
-  dat$'s/b'[is.na(dat[[y_trans]])] <- NA
+  dat$signalBlankRatio[dat$Y <= (medblank * noise)] <- TRUE
+  dat$color[dat$signalBlankRatio %in% TRUE] <- "grey"
+  dat$Comment[dat$signalBlankRatio %in% FALSE] <- paste0(dat$Comment[dat$signalBlankRatio], "_>s/b")
+  dat$Comment[dat$signalBlankRatio %in% TRUE] <- paste0(dat$Comment[dat$signalBlankRatio], "_<s/b")
+  dat$signalBlankRatio[is.na(dat[[y_trans]])] <- NA
   dat$Y_sb <- dat[[y_trans]]
-  dat$Y_sb[dat$'s/b' %in% TRUE] <- NA
+  dat$Y_sb[dat$signalBlankRatio %in% TRUE] <- NA
 
   return(dat)
 
