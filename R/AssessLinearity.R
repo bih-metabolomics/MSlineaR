@@ -296,7 +296,7 @@ AssessLinearity <- function(
     "Data set with ", nCompounds, " ",Compounds, ", ",
     nReplicates, " Batch(es) and ",
     nDilutions, " ", Dilutions," -> ",
-    format.default(nSeries, big.mark = ",", scientific = F), " ",Series,".\n"
+    format.default(nSeries, big.mark = ",", scientific = F), " ",Series,"."
   ))
 
   # check length of points
@@ -351,9 +351,9 @@ AssessLinearity <- function(
     Y = "Y_sb"
 
     processingFeature <- data.table::data.table(dplyr::full_join(dataSB, processingFeature[!IDintern %in% dataSB$IDintern], by = colnames(processingFeature)))
-    processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'SignalBlank' :=any(signalBlankRatio %in% TRUE), groupIndices][,.(groupIndices, signalBlankRatio)]), by = c("groupIndices"))
+    processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'SignalBlank' :=any(signalBlankRatio %in% TRUE), groupIndices][,.(groupIndices, SignalBlank)]), by = c("groupIndices"))
 
-    rlang::inform(paste(data.table::uniqueN(processingFeature |> dplyr::filter(signalBlankRatio %in% TRUE) %>% dplyr::select(IDintern)), " Signals were removed according to the Signal to blank ratio of ",NOISE,".\n"))
+    rlang::inform(paste(data.table::uniqueN(processingFeature |> dplyr::filter(signalBlankRatio %in% TRUE) %>% dplyr::select(IDintern)), " Signals were removed according to the Signal to blank ratio of ",NOISE,"."))
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
@@ -619,7 +619,8 @@ AssessLinearity <- function(
 
 
   ##### find linear Range ####
-{  rlang::inform("
+{
+  rlang::inform("
                  --------------------------------------------------------
                  Determining linear range
                  --------------------------------------------------------\n")
@@ -718,7 +719,7 @@ AssessLinearity <- function(
   if(TYPE %in% "targeted"){
     rlang::inform("Back calculation of concentration for the concentration series signals")
     Y <- ifelse(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y), "Y_trans", COLNAMES[["Y"]])
-    processingFeature <- getConc(dats = processingFeature, datCal = processingGroup, Y, INVERSE_Y)
+    processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y)
 
   }
 message("test1")
