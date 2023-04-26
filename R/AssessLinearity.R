@@ -92,14 +92,14 @@ AssessLinearity <- function(
     #input_data
     input_data = NULL,
     column_sample_type = c("Sample.Type", "Type")[1],
-    sample_type_QC = c("pooled QC", "Reference QC", NULL)[4],
+    sample_type_QC = c("pooled QC", "Reference QC", NULL)[3],
     sample_type_sample = "Sample",
     sample_type_serial = "Calibration Standard",
     sample_type_blank = c("Blank", NULL)[1],
     signal_blank_ratio = 5,
-    sample_ID = "Sample.Identification",
-    column_ID = "Compound",
-    column_Batch = "Batch",
+    column_sample_ID = "Sample.Identification",
+    column_compound_ID = "Compound",
+    column_batch = "Batch",
     column_X = c("Concentration", "Dilution")[2],
     column_Y = c("Area","Height", "Intensity")[1],
     column_Y_sample = c("Area","Height", "Intensity")[1],
@@ -159,9 +159,9 @@ AssessLinearity <- function(
   SAMPLE = sample_type_sample
   SAMPLE_ID = sample_ID
   CALIBRANTS = sample_type_serial
-  COLNAMES = c(ID = column_ID,
-               Sample_ID = sample_ID,
-               Batch = column_Batch,
+  COLNAMES = c(ID = column_compound_ID,
+               Sample_ID = column_sample_ID,
+               Batch = column_batch,
                Sample_type = column_sample_type,
                X = column_X,
                Y = column_Y,

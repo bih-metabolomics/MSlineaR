@@ -416,8 +416,8 @@ credentials::set_github_pat()
 # install.packages(&quot;devtools&quot;)
 devtools::install_github(&quot;bih-metabolomics/MSlineaR&quot;)</code></pre>
 </div>
-<div id="input-data" class="section level2">
-<h2>Input Data</h2>
+<div id="input-data-table" class="section level2">
+<h2>Input Data Table</h2>
 <p>The input data needs at least 5 columns, indicating:</p>
 <ul>
 <li><p>the Identification of the samples</p></li>
@@ -426,7 +426,7 @@ etc</p></li>
 <li><p>the Identification of the compounds</p></li>
 <li><p>the Instrument response( y) , e.g. Area, Intensity etc</p></li>
 <li><p>the dilution step (1, 2, 3…) of a pooled QC for untargeted
-analysis and the Concentration of Calibrants for targeted
+analysis and of the Concentration of Calibrants for targeted
 analysis</p></li>
 </ul>
 <table>
@@ -463,35 +463,75 @@ analysis</p></li>
 </tr>
 </tbody>
 </table>
-<p>Optional the data table could include:</p>
+<p>Optional the input data table could include:</p>
 <ul>
-<li><p>a column to distinguish between different Batches</p></li>
+<li><p>a column to distinguish between different Batches if there are
+more than one batch</p></li>
 <li><p>a column to distinguish between different statistical classes
 e.g. healthy and treatment</p></li>
 </ul>
+<p>Additional columns will be ignored for calculations, but will be
+present in the final output.</p>
 </div>
-<div id="example" class="section level2">
-<h2>Example</h2>
-<p>Finding the linear Range for an targeted tryptophan Calibration data
-set:</p>
+<div id="mandatory-input-arguments" class="section level2">
+<h2>Mandatory Input Arguments</h2>
+<ul>
+<li><p><em>analysis_type:</em> You can choose between “targeted” or
+“untargeted”</p></li>
+<li><p><em>input_data</em>: data table or data frame with at least five
+columns, see above</p>
+<ul>
+<li><p><em>column_sample_type</em>: Column in input_data which indicates
+the sample types of the data set, as:</p>
+<ul>
+<li><p><em>sample_type_serial:</em> type name in
+<em>column_sample_type</em> of the serial diluted or concentrated
+samples</p></li>
+<li><p><em>sample_type_blank</em>: type name in
+<em>column_sample_type</em> of the blank sample, which will be used to
+determine the minimum lower limit of quantification</p></li>
+</ul></li>
+<li><p><em>column_sample_ID:</em> column in <em>input_data</em>
+indicating the sample ID</p></li>
+<li><p><em>column_X:</em> column in <em>input_data</em> indicating the
+dilution or concentration of the serial diluted samples</p></li>
+<li><p><em>column_Y:</em> column in <em>input_dat</em>a indicating the
+Instrument response, e.g. Area, Intensity etc</p></li>
+</ul></li>
+<li><p><em>dilution_factor</em>: distance between the
+dilution/concentration steps, e.g. dilution_factor = 2 means, that the
+concentration of dilution 1 is half the concentration of dilution
+2</p></li>
+<li><p><em>signal_blank_ratio</em>:</p></li>
+</ul>
+</div>
+<div id="optional-input-arguments" class="section level2">
+<h2>Optional Input Arguments</h2>
+<ul>
+<li><p><em>sample_type_QC:</em></p></li>
+<li><p><em>sample_type_sample:</em></p></li>
+<li><p><em>sample_ID:</em></p></li>
+</ul>
 <pre class="r"><code>library(MSlineaR)
 
 data_tbl &lt;- MSlineaR::targeted_MS
 
 
 targetedMSCal &lt;- AssessLinearity(
-  dilution_factor = 3,
   analysis_type =&quot;targeted&quot;,
   input_data = data_tbl,
   column_sample_type = &quot;Sample.Type&quot; ,
-  sample_type_QC = c(&quot;Pooled QC&quot;,&quot;Reference QC&quot;,&quot;Blank&quot;),
+  sample_type_QC = c(&quot;Pooled QC&quot;,&quot;Reference QC&quot;),
   sample_type_sample = &quot;Sample&quot;,
   sample_type_serial = &quot;Calibration Standard&quot;,
-  sample_ID = &quot;Sample.Identification&quot;,
+  sample_type_blank = &quot;Blank&quot;,
+  column_sample_ID = &quot;Sample.Identification&quot;,
 
-  column_ID = &quot;Compound&quot;,
-  column_Batch = &quot;Batch&quot;,
+  column_compound_ID = &quot;Compound&quot;,
+  column_batch = &quot;Batch&quot;,
   column_X = &quot;Concentration&quot;,
+  dilution_factor = 3,
+  signal_blank_ratio = 5,
   column_Y = &quot;Area&quot;,
   column_Y_sample = &quot;Area&quot;,
   min_feature = 5,
