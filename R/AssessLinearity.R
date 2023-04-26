@@ -899,7 +899,7 @@ rlang::inform("summary_barplot was created")
                               inputData_BioSamples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                               inputData_QC = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC),
                               #inputData_QC_ref = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC_REF),
-                              #inputData_Blank = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% BLANK),
+                              inputData_Blank = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% BLANK),
                               COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
                               Series = Series, output_dir = IMG_OUTPUT_DIR
   )
