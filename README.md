@@ -138,7 +138,7 @@ targetedMSCal <- AssessLinearity(
   column_Y_sample = "Area",
   min_feature = 5,
   output_name = "Test_targeted",
-  output_dir = "S:/Projects/2022/MSTARS/Janine_linearity_project/Benchmark data/targeted/230419",
+  output_dir = " ",
   nCORE = 4
 
 )
