@@ -364,6 +364,8 @@ to determine the linear portion of the dilution/calibration curve.
 Therefore the following steps will be performed:</p>
 <ol style="list-style-type: decimal">
 <li><p>The data will be checked and transformed.</p></li>
+<li><p>The minimal lower limit of quantification will be determined
+using a blank and a user defined signal to blank ratio.</p></li>
 <li><p>Outliers will be detected using three curve fitting
 models.</p></li>
 <li><p>The beginning and end of dilution/calibration curve will be
@@ -481,8 +483,8 @@ present in the final output.</p>
 <li><p><em>input_data</em>: data table or data frame with at least five
 columns, see above</p>
 <ul>
-<li><p><em>column_sample_type</em>: Column in input_data which indicates
-the sample types of the data set, as:</p>
+<li><p><em>column_sample_type</em>: Column in <em>input_data</em> which
+indicates the sample types of the data set, as:</p>
 <ul>
 <li><p><em>sample_type_serial:</em> type name in
 <em>column_sample_type</em> of the serial diluted or concentrated
@@ -502,18 +504,21 @@ Instrument response, e.g. Area, Intensity etc</p></li>
 dilution/concentration steps, e.g. dilution_factor = 2 means, that the
 concentration of dilution 1 is half the concentration of dilution
 2</p></li>
-<li><p><em>signal_blank_ratio</em>:</p></li>
+<li><p><em>signal_blank_ratio</em>: Default set to 5, according to EMA
+guidelines 2012, the signal should be at least 5 times the the signal of
+a blank sample. Disable by setting the parameter to NULL.</p></li>
+<li><p><em>min_feature:</em> Default set to 6, according to EMA
+guidelines 2012. Minimal number of consecutive signals present per
+dilution/concentration curve, to consider this curve as linear.</p></li>
+<li><p><em>output_name</em>: name of the output file</p></li>
+<li><p><em>output_dir: directory where the output files should be
+saved</em></p></li>
 </ul>
-</div>
-<div id="optional-input-arguments" class="section level2">
-<h2>Optional Input Arguments</h2>
-<ul>
-<li><p><em>sample_type_QC:</em></p></li>
-<li><p><em>sample_type_sample:</em></p></li>
-<li><p><em>sample_ID:</em></p></li>
-</ul>
+<div id="with-these-arguments-you-can-run-the-example-data-set" class="section level3">
+<h3>With these arguments you can run the example data set:</h3>
 <pre class="r"><code>library(MSlineaR)
 
+# load example data
 data_tbl &lt;- MSlineaR::targeted_MS
 
 
@@ -536,10 +541,58 @@ targetedMSCal &lt;- AssessLinearity(
   column_Y_sample = &quot;Area&quot;,
   min_feature = 5,
   output_name = &quot;Test_targeted&quot;,
-  output_dir = &quot;S:/Projects/2022/MSTARS/Janine_linearity_project/Benchmark data/targeted/230419&quot;,
+  output_dir = &quot; &quot;,
   nCORE = 4
 
 )</code></pre>
+</div>
+</div>
+<div id="results" class="section level2">
+<h2>Results</h2>
+</div>
+<div id="optional-input-arguments" class="section level2">
+<h2>Optional Input Arguments:</h2>
+<ul>
+<li><p><em>sample_type_QC :</em></p></li>
+<li><p><em>column_Batch = “Batch”</em></p></li>
+<li><p><em>column_Y_sample = “Area”</em></p></li>
+<li><p><em>column_class_sample = NULL</em></p></li>
+<li><p><em>#linear_range</em></p></li>
+<li><p><em>nCORE = 4</em></p></li>
+<li><p><em>get_output = TRUE</em></p></li>
+<li><p><em>#transform_data</em></p></li>
+<li><p><em>transform = c(TRUE, FALSE)[1]</em></p>
+<ul>
+<li><p><em>transform_x = “log”</em></p></li>
+<li><p><em>inverse_x = “exp”</em></p></li>
+<li><p><em>transform_y = “log”</em></p></li>
+<li><p><em>inverse_y = “exp”</em></p></li>
+</ul></li>
+<li><p><em>#first_outlier_detection</em></p></li>
+<li><p><em>first_outlier_detection = c(TRUE, FALSE)[1]</em></p>
+<ul>
+<li><p><em>FOD_model = c(“logistic”, “linear”,
+“quadratic”)</em></p></li>
+<li><p><em>FOD_sdres_min = 1</em></p></li>
+<li><p><em>FOD_stdres_max = 2</em></p></li>
+</ul></li>
+<li><p><em>trimming = c(TRUE, FALSE)[1]</em></p></li>
+<li><p><em>#second_outlier_detection</em></p></li>
+<li><p><em>second_outlier_detection = c(TRUE, FALSE)[1]</em></p>
+<ul>
+<li><p><em>SOD_model = c(“logistic”, “linear”,
+“quadratic”)</em></p></li>
+<li><p><em>SOD_sdres_min = 1</em></p></li>
+<li><p><em>SOD_stdres_max = 2</em></p></li>
+<li><p><em>R2_min = 0.9</em></p></li>
+</ul></li>
+<li><p><em>#linear_range</em></p></li>
+<li><p><em>LR_sd_res_factor = 2</em></p></li>
+<li><p><em>Batch_harmonization = c(TRUE, FALSE)[1]</em></p></li>
+<li><p><em>calculate_concentration = c(TRUE, FALSE)[1]</em></p></li>
+<li><p><em>get_linearity_status_samples = c(TRUE,
+FALSE)[1]</em></p></li>
+</ul>
 </div>
 </div>
 
