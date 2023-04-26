@@ -286,7 +286,7 @@ AssessLinearity <- function(
   nSeries <- data.table::uniqueN(processingGroup, by = c("groupIndices"))
   nPeaks <- data.table::uniqueN(processingFeature, by = c("IDintern"))
 
-  rlang::inform(paste(
+  rlang::inform(paste0(
     "Data set with ", nCompounds, " ",Compounds, ", ",
     nReplicates, " Batch(es) and ",
     nDilutions, " ", Dilutions," -> ",
@@ -301,7 +301,7 @@ AssessLinearity <- function(
   nSeriesNew <- data.table::uniqueN(processingGroup[enoughPeaks_1 %in% TRUE], by = c("groupIndices"))
 
   rlang::inform(paste0("Removed ", nSeries - nSeriesNew, " ", Series, " with less than ", MIN_FEATURE, " Signals.","\n",
-                 "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series),"\n--------------------------------------------------------\n")
+                 "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series,"\n--------------------------------------------------------\n"))
 
   stopifnot(exprs = {
     "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("ID")) > 0
@@ -321,12 +321,6 @@ AssessLinearity <- function(
 
     blanks <-  dataOrigin[get(COLNAMES[["Sample_type"]]) %in% BLANK]
 
-    if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
-      blanks$Y_trans <- get(TRANSFORM_Y)(blanks[[column_Y_sample]])
-      blanks$Y_trans[is.infinite(blanks$Y_trans)] <- NA
-      Y <- "Y_trans"
-    }
-
 
 
     # prints recorded time
@@ -336,11 +330,12 @@ AssessLinearity <- function(
       nCORE,
       xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
-      y = Y,
+      y = COLNAMES[["Y"]],
+      y_trans = Y,
       func = trimm_signalBlank,#(function in trimmEnds.R)
       blanks = blanks,
       noise = NOISE
-    ) |> unlist(recursive = F)
+    ) |> plyr::ldply(.id = NULL)
 
     closeAllConnections()
 
