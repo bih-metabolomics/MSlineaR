@@ -490,7 +490,7 @@ AssessLinearity <- function(
 
     rlang::inform("
                   --------------------------------------------------------
-                  Second Outlier Detection
+                  \tSecond Outlier Detection
                   --------------------------------------------------------\n")
 
 
@@ -559,7 +559,7 @@ AssessLinearity <- function(
 {
     rlang::inform("
                   --------------------------------------------------------
-                  Check if data curves have a positive slope
+                  \tCheck if data curves have a positive slope
                   --------------------------------------------------------\n")
 
 
@@ -622,7 +622,7 @@ AssessLinearity <- function(
 {
   rlang::inform("
                  --------------------------------------------------------
-                 Determining linear range
+                 \tDetermining linear range
                  --------------------------------------------------------\n")
 
   processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE, groupIndices]]
@@ -689,7 +689,7 @@ AssessLinearity <- function(
   ##### batch reproducibility ####
   rlang::inform("
                 --------------------------------------------------------
-                check batch reproducibility
+                \tcheck batch reproducibility
                 --------------------------------------------------------\n")
 
   {
@@ -722,11 +722,8 @@ AssessLinearity <- function(
     processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y)
 
   }
-message("test1")
   processingFeature  <- getLRstatus(dats =  processingFeature, datCal = processingGroup, y =  column_Y_sample)
-message("test2")
   processingFeature <- processingFeature[!is.na(IDintern)]
-message("test3")
 
   #### biological samples ####
 
@@ -734,7 +731,7 @@ message("test3")
 
   rlang::inform("
                 --------------------------------------------------------
-                prepare biological samples
+                \tprepare biological samples
                 --------------------------------------------------------\n")
     SampleFeature <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% SAMPLE]
 
@@ -750,7 +747,7 @@ message("test3")
     }
 
     if(GET_LR_STATUS %in% TRUE){
-
+      rlang::inform(" Associating biological samples to their respective linear ranges\n")
       SampleFeature  <- getLRstatus(dats = SampleFeature, datCal = processingGroup,y =  column_Y_sample)
         #data_Sample$Status_LR <-  data.table::between(lower = data_Sample$LRStartY, x = data_Sample[, c("Area.CorrDrift")], upper = data_Sample$LREndY, NAbounds = NA)
 
@@ -766,7 +763,7 @@ message("test3")
   if(!is.null(QC)){
     rlang::inform("
                   --------------------------------------------------------
-                  check QC samples
+                  \tcheck QC samples
                   --------------------------------------------------------\n")
 
 
@@ -806,7 +803,7 @@ message("test3")
   #### output files ####
   rlang::inform("
                 --------------------------------------------------------
-                prepare output files
+                \tprepare output files
                 --------------------------------------------------------\n")
 
   cutoff <- dplyr::full_join(cutoff,
