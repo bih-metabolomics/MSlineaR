@@ -456,7 +456,7 @@ AssessLinearity <- function(
     processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern], by = colnames(processingFeature))
     processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
 
-    rlang::inform(paste"\t","In total ", TrimFeatures," ",  Signals," in ", TrimGroups, " ",Series," were trimmed.\n"))
+    rlang::inform(paste("\t","In total ", TrimFeatures," ",  Signals," in ", TrimGroups, " ",Series," were trimmed.\n"))
 
     # check length of points
     checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
