@@ -772,7 +772,7 @@ AssessLinearity <- function(
     if(!is.null(BLANK)){
 
       SampleBlank <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% BLANK]
-      SampleQC <- dplyr::full_join(SampleQC, SampleBlank, by = colnames(SampleQC))
+      SampleQC <- rbind(SampleQC, SampleBlank)
     }
 
 
