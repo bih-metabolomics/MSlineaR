@@ -1279,9 +1279,11 @@ testthat::test_that("function prepareData works", {
   TYPE. = "targeted"
   CALIBRANTS. = "Calibration Standard"
   QC. = NULL
+  BLANK. = NULL
   SAMPLE. = NULL
   Y_SAMPLE. = NULL
   DILUTION_FACTOR. = 2
+  NOISE. = NULL
   TRANSFORM. = TRUE
   TRANSFORM_X. = "log"
   INVERSE_X. = "exp"
@@ -1307,11 +1309,13 @@ testthat::test_that("function prepareData works", {
             MIN_FEATURE.,
             TYPE.,
             QC.,
+            BLANK.,
             SAMPLE.,
             Y_SAMPLE.,
             CALIBRANTS.,
             COLNAMES.,
             DILUTION_FACTOR.,
+            NOISE.,
             TRANSFORM.,
             TRANSFORM_X.,
             INVERSE_X.,
