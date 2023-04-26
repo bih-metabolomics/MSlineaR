@@ -225,11 +225,11 @@ AssessLinearity <- function(
     # check if output dir already exist or create it
     if (!dir.exists(REPORT_OUTPUT_DIR)){
       dir.create(REPORT_OUTPUT_DIR)
-      rlang::inform(paste("\t","Dir", REPORT_OUTPUT_DIR , "was created."))
+      rlang::inform(paste("Dir", REPORT_OUTPUT_DIR , "was created."))
       dir.create(file.path(IMG_OUTPUT_DIR))
 
     } else {
-      rlang::inform(paste("\t","Dir already exists!"))
+      rlang::inform(paste("Dir already exists!"))
       if (!dir.exists(IMG_OUTPUT_DIR)){
         dir.create(IMG_OUTPUT_DIR)
       }
@@ -296,8 +296,7 @@ AssessLinearity <- function(
     "Data set with ", nCompounds, " ",Compounds, ", ",
     nReplicates, " Batch(es) and ",
     nDilutions, " ", Dilutions," -> ",
-    format.default(nSeries, big.mark = ",", scientific = F), " ",Series,".",
-    "\n--------------------------------------------------------\n"
+    format.default(nSeries, big.mark = ",", scientific = F), " ",Series,".\n"
   ))
 
   # check length of points
@@ -307,7 +306,7 @@ AssessLinearity <- function(
   nSeriesNew <- data.table::uniqueN(processingGroup[enoughPeaks_1 %in% TRUE], by = c("groupIndices"))
 
   rlang::inform(paste0("Removed ", nSeries - nSeriesNew, " ", Series, " with less than ", MIN_FEATURE, " Signals.","\n",
-                 "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series,"\n--------------------------------------------------------\n"))
+                 "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series,".\n"))
 
   stopifnot(exprs = {
     "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("ID")) > 0
@@ -348,13 +347,13 @@ AssessLinearity <- function(
 
     closeAllConnections()
 
-    rlang::inform(paste("\t","signal/blank: ",format(round(difftime(Sys.time(), startTime),2))))
+    rlang::inform(paste("signal/blank: ",format(round(difftime(Sys.time(), startTime),2)), "\n"))
     Y = "Y_sb"
 
     processingFeature <- data.table::data.table(dplyr::full_join(dataSB, processingFeature[!IDintern %in% dataSB$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'SignalBlank' :=any(signalBlankRatio %in% TRUE), groupIndices][,.(groupIndices, signalBlankRatio)]), by = c("groupIndices"))
 
-    rlang::inform(paste("\t",data.table::uniqueN(processingFeature |> dplyr::filter(signalBlankRatio %in% TRUE) %>% dplyr::select(IDintern)), " Signals were removed according to the Signal to blank ratio of ",NOISE,".\n"))
+    rlang::inform(paste(data.table::uniqueN(processingFeature |> dplyr::filter(signalBlankRatio %in% TRUE) %>% dplyr::select(IDintern)), " Signals were removed according to the Signal to blank ratio of ",NOISE,".\n"))
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
@@ -374,7 +373,10 @@ AssessLinearity <- function(
 
   #### first outlier detection ####
   if(FOD %in% TRUE){
-    rlang::inform("First Outlier Detection\n--------------------------------------------------------\n")
+    rlang::inform("
+                  --------------------------------------------------------
+                  \tFirst Outlier Detection
+                  --------------------------------------------------------\n")
 
     # prints recorded time
     startTime = Sys.time()
@@ -394,7 +396,7 @@ AssessLinearity <- function(
 
     closeAllConnections()
 
-    rlang::inform(paste("FOD: ",format(round(difftime(Sys.time(), startTime),2))))
+    rlang::inform(paste("FOD: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
     Y = "Y_FOD"
 
     dataFODModel <- tibble::tibble(
@@ -408,7 +410,7 @@ AssessLinearity <- function(
     processingFeature <- data.table::data.table(dplyr::full_join(dataFOD, processingFeature[!IDintern %in% dataFOD$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierFOD' :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]), by = c("groupIndices"))
 
-    rlang::inform(paste("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,".\n"))
+    rlang::inform(paste0("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,"."))
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
@@ -449,7 +451,7 @@ AssessLinearity <- function(
     #parallel::stopCluster(cl)
     closeAllConnections()
 
-    rlang::inform(paste("Trimming: ",format(round(difftime(Sys.time(), startTime),2))))
+    rlang::inform(paste("Trimming: ",format(round(difftime(Sys.time(), startTime),2)), "\n"))
 
     Y = "Y_trim"
 
@@ -468,7 +470,7 @@ AssessLinearity <- function(
     processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern], by = colnames(processingFeature))
     processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
 
-    rlang::inform(paste("In total ", TrimFeatures," ",  Signals," in ", TrimGroups, " ",Series," were trimmed.\n"))
+    rlang::inform(paste0("In total ", TrimFeatures," ",  Signals," in ", TrimGroups, " ",Series," were trimmed."))
 
     # check length of points
     checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
@@ -517,7 +519,7 @@ AssessLinearity <- function(
 
 
     endTime = Sys.time()
-    rlang::inform(paste("SOD: ",format(round(difftime(Sys.time(), startTime),2))))
+    rlang::inform(paste("SOD: ",format(round(difftime(Sys.time(), startTime),2)), "\n"))
 
     Y = "Y_SOD"
 
@@ -536,7 +538,7 @@ AssessLinearity <- function(
     processingFeature <- data.table::data.table(dplyr::full_join(dataSOD, processingFeature[!IDintern %in% dataSOD$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierSOD' :=any(OutlierSOD %in% TRUE), groupIndices][,.(groupIndices, OutlierSOD)]), by = c("groupIndices"))
 
-    rlang::inform(paste("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierSOD %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,".\n"))
+    rlang::inform(paste0("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierSOD %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,"."))
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
@@ -578,7 +580,7 @@ AssessLinearity <- function(
 
     closeAllConnections()
 
-    rlang::inform(paste("TrimmPos: ",format(round(difftime(Sys.time(), startTime),2))))
+    rlang::inform(paste("TrimmPos: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
 
     Y = "Y_trimPos"
 
@@ -597,7 +599,7 @@ AssessLinearity <- function(
     processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern], by = colnames(processingFeature))
     processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
 
-    rlang::inform(paste("In total ", TrimPosFeatures," ",  Signals," in ", TrimPosGroups, " ",Series," were removed.\n"))
+    rlang::inform(paste0("In total ", TrimPosFeatures," ",  Signals," in ", TrimPosGroups, " ",Series," were removed."))
 
     # check length of points
     checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
@@ -646,7 +648,7 @@ AssessLinearity <- function(
   )
 
   closeAllConnections()
-  rlang::inform(paste("FindLinear Range: ",format(round(difftime(Sys.time(), startTime),2))))
+  rlang::inform(paste("FindLinear Range: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
 
   Y = "Y_LR"
 
@@ -666,8 +668,8 @@ AssessLinearity <- function(
   processingFeature <- data.table::data.table(dplyr::full_join(dataLRFeature, processingFeature[!IDintern %in% dataLRFeature$IDintern], by = colnames(processingFeature)))
   processingGroup <-  dplyr::full_join(processingGroup, dataLRGroup, by = "groupIndices")
 
-  rlang::inform(paste("For ", data.table::uniqueN(processingGroup |> dplyr::filter(aboveR2 %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,
-          " a linear Range with a minimum of ", MIN_FEATURE, " Points and an R^2 higher or equal ", R2_MIN," were found\n"))
+  rlang::inform(paste0("For ", data.table::uniqueN(processingGroup |> dplyr::filter(aboveR2 %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,
+          " a linear Range with a minimum of ", MIN_FEATURE, " Points and an R^2 higher or equal ", R2_MIN," were found."))
 
   countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
   processingFeature <- countList[[1]]
@@ -705,10 +707,10 @@ AssessLinearity <- function(
     processingFeature[groupIndices %in% conflictBatches$groupIndices,
                       Comment := paste(processingFeature[groupIndices %in% conflictBatches$groupIndices, Comment],"_notEnoughPeaksInAllBatches")]
 
-    rlang::inform(paste(data.table::uniqueN(conflictBatches$ID), " ", Compounds, " were excluded, because they do not show repeatable ", Series, ".\n"))
-    rlang::inform(paste("Final Data set with ", data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, ID]), " ", Compounds,
+    rlang::inform(paste0(data.table::uniqueN(conflictBatches$ID), " ", Compounds, " were excluded, because they do not show repeatable ", Series, "."))
+    rlang::inform(paste0("Final Data set with ", data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, ID]), " ", Compounds,
             " and ", data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, Batch]), " Batch(es) -> ",
-            data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, groupIndices]), " ", Series,"\n--------------------------------------------------------\n"))
+            data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, groupIndices]), " ", Series,".\n"))
 
   }
 
@@ -719,11 +721,11 @@ AssessLinearity <- function(
     processingFeature <- getConc(dats = processingFeature, datCal = processingGroup, Y, INVERSE_Y)
 
   }
-
+message("test1")
   processingFeature  <- getLRstatus(dats =  processingFeature, datCal = processingGroup, y =  column_Y_sample)
-
+message("test2")
   processingFeature <- processingFeature[!is.na(IDintern)]
-
+message("test3")
 
   #### biological samples ####
 
