@@ -52,7 +52,7 @@ Install `MSlineaR` by running the following commands in R:
     # install.packages("devtools")
     devtools::install_github("bih-metabolomics/MSlineaR")
 
-## Input Data
+## Input Data Table
 
 The input data needs at least 5 columns, indicating:
 
@@ -64,7 +64,7 @@ The input data needs at least 5 columns, indicating:
 
 -   the Instrument response( y) , e.g. Area, Intensity etc
 
--   the dilution step (1, 2, 3...) of a pooled QC for untargeted analysis and the Concentration of Calibrants for targeted analysis
+-   the dilution step (1, 2, 3...) of a pooled QC for untargeted analysis and of the Concentration of Calibrants for targeted analysis
 
 | Sample_ID |  Type   | Compound_ID |  Area  | Dilution |
 |:---------:|:-------:|:-----------:|:------:|:--------:|
@@ -72,15 +72,31 @@ The input data needs at least 5 columns, indicating:
 |   cal2    | QC pool |  compound1  | 157898 |    2     |
 |    s25    | sample  |  compound1  | 136789 |    NA    |
 
-Optional the data table could include:
+Optional the input data table could include:
 
--   a column to distinguish between different Batches
+-   a column to distinguish between different Batches if there are more than one batch
 
 -   a column to distinguish between different statistical classes e.g. healthy and treatment
 
-## Example
+Additional columns will be ignored for calculations, but will be present in the final output.
 
-Finding the linear Range for an targeted tryptophan Calibration data set:
+## Mandatory Input Arguments
+
+-   *analysis_type:* You can choose between "targeted" or "untargeted"
+
+-   *input_data*: data table or data frame with at least five columns, see above
+
+-   *column_sample_type*: Column name which indicates the sample types of the data set, as:
+
+    -   *sample_type_serial:* type name of the serial diluted or concentrated samples
+
+    -   
+
+-   *sample_type_QC:*
+
+-   *sample_type_sample:*
+
+-   *sample_ID:*
 
 ``` r
 library(MSlineaR)
@@ -89,7 +105,6 @@ data_tbl <- MSlineaR::targeted_MS
 
 
 targetedMSCal <- AssessLinearity(
-  dilution_factor = 3,
   analysis_type ="targeted",
   input_data = data_tbl,
   column_sample_type = "Sample.Type" ,
@@ -101,6 +116,7 @@ targetedMSCal <- AssessLinearity(
   column_ID = "Compound",
   column_Batch = "Batch",
   column_X = "Concentration",
+  dilution_factor = 3,
   column_Y = "Area",
   column_Y_sample = "Area",
   min_feature = 5,
