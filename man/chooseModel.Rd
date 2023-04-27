@@ -6,13 +6,12 @@
 \usage{
 chooseModel(
   dats,
-  y = "Intensity",
-  x = "Concentration",
+  y = parent.frame()$Y,
+  x = parent.frame()$X,
   model = c("logistic", "linear", "quadratic"),
   SDRES_MIN = 1,
   STDRES = 2,
-  abbr,
-  ...
+  abbr
 )
 }
 \arguments{

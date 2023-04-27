@@ -4,7 +4,7 @@
 \alias{trim_pos_associated}
 \title{Title}
 \usage{
-trim_pos_associated(dats, y, x, MIN_Feature, ...)
+trim_pos_associated(dats, y, x, MIN_Feature)
 }
 \arguments{
 \item{x}{}

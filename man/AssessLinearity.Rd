@@ -8,17 +8,19 @@ AssessLinearity(
   analysis_type = c("targeted", "untargeted", NULL)[3],
   input_data = NULL,
   column_sample_type = c("Sample.Type", "Type")[1],
-  sample_type_QC = c("pooled QC", "QC", NULL)[3],
-  sample_type_QC_ref = c("Reference QC", "QC", NULL)[3],
-  sample_type_blank = c("Blank", NULL)[2],
+  sample_type_QC = c("pooled QC", "Reference QC", NULL)[3],
   sample_type_sample = "Sample",
   sample_type_serial = "Calibration Standard",
-  sample_ID = "Sample.Identification",
-  column_ID = "Compound",
-  column_Batch = "Batch",
+  sample_type_blank = c("Blank", NULL)[1],
+  signal_blank_ratio = 5,
+  column_sample_ID = "Sample.Identification",
+  column_compound_ID = "Compound",
+  column_batch = "Batch",
   column_X = c("Concentration", "Dilution")[2],
   column_Y = c("Area", "Height", "Intensity")[1],
   column_Y_sample = c("Area", "Height", "Intensity")[1],
+  column_class_sample = c("group", NULL)[2],
+  dilution_factor = NULL,
   transform = c(TRUE, FALSE)[1],
   transform_x = "log",
   inverse_x = "exp",
@@ -36,9 +38,9 @@ AssessLinearity(
   min_feature = 6,
   LR_sd_res_factor = 2,
   R2_min = 0.9,
+  Batch_harmonization = c(TRUE, FALSE)[1],
   calculate_concentration = c(TRUE, FALSE)[1],
   get_linearity_status_samples = c(TRUE, FALSE)[1],
-  Batch_harmonization = c(TRUE, FALSE)[1],
   nCORE = 1,
   get_output = c(TRUE, FALSE)[1],
   output_name = NULL,
@@ -51,7 +53,7 @@ AssessLinearity(
 \item{analysis_type}{String; was the analysis "targeted" or "untargeted"?}
 
 \item{input_data}{Long format data frame or data table combining the information
-of samples, serial diluted/concentrated samples and optional repeated measured
+of biological samples, serial diluted/concentrated samples and optional repeated measured
 QC samples for all batches.}
 
 \item{column_sample_type}{String; Column name which distinguish between
@@ -59,20 +61,18 @@ samples, QC and serial samples.}
 
 \item{sample_type_QC}{String; Identification of QC in \code{column_sample_type}.}
 
-\item{sample_type_sample}{String;Identification of sample in \code{column_sample_type}.}
+\item{sample_type_sample}{String;Identification of biological samples in \code{column_sample_type}.}
 
 \item{sample_type_serial}{String;Identification of serial data in \code{column_sample_type}.}
 
-\item{column_ID}{String; Column name, which identifies the measured Signals.}
-
-\item{column_Batch}{String; Column name to identify the different batches.
-Only necessary if there are more than 1 Batch.}
-
 \item{column_X}{String; Column name of the independent variable,
-e.g. Concentration, Dilution,...}
+e.g. Concentration, Dilution,... . Highest number should be the highest concentration or lowest dilution.
+For untargeted data use a vector with consecutive numbers, e.g. c(1, 2, 3 , ...) with 1 beeing the highest dilution}
 
 \item{column_Y}{String; Column name of the dependent variable,
 e.g. Intensity, Area,..}
+
+\item{column_class_sample}{String, Column name used for statistical classes}
 
 \item{transform}{Boolean; Should the data be transformed? Default is \code{TRUE}.}
 
@@ -117,16 +117,16 @@ Default to 2.}
 \item{R2_min}{Numeric, ranges from 0 to 1; Minimum coefficient of determination,
 which needs to be reached to consider the signal as linear. Default to 0.9}
 
+\item{Batch_harmonization}{Boolean; If \code{TRUE} (default),
+only serial diluted curves will be considered if they have a linear Range in
+all Batches, otherwise they will be excluded. If set to \code{FALSE} all curves with
+a linear range will be taken but flagged that in one or more batches linearity is missing}
+
 \item{calculate_concentration}{Boolean; For targeted analysis. Should the
 concentration of samples in regard to the linear regression equation be calculated? Default is \code{TRUE}.}
 
 \item{get_linearity_status_samples}{Boolean; If \code{TRUE} (default) the samples
 will be differentiated into linear and non linear according to their serial diluted/concentrated signal.}
-
-\item{Batch_harmonization}{Boolean; If \code{TRUE} (default),
-only serial diluted curves will be considered if they have a linear Range in
-all Batches, otherwise they will be excluded. If set to \code{FALSE} all curves with
-a linear range will be taken but flagged that in one or more batches linearity is missing}
 
 \item{nCORE}{Integer; Number of cores used for parallelization. Default to 1.}
 
@@ -142,9 +142,14 @@ which should be generated.Default all files will be generated and stored:
 
 \item{output_dir}{Only necessary if \code{get_output} is \code{TRUE}.
 custom path, where the output files should be stored.}
+
+\item{column_ID}{String; Column name, which uniquely identifies the measured Signals.}
+
+\item{column_Batch}{String; Column name to identify the different batches.
+Only necessary if there are more than 1 Batch.}
 }
 \description{
-\code{AssessLinearity()} cleans up a data set to only signals which
-show a linear response. The function use two outlier detections and a partially
-linear regression to identify the exact linear response range for each Signal.
+\code{AssessLinearity()} cleans up a data set of serial concentrated or diluted Compounds to only signals which
+show a linear response. The function use two outlier detection steps and a partially
+linear regression to identify the exact linear response range for each Compound.
 }

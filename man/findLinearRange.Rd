@@ -9,7 +9,8 @@ findLinearRange(
   x = "DilutionPoint",
   y = "IntensityNorm",
   sd_res_factor = 2,
-  min_feature
+  min_feature,
+  real_x
 )
 }
 \arguments{

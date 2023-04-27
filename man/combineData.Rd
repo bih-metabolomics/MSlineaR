@@ -4,13 +4,7 @@
 \alias{combineData}
 \title{Title}
 \usage{
-combineData(
-  inputData_Series,
-  inputData_BioSamples,
-  inputData_QC,
-  inputData_QC_ref,
-  inputData_Blank
-)
+combineData(inputData_Series, inputData_BioSamples, inputData_QC)
 }
 \arguments{
 \item{...}{}
