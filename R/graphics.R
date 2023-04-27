@@ -5,8 +5,6 @@
 #' @param inputData_Series
 #' @param inputData_BioSamples
 #' @param inputData_QC
-#' @param inputData_QC_ref
-#' @param inputData_Blank
 #' @param ...
 #'
 #' @return
