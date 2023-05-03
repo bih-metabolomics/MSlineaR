@@ -112,6 +112,23 @@ Additional columns will be ignored for calculations, but will be present in the 
 
 ### With these arguments you can run the example data set:
 
+The example data set is an targeted data set with 34 metabolites measured in two batches :
+
+-   680 Calibration Standard signals ( 34 metabolites a two batches a 10 concentrations)
+
+```{=html}
+<!-- -->
+```
+-   1020 Blank signals (34 metabolites a two batches a 15 repeats)
+
+-   748 pooled QC signals (34 metabolites a two batches a 11 repeats)
+
+-   884 Reference QC signals (34 metabolites a two batches a 13 repeats)
+
+-   3434 biological sample signals ( 34 metabolites a 101 patients)
+
+The 3434 biological samples were randomly assigned to either statistical group " healthy" (n = 1653) or "patient" (n = 1781)
+
 ``` r
 library(MSlineaR)
 
