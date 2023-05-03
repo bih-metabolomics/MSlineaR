@@ -390,11 +390,12 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   x <- X
   y <- Y
   SAMPLE_ID <- COLNAMES[["Sample_ID"]]
+  Group <- COLNAMES[["Class"]]
 
   data.table::setDT(inputData_Samples)
 
   data_Signals_sample_summary <- inputData_Samples |>
-    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), Sample.Type, Group = get(COLNAMES[["CLASS"]])) |>
+    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), Sample.Type, Group = get(Group)) |>
     dplyr::summarize(
       Missing = sum(is.na(y), na.rm = T),
       LR_TRUE = sum(Status_LR %in% TRUE, na.rm = T),
