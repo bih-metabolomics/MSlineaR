@@ -1,9 +1,5 @@
 # MSlineaR
 
-<!-- badges: start -->
-
-<!-- badges: end -->
-
 The goal of `MSlineaR` is to clean up a data set of serial concentrated or diluted Compounds to only signals which show a linear response. It can be used for targeted and untargeted metabolomic data sets. In short the package use a serial diluted or concentrated data set to determine the linear portion of the dilution/calibration curve. Therefore the following steps will be performed:
 
 1.  The data will be checked and transformed.
@@ -115,16 +111,9 @@ Additional columns will be ignored for calculations, but will be present in the 
 The example data set is an targeted data set with 34 metabolites measured in two batches :
 
 -   680 Calibration Standard signals ( 34 metabolites a two batches a 10 concentrations)
-
-```{=html}
-<!-- -->
-```
 -   1020 Blank signals (34 metabolites a two batches a 15 repeats)
-
 -   748 pooled QC signals (34 metabolites a two batches a 11 repeats)
-
 -   884 Reference QC signals (34 metabolites a two batches a 13 repeats)
-
 -   3434 biological sample signals ( 34 metabolites a 101 patients)
 
 The 3434 biological samples were randomly assigned to either statistical group " healthy" (n = 1653) or "patient" (n = 1781)
@@ -153,6 +142,7 @@ targetedMSCal <- AssessLinearity(
   signal_blank_ratio = 5,
   column_Y = "Area",
   column_Y_sample = "Area",
+  column_class_sample = "Group",
   min_feature = 5,
   output_name = "Test_targeted",
   output_dir = " ",
