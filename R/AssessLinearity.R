@@ -926,7 +926,7 @@ rlang::inform("Scatterplot was created")
                                                      COLNAMES = COLNAMES,
                                                      X = Xraw, Y = Yraw,
                                                      output_dir = IMG_OUTPUT_DIR,
-                                                     group = "Group",
+                                                     group = "class",
                                                      outputfileName = c("Summary_Barplot_Samples"))
 
   rlang::inform("summary_barplot_sample was created")
