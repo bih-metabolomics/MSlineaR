@@ -401,7 +401,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
       LR_TRUE = sum(Status_LR %in% TRUE, na.rm = T),
       LR_FALSE = sum(Status_LR %in% FALSE, na.rm = T)
     ) |>
-    tidyr::pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:3))
+    tidyr::pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:4))
 
 
 
