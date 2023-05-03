@@ -903,7 +903,7 @@ rlang::inform("summary_barplot was created")
   #8) scatter plot
   FDS_scatterplot <- plot_FDS(inputData_Series = output1,
                               inputData_BioSamples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
-                              inputData_QC = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC),
+                              inputData_QC = SampleQC,
                               COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
                               Series = Series, output_dir = IMG_OUTPUT_DIR
   )

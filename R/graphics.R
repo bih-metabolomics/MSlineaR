@@ -43,7 +43,6 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 #' @param inputData_BioSamples
 #' @param inputData_QC
 #' @param inputData_QC_ref
-#' @param inputData_Blank
 #' @param nrRow
 #' @param nrFeature
 #' @param GroupIndices
@@ -411,12 +410,12 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
 
   plot_Summary_samples <-
-    ggplot2::ggplot(data = data_Signals_sample_summary, ggplot2::aes(x = Sample_ID, y = count, label = count, fill = Type)) +
+    ggplot2::ggplot(data = data_Signals_sample_summary, ggplot2::aes(x = Sample_ID, y = count, label = count, fill = Batch)) +
     ggplot2::geom_bar(stat="identity",
              position="fill",
              width = 0.5 ) +
     #geom_text(size = 3, position = position_fill(vjust = 0.5)) +
-    ggplot2::facet_grid(. ~ Batch, scales = "free_x", space = "free_x")
+    ggplot2::facet_grid(. ~ Sample.Type, scales = "free_x", space = "free_x")
 
   plot_Summary_samples <- plot_Summary_samples +
     #scale_x_continuous(breaks = data_Signals$DilutionPoint) +
