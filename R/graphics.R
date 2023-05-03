@@ -379,7 +379,8 @@ plot_Barplot_Summary <- function(inputData_Series,
 plot_Barplot_Summary_Sample <- function(inputData_Samples,
                                         printPDF = TRUE, GroupIndices = "all",  Feature = "all",
                                         outputfileName = c("Summary_Barplot_Samples"),
-                                        COLNAMES, X, Y , output_dir){
+                                        COLNAMES, X, Y , output_dir,
+                                        group = "Sample.Type"){
 
 
   assertthat::not_empty(inputData_Samples)
@@ -393,7 +394,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   data.table::setDT(inputData_Samples)
 
   data_Signals_sample_summary <- inputData_Samples |>
-    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), Sample.Type) |>
+    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), Sample.Type, Group = get(COLNAMES[["CLASS"]])) |>
     dplyr::summarize(
       Missing = sum(is.na(y), na.rm = T),
       LR_TRUE = sum(Status_LR %in% TRUE, na.rm = T),
@@ -416,7 +417,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
                       #position="fill",
                       width = 0.5 ) +
     #geom_text(size = 3, position = position_fill(vjust = 0.5)) +
-    ggplot2::facet_grid(. ~ Sample.Type, scales = "free_x", space = "free_x")
+    ggplot2::facet_grid(. ~ get(group), scales = "free_x", space = "free_x")
 
   plot_Summary_samples <- plot_Summary_samples +
     #scale_x_continuous(breaks = data_Signals$DilutionPoint) +

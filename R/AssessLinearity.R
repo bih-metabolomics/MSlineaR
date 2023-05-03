@@ -926,6 +926,7 @@ rlang::inform("Scatterplot was created")
                                                      COLNAMES = COLNAMES,
                                                      X = Xraw, Y = Yraw,
                                                      output_dir = IMG_OUTPUT_DIR,
+                                                     group = "Group",
                                                      outputfileName = c("Summary_Barplot_Samples"))
 
   rlang::inform("summary_barplot_sample was created")
@@ -933,10 +934,11 @@ rlang::inform("Scatterplot was created")
 
   #11) barplot summary for QC samples
 
-  summary_barplot_QC <- plot_Barplot_Summary_Sample(inputData_Samples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% QC),
+  summary_barplot_QC <- plot_Barplot_Summary_Sample(inputData_Samples = SampleQC,
                                                         COLNAMES = COLNAMES,
                                                         X = Xraw, Y = Yraw,
                                                         output_dir = IMG_OUTPUT_DIR,
+                                                    group = "Sample.Type",
                                                     outputfileName = c("Summary_Barplot_QC"))
 
   rlang::inform("summary_barplot_sample was created")
