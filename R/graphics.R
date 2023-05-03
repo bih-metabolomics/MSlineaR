@@ -410,7 +410,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
 
   plot_Summary_samples <-
-    ggplot2::ggplot(data = data_Signals_sample_summary |> Type %in% "LR_TRUE", ggplot2::aes(x = Sample_ID, y = count, label = count, fill = Batch)) +
+    ggplot2::ggplot(data = data_Signals_sample_summary |> dplyr::filter(Type %in% "LR_TRUE"), ggplot2::aes(x = Sample_ID, y = count, label = count, fill = Batch)) +
     ggplot2::geom_bar(stat="identity",
              #position="fill",
              width = 0.5 ) +
