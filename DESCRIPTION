@@ -30,7 +30,8 @@ Imports:
     dplyr,
     DescTools,
     ggplot2,
-    DT
+    DT,
+    logr
 Suggests: 
     testthat,
     tidyselect,
