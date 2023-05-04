@@ -236,7 +236,11 @@ AssessLinearity <- function(
         dir.create(IMG_OUTPUT_DIR)
       }
 
-#      sink(paste0(REPORT_OUTPUT_DIR,"/MSlineaR.txt"))
+      my_log <- file(paste0(REPORT_OUTPUT_DIR,"/my_log.txt"))
+      sink(my_log, append = TRUE, type = "output")
+      sink(my_log, append = TRUE, type = "message")
+
+
 
 
       #check if pdfs are still open
@@ -345,7 +349,7 @@ AssessLinearity <- function(
     blanks <-  dataOrigin[get(COLNAMES[["Sample_type"]]) %in% BLANK]
 
 
-
+sink()
     # prints recorded time
     startTime = Sys.time()
 
@@ -361,6 +365,9 @@ AssessLinearity <- function(
     ) |> plyr::ldply(.id = NULL)
 
     closeAllConnections()
+
+    sink(my_log, append = TRUE, type = "output")
+    sink(my_log, append = TRUE, type = "message")
 
     rlang::inform(paste("signal/blank: ",format(round(difftime(Sys.time(), startTime),2)), "\n"))
     Y = "Y_sb"
@@ -392,7 +399,7 @@ AssessLinearity <- function(
                   --------------------------------------------------------
                   \tFirst Outlier Detection
                   --------------------------------------------------------\n")
-
+sink()
     # prints recorded time
     startTime = Sys.time()
 
@@ -410,6 +417,9 @@ AssessLinearity <- function(
     ) |> unlist(recursive = F)
 
     closeAllConnections()
+
+    sink(my_log, append = TRUE, type = "output")
+    sink(my_log, append = TRUE, type = "message")
 
     rlang::inform(paste("FOD: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
     Y = "Y_FOD"
@@ -449,7 +459,7 @@ AssessLinearity <- function(
                   --------------------------------------------------------
                   \tTrim data: first Dilution should have the smallest Intensity and last point should have the biggest.
                   --------------------------------------------------------\n")
-
+    sink()
     startTime = Sys.time()
     #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
     dataTrim <- my_fcn(
@@ -465,6 +475,9 @@ AssessLinearity <- function(
 
     #parallel::stopCluster(cl)
     closeAllConnections()
+
+    sink(my_log, append = TRUE, type = "output")
+    sink(my_log, append = TRUE, type = "message")
 
     rlang::inform(paste("Trimming: ",format(round(difftime(Sys.time(), startTime),2)), "\n"))
 
@@ -510,7 +523,7 @@ AssessLinearity <- function(
 
 
     processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE, groupIndices]]
-
+sink()
     startTime = Sys.time()
     #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
     dataSOD <- my_fcn(
@@ -530,6 +543,8 @@ AssessLinearity <- function(
 
     closeAllConnections()
 
+    sink(my_log, append = TRUE, type = "output")
+    sink(my_log, append = TRUE, type = "message")
     #rm(cl)
 
 
@@ -578,7 +593,7 @@ AssessLinearity <- function(
                   --------------------------------------------------------\n")
 
 
-
+  sink()
     startTime = Sys.time()
     #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
     dataTrimPos <- my_fcn(
@@ -594,6 +609,9 @@ AssessLinearity <- function(
       plyr::ldply(.id = NULL)
 
     closeAllConnections()
+
+    sink(my_log, append = TRUE, type = "output")
+    sink(my_log, append = TRUE, type = "message")
 
     rlang::inform(paste("TrimmPos: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
 
@@ -645,6 +663,7 @@ AssessLinearity <- function(
   #dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[aboveMinCor %in% TRUE, groupIndices]]
   #dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[ , groupIndices]]
   #dataLin$fittingModel <- sapply(dataLin$groupIndices, function(i) dataSODModel$Model[dataSODModel$groupIndices %in% i])
+sink()
 
   startTime = Sys.time()
   #cl <- parallel::makeCluster(getOption("cl.cores", nCORE), type = "PSOCK")
@@ -664,6 +683,10 @@ AssessLinearity <- function(
   )
 
   closeAllConnections()
+
+  sink(my_log, append = TRUE, type = "output")
+  sink(my_log, append = TRUE, type = "message")
+
   rlang::inform(paste("FindLinear Range: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
 
   Y = "Y_LR"
