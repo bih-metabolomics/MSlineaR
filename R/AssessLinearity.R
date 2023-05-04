@@ -198,11 +198,33 @@ AssessLinearity <- function(
   PREFIX = output_name
   OUTPUT_DIR = output_dir
 
+  my_log <- file(paste0(OUTPUT_DIR,"/my_log.txt"), open = "a")
+  sink(my_log, append = TRUE, type = "output", split = TRUE)
+  #sink(file = my_log, type = "message", append = TRUE)
+  # sink.number()
+  # #you can close all open sinks with
+  # while (sink.number()>0) sink()
 
-  rlang::inform("
-                --------------------------------------------------------
-                \tchecking input arguments
-                --------------------------------------------------------\n")
+
+  # Create temp file location
+  tmp <- file.path(OUTPUT_DIR, "test.log")
+
+  # Open log
+  lf <- log_open(tmp)
+
+  # Send message to log
+  #log_print(
+
+  sep("checking input arguments")
+  # rlang::inform("
+  #               --------------------------------------------------------
+  #               \tchecking input arguments
+  #               --------------------------------------------------------\n")
+
+  #)
+
+
+
   dataOrigin <- data.table::copy(DAT)
   dataOrigin <- checkData(dat = dataOrigin) # function in prep.R
 
@@ -227,20 +249,14 @@ AssessLinearity <- function(
     # check if output dir already exist or create it
     if (!dir.exists(REPORT_OUTPUT_DIR)){
       dir.create(REPORT_OUTPUT_DIR)
-      rlang::inform(paste("Dir", REPORT_OUTPUT_DIR , "was created."))
+      put(paste("Dir", REPORT_OUTPUT_DIR , "was created."))
       dir.create(file.path(IMG_OUTPUT_DIR))
 
     } else {
-      rlang::inform(paste("Dir", REPORT_OUTPUT_DIR,"already exists!"))
+      put(paste("Dir", REPORT_OUTPUT_DIR,"already exists!"))
       if (!dir.exists(IMG_OUTPUT_DIR)){
         dir.create(IMG_OUTPUT_DIR)
       }
-
-      my_log <- file(paste0(REPORT_OUTPUT_DIR,"/my_log.txt"))
-      sink(my_log, append = TRUE, type = "output")
-      sink(my_log, append = TRUE, type = "message")
-
-
 
 
       #check if pdfs are still open
@@ -289,10 +305,11 @@ AssessLinearity <- function(
 
 
   #### normalizing, centralizing, log transforming ####
- rlang::inform("
-               --------------------------------------------------------
-                \tpreparing serial diluted QC data
-               --------------------------------------------------------\n")
+  sep("preparing serial diluted QC data")
+ # rlang::inform("
+ #               --------------------------------------------------------
+ #                \tpreparing serial diluted QC data
+ #               --------------------------------------------------------\n")
 # function in prep.R
   dataPrep <- prepareData(processingFeature, TRANSFORM, TRANSFORM_X, TRANSFORM_Y, DILUTION_FACTOR, COLNAMES, TYPE)
 
@@ -311,7 +328,7 @@ AssessLinearity <- function(
   nSeries <- data.table::uniqueN(processingGroup, by = c("groupIndices"))
   nPeaks <- data.table::uniqueN(processingFeature, by = c("IDintern"))
 
-  rlang::inform(paste0(
+  put(paste0(
     "Data set with ", nCompounds, " ",Compounds, ", ",
     nReplicates, " Batch(es) and ",
     nDilutions, " ", Dilutions," -> ",
@@ -324,7 +341,7 @@ AssessLinearity <- function(
   nReplicatesNew <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("Batch"))
   nSeriesNew <- data.table::uniqueN(processingGroup[enoughPeaks_1 %in% TRUE], by = c("groupIndices"))
 
-  rlang::inform(paste0("Removed ", nSeries - nSeriesNew, " ", Series, " with less than ", MIN_FEATURE, " Signals.","\n",
+  put(paste0("Removed ", nSeries - nSeriesNew, " ", Series, " with less than ", MIN_FEATURE, " Signals.","\n",
                  "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series,".\n"))
 
   stopifnot(exprs = {
@@ -336,6 +353,11 @@ AssessLinearity <- function(
   processingFeature <- processingFeature[groupIndices %in% processingGroup[enoughPeaks_1 %in% TRUE, groupIndices]]
 
   step <- step + 1
+  # Close log
+  log_close()
+
+  # View results
+  writeLines(readLines(lf))
 
   # assert_that(nrow(processList$processing) == rawCompounds*n_dilution*nReplications)
 
@@ -349,7 +371,7 @@ AssessLinearity <- function(
     blanks <-  dataOrigin[get(COLNAMES[["Sample_type"]]) %in% BLANK]
 
 
-sink()
+#closeAllConnections()
     # prints recorded time
     startTime = Sys.time()
 
@@ -364,10 +386,10 @@ sink()
       noise = NOISE
     ) |> plyr::ldply(.id = NULL)
 
-    closeAllConnections()
+    #closeAllConnections()
 
-    sink(my_log, append = TRUE, type = "output")
-    sink(my_log, append = TRUE, type = "message")
+    #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "output", split = TRUE)
+    #sink(my_log, append = TRUE, type = "message", split = TRUE)
 
     rlang::inform(paste("signal/blank: ",format(round(difftime(Sys.time(), startTime),2)), "\n"))
     Y = "Y_sb"
@@ -399,7 +421,7 @@ sink()
                   --------------------------------------------------------
                   \tFirst Outlier Detection
                   --------------------------------------------------------\n")
-sink()
+#sink()
     # prints recorded time
     startTime = Sys.time()
 
@@ -416,10 +438,10 @@ sink()
       STDRES = FOD_STDRES_MAX
     ) |> unlist(recursive = F)
 
-    closeAllConnections()
+    #closeAllConnections()
 
-    sink(my_log, append = TRUE, type = "output")
-    sink(my_log, append = TRUE, type = "message")
+    #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "output")
+    #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "message")
 
     rlang::inform(paste("FOD: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
     Y = "Y_FOD"
@@ -459,7 +481,7 @@ sink()
                   --------------------------------------------------------
                   \tTrim data: first Dilution should have the smallest Intensity and last point should have the biggest.
                   --------------------------------------------------------\n")
-    sink()
+    #sink()
     startTime = Sys.time()
     #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
     dataTrim <- my_fcn(
@@ -474,10 +496,10 @@ sink()
       plyr::ldply(.id = NULL)
 
     #parallel::stopCluster(cl)
-    closeAllConnections()
+    #closeAllConnections()
 
-    sink(my_log, append = TRUE, type = "output")
-    sink(my_log, append = TRUE, type = "message")
+    #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "output")
+    #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "message")
 
     rlang::inform(paste("Trimming: ",format(round(difftime(Sys.time(), startTime),2)), "\n"))
 
@@ -523,7 +545,7 @@ sink()
 
 
     processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE, groupIndices]]
-sink()
+#sink()
     startTime = Sys.time()
     #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
     dataSOD <- my_fcn(
@@ -541,10 +563,10 @@ sink()
       STDRES = SOD_STDRES_MAX
     ) |> unlist(recursive = F)
 
-    closeAllConnections()
+    #closeAllConnections()
 
-    sink(my_log, append = TRUE, type = "output")
-    sink(my_log, append = TRUE, type = "message")
+    #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "output")
+    #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "message")
     #rm(cl)
 
 
@@ -593,7 +615,7 @@ sink()
                   --------------------------------------------------------\n")
 
 
-  sink()
+  #sink()
     startTime = Sys.time()
     #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
     dataTrimPos <- my_fcn(
@@ -608,10 +630,10 @@ sink()
     ) |>
       plyr::ldply(.id = NULL)
 
-    closeAllConnections()
+    #closeAllConnections()
 
-    sink(my_log, append = TRUE, type = "output")
-    sink(my_log, append = TRUE, type = "message")
+    #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "output")
+    #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "message")
 
     rlang::inform(paste("TrimmPos: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
 
@@ -663,7 +685,7 @@ sink()
   #dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[aboveMinCor %in% TRUE, groupIndices]]
   #dataLin <-  data.table::copy(processingFeature)[groupIndices %in% dataSODModel[ , groupIndices]]
   #dataLin$fittingModel <- sapply(dataLin$groupIndices, function(i) dataSODModel$Model[dataSODModel$groupIndices %in% i])
-sink()
+#sink()
 
   startTime = Sys.time()
   #cl <- parallel::makeCluster(getOption("cl.cores", nCORE), type = "PSOCK")
@@ -682,10 +704,10 @@ sink()
     sd_res_factor = LR_SD_RES_FACTOR
   )
 
-  closeAllConnections()
+  #closeAllConnections()
 
-  sink(my_log, append = TRUE, type = "output")
-  sink(my_log, append = TRUE, type = "message")
+  #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "output")
+  #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "message")
 
   rlang::inform(paste("FindLinear Range: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
 
@@ -1076,7 +1098,8 @@ rlang::inform("Scatterplot was created")
     if(any(c("filteredBioSampleSignal", "all") %in% which_output)) write.csv(output5, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "High_Quality_Samples_Signals.csv" , sep = "_")))
   }
 
-
+  #sink()
+  closeAllConnections()
   return(processList)
-#sink()
+
 }
