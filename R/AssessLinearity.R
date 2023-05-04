@@ -289,7 +289,6 @@ AssessLinearity <- function(
 # function in prep.R
   dataPrep <- prepareData(processingFeature, TRANSFORM, TRANSFORM_X, TRANSFORM_Y, DILUTION_FACTOR, COLNAMES, TYPE)
 
-
   processingFeature <- data.table::copy(dataPrep)
 
   step <- 1
@@ -729,14 +728,36 @@ AssessLinearity <- function(
   }
 
   ### Back calculation Concentration
+  processingFeature  <- getLRstatus(dats =  processingFeature, datCal = processingGroup, y =  column_Y_sample)
+  processingFeature <- processingFeature[!is.na(IDintern)]
+
   if(TYPE %in% "targeted"){
     rlang::inform("Back calculation of concentration for the concentration series signals")
     Y <- ifelse(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y), "Y_trans", COLNAMES[["Y"]])
-    processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y, x = COLNAMES[["X"]])
+    processingFeature$xfactor <- round(processingFeature$X/processingFeature[[COLNAMES[["X"]]]],3)
+    processingGroup <- dplyr::right_join(processingGroup, unique(processingFeature[,c("groupIndices", "xfactor")]), by = "groupIndices")
+    processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y)
+
+    table.backcalc <- processingFeature[,c(1:9)]
+    table.backcalc$ConcentrationLR <- processingFeature$i.ConcentrationLR
+    table.backcalc$precision <- abs(table.backcalc$ConcentrationLR*100/table.backcalc[[COLNAMES[["X"]]]] -100)
+
+
+    #)
+
+    abs(processingFeature$i.ConcentrationLR*100/processingFeature[[COLNAMES[["X"]]]] -100)
+
+    rlang::inform(paste("Concentration Back calculation", ":"))
+    rlang::inform(paste0(capture.output(dplyr::full_join(rsd_before, rsd_after, by = c("Batch","Sample.Type"))), collapse = "\n"))
+
+
+
 
   }
-  processingFeature  <- getLRstatus(dats =  processingFeature, datCal = processingGroup, y =  column_Y_sample)
-  processingFeature <- processingFeature[!is.na(IDintern)]
+
+
+
+
 
   #### biological samples ####
 

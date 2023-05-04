@@ -56,7 +56,7 @@ getLRstatus <- function(dats, datCal, y){
 #' @export
 #'
 #' @examples
-getConc <- function(dats, datCal, y, INVERSE_Y, x){
+getConc <- function(dats, datCal, y, INVERSE_Y){
 
   setDT(dats)
   setDT(datCal)
@@ -72,7 +72,7 @@ getConc <- function(dats, datCal, y, INVERSE_Y, x){
   if(!is.na(INVERSE_Y) & INVERSE_Y !=""){
     dat$ConcentrationLR <- sapply(paste0(INVERSE_Y,"(",dat$ConcentrationLR,")"),function(i) eval(parse(text = i)))
   }
-  dat$ConcentrationLR <- dat$ConcentrationLR - get(x)
+  dat$ConcentrationLR <- dat$ConcentrationLR/dat$xfactor
 
   dats <- dats[dat[ ,.(IDintern, ConcentrationLR)], on = "IDintern"]
   return(dats)
