@@ -832,7 +832,7 @@ AssessLinearity <- function(
 
 
     logr::put(paste("Concentration Back calculation", ":"))
-    logr::put(paste0(capture.output(print(t, n = nrow(t))), collapse = "\n"))
+    logr::put(print(t, n = nrow(t)))
 
 
 
@@ -861,12 +861,12 @@ AssessLinearity <- function(
     }
 
     if(TYPE %in% "targeted" & CAL_CONC %in% TRUE){
-      rlang::inform(paste("Calculate Concentration for biological Samples"))
+      logr::put(paste("Calculate Concentration for biological Samples"))
     SampleFeature <- getConc(dats = SampleFeature, datCal = processingGroup, y = Y_SAMPLE,INVERSE_Y =  INVERSE_Y)
     }
 
     if(GET_LR_STATUS %in% TRUE){
-      rlang::inform(" Associating biological samples to their respective linear ranges\n")
+      logr::put(" Associating biological samples to their respective linear ranges\n")
       SampleFeature  <- getLRstatus(dats = SampleFeature, datCal = processingGroup,y =  column_Y_sample)
         #data_Sample$Status_LR <-  data.table::between(lower = data_Sample$LRStartY, x = data_Sample[, c("Area.CorrDrift")], upper = data_Sample$LREndY, NAbounds = NA)
 
@@ -921,7 +921,7 @@ AssessLinearity <- function(
 
       SampleFeature <- dplyr::full_join(SampleFeature, SampleQC, by = colnames(SampleQC))
       logr::put(paste("QC", ":"))
-      logr::put(paste0(capture.output(dplyr::full_join(rsd_before, rsd_after, by = c("Batch","Sample.Type"))), collapse = "\n"))
+      logr::put(dplyr::full_join(rsd_before, rsd_after, by = c("Batch","Sample.Type")))
 
   }
 
