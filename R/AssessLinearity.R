@@ -152,7 +152,6 @@ AssessLinearity <- function(
     output_dir = NULL
 ) {
 
-  sink("sink-examp.txt")
 
   # define arguments
   TYPE = analysis_type
@@ -236,6 +235,9 @@ AssessLinearity <- function(
       if (!dir.exists(IMG_OUTPUT_DIR)){
         dir.create(IMG_OUTPUT_DIR)
       }
+
+      sink(paste(REPORT_OUTPUT_DIR,"/MSlineaR.txt"))
+
 
       #check if pdfs are still open
         imgfileName = c("Summary_Barplot_QC", "Summary_Barplot_Samples", "Summary_Barplot_All", "Calibrationplot")
