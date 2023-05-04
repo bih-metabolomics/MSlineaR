@@ -168,16 +168,7 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
   if(!is.null(NOISE)) if(!BLANK %in% dat[[COLNAMES[["Sample_type"]]]]) rlang::abort("Argument 'sample_type_blank' was not found in column 'column_sample_type'")
 
 
-  if(GET_OUTPUT %in% TRUE){
-    imgfileName = c("Summary_Barplot_QC", "Summary_Barplot_Samples", "Summary_Barplot_All", "Calibrationplot")
-    output_dir = IMG_OUTPUT_DIR
 
-    check <- sapply(imgfileName, function(i) {file.rename(from = file.path(output_dir,paste0(Sys.Date(),"_", i,".pdf")),
-                                      to = file.path(output_dir,paste0(Sys.Date(),"_", i,".pdf")) )
-    })
-
-   if(!all(check)) rlang::abort("Please close all pdfs first.")
-  }
 
   return(dat)
 }

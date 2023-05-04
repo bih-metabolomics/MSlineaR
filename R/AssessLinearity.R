@@ -229,10 +229,21 @@ AssessLinearity <- function(
       dir.create(file.path(IMG_OUTPUT_DIR))
 
     } else {
-      rlang::inform(paste("Dir already exists!"))
+      rlang::inform(paste("Dir", REPORT_OUTPUT_DIR,"already exists!"))
       if (!dir.exists(IMG_OUTPUT_DIR)){
         dir.create(IMG_OUTPUT_DIR)
       }
+
+      #check if pdfs are still open
+        imgfileName = c("Summary_Barplot_QC", "Summary_Barplot_Samples", "Summary_Barplot_All", "Calibrationplot")
+
+        check <- sapply(imgfileName, function(i) {file.rename(from = file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", i,".pdf")),
+                                                              to = file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", i,".pdf")) )
+        })
+
+        if(!all(check)) rlang::abort("Please close all pdfs first.")
+      }
+
 
     }
   }
