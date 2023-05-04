@@ -246,7 +246,7 @@ AssessLinearity <- function(
 
 
     }
-  }
+  #}
 
 
   if(TRANSFORM %in% TRUE){
