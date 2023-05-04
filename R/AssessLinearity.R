@@ -236,7 +236,7 @@ AssessLinearity <- function(
         dir.create(IMG_OUTPUT_DIR)
       }
 
-      sink(paste0(REPORT_OUTPUT_DIR,"/MSlineaR.txt"))
+#      sink(paste0(REPORT_OUTPUT_DIR,"/MSlineaR.txt"))
 
 
       #check if pdfs are still open
@@ -1055,5 +1055,5 @@ rlang::inform("Scatterplot was created")
 
 
   return(processList)
-sink()
+#sink()
 }
