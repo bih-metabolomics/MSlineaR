@@ -210,6 +210,11 @@ AssessLinearity <- function(
   tmp <- file.path(OUTPUT_DIR, "MSlineaR.log")
 
   # Open log
+  if (!dir.exists(OUTPUT_DIR)){
+    logr::put(paste("Dir", OUTPUT_DIR , "was created."))
+  } else {
+    logr::put(paste("Dir", OUTPUT_DIR,"already exists!"))
+  }
   lf <- logr::log_open(tmp, autolog = TRUE, show_notes = FALSE)
 
   # Send message to log
@@ -253,21 +258,39 @@ AssessLinearity <- function(
       dir.create(file.path(IMG_OUTPUT_DIR))
 
     } else {
-      logr::put(paste("Dir", REPORT_OUTPUT_DIR,"already exists!"))
+      #logr::put(paste("Dir", REPORT_OUTPUT_DIR,"already exists!"))
       if (!dir.exists(IMG_OUTPUT_DIR)){
         dir.create(IMG_OUTPUT_DIR)
-      }
+      }}
 
 
       #check if pdfs are still open
-        imgfileName = c("Summary_Barplot_QC", "Summary_Barplot_Samples", "Summary_Barplot_All", "Calibrationplot")
+      imgfileName = c("Summary_Barplot_QC", "Summary_Barplot_Samples", "Summary_Barplot_All", "Calibrationplot")
 
-        check <- sapply(imgfileName, function(i) {file.rename(from = file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", i,".pdf")),
-                                                              to = file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", i,".pdf")) )
+      if (any(c(file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[1],".pdf"))),
+               file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[2],".pdf"))),
+               file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[3],".pdf"))),
+               file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[4],".pdf")))))){
+
+
+        imgexist <- which(c(file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[1],".pdf"))),
+                            file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[2],".pdf"))),
+                            file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[3],".pdf"))),
+                            file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[4],".pdf")))))
+
+
+        check <- sapply(imgexist, function(i) {file.rename(from = file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[i],".pdf")),
+                                                              to = file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[i],".pdf")) )
         })
 
         if(!all(check)) rlang::abort("Please close all pdfs first.")
       }
+
+
+
+
+
+
 
 
     }
