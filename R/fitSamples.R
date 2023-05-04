@@ -16,15 +16,17 @@
 #' @examples
 getLRstatus <- function(dats, datCal, y){
 
-  setDT(dats)
-  setDT(datCal)
+  data.table::setDT(dats)
+  data.table::setDT(datCal)
 
   dat <- data.table::copy(dats)
+
 
   dat <- dat[datCal, on = "groupIndices"]
   if(any(startsWith(names(dat), "i."))){
   dat <- dat[, grep("^i\\.", names(dat), value=TRUE) := NULL]
-}
+  }
+  dat$Status_LR <- NA
   dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[[y]], upper = dat$LREndY, NAbounds = NA)
 
 

@@ -152,6 +152,7 @@ AssessLinearity <- function(
     output_dir = NULL
 ) {
 
+  sink("sink-examp.txt")
 
   # define arguments
   TYPE = analysis_type
@@ -728,7 +729,7 @@ AssessLinearity <- function(
   }
 
   ### Back calculation Concentration
-  processingFeature  <- getLRstatus(dats =  processingFeature, datCal = processingGroup, y =  column_Y_sample)
+  processingFeature  <- getLRstatus(dats =  processingFeature, datCal = processingGroup, y =  "Y")
   processingFeature <- processingFeature[!is.na(IDintern)]
 
   if(TYPE %in% "targeted"){
@@ -739,16 +740,25 @@ AssessLinearity <- function(
     processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y)
 
     table.backcalc <- processingFeature[,c(1:9)]
-    table.backcalc$ConcentrationLR <- processingFeature$i.ConcentrationLR
+    table.backcalc$ConcentrationLR <- processingFeature$ConcentrationLR
+    table.backcalc$Status_LR <- processingFeature$Status_LR
     table.backcalc$precision <- abs(table.backcalc$ConcentrationLR*100/table.backcalc[[COLNAMES[["X"]]]] -100)
 
+    t1 <- table.backcalc |> dplyr::group_by(ID, Batch) |>
+      dplyr::summarize( lr_signals = sum(!is.na(Y)),
+                        lr_signals_true = sum(Status_LR),
+                        'prc_all_<=20' = sum(precision <= 20)
+      )
+    t2 <- table.backcalc |> dplyr::group_by(ID, Batch) |>
+      dplyr::filter(Status_LR %in% TRUE) |>
+      dplyr::summarize( 'prc_true_<=20' = sum(precision <= 20))
+    t <- dplyr::full_join(t1, t2, by = c("ID", "Batch") )
+    t$prc_true_percent <- round(t$'prc_true_<=20'*100/t$lr_signals_true,2)
 
-    #)
 
-    abs(processingFeature$i.ConcentrationLR*100/processingFeature[[COLNAMES[["X"]]]] -100)
 
     rlang::inform(paste("Concentration Back calculation", ":"))
-    rlang::inform(paste0(capture.output(dplyr::full_join(rsd_before, rsd_after, by = c("Batch","Sample.Type"))), collapse = "\n"))
+    rlang::inform(paste0(capture.output(print(t, n = nrow(t))), collapse = "\n"))
 
 
 
@@ -1043,5 +1053,5 @@ rlang::inform("Scatterplot was created")
 
 
   return(processList)
-
+sink()
 }
