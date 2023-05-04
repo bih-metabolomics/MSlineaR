@@ -69,7 +69,7 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
                       BATCH_HARMONIZATION = parent.frame()$BATCH_HARMONIZATION,
                       CAL_CONC = parent.frame()$CAL_CONC,GET_LR_STATUS = parent.frame()$GET_LR_STATUS,
                       nCORE = parent.frame()$nCORE,
-                      GET_OUTPUT = parent.frame()$GET_OUTPUT){
+                      GET_OUTPUT = parent.frame()$GET_OUTPUT, IMG_OUTPUT_DIR = parent.frame()$IMG_OUTPUT_DIR){
 
   data.table::setDT(dat)
 
@@ -166,6 +166,18 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
   if(!is.logical(BATCH_HARMONIZATION) | is.na(BATCH_HARMONIZATION)) rlang::abort("Argument 'Batch_harmonization' needs to be from type logical")
   if(!is.null(NOISE)) if(!is.numeric(NOISE) | NOISE < 1) rlang::abort("Argument 'signal_blank_ration' needs to be from type integer and greater than 0.")
   if(!is.null(NOISE)) if(!BLANK %in% dat[[COLNAMES[["Sample_type"]]]]) rlang::abort("Argument 'sample_type_blank' was not found in column 'column_sample_type'")
+
+
+  if(GET_OUTPUT %in% TRUE){
+    imgfileName = c("Summary_Barplot_QC", "Summary_Barplot_Samples", "Summary_Barplot_All", "Calibrationplot")
+    output_dir = IMG_OUTPUT_DIR
+
+    check <- sapply(imgfileName, function(i) {file.rename(from = file.path(output_dir,paste0(Sys.Date(),"_", i,".pdf")),
+                                      to = file.path(output_dir,paste0(Sys.Date(),"_", i,".pdf")) )
+    })
+
+   if(!all(check)) rlang::abort("Please close all pdfs first.")
+  }
 
   return(dat)
 }
