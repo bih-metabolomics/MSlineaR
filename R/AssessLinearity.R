@@ -140,6 +140,8 @@ AssessLinearity <- function(
 
     #filtering
 
+
+
     nCORE = 1,
 
     #output
@@ -730,7 +732,7 @@ AssessLinearity <- function(
   if(TYPE %in% "targeted"){
     rlang::inform("Back calculation of concentration for the concentration series signals")
     Y <- ifelse(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y), "Y_trans", COLNAMES[["Y"]])
-    processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y)
+    processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y, x = COLNAMES[["X"]])
 
   }
   processingFeature  <- getLRstatus(dats =  processingFeature, datCal = processingGroup, y =  column_Y_sample)
