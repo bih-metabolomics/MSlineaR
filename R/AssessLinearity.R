@@ -211,9 +211,9 @@ AssessLinearity <- function(
 
   # Open log
   if (!dir.exists(OUTPUT_DIR)){
-    logr::put(paste("Dir", OUTPUT_DIR , "was created."))
+    rlang::inform(paste("Dir", OUTPUT_DIR , "was created."))
   } else {
-    logr::put(paste("Dir", OUTPUT_DIR,"already exists!"))
+    rlang::inform(paste("Dir", OUTPUT_DIR,"already exists!"))
   }
   lf <- logr::log_open(tmp, autolog = TRUE, show_notes = FALSE)
 
@@ -364,8 +364,8 @@ AssessLinearity <- function(
   nReplicatesNew <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("Batch"))
   nSeriesNew <- data.table::uniqueN(processingGroup[enoughPeaks_1 %in% TRUE], by = c("groupIndices"))
 
-  logr::put(paste0("Removed ", nSeries - nSeriesNew, " ", Series, " with less than ", MIN_FEATURE, " Signals.","\n",
-                 "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series,".\n"))
+  logr::put(paste0("Removed ", nSeries - nSeriesNew, " ", Series, " with less than ", MIN_FEATURE, " Signals.",
+                 "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series,"."))
 
   stopifnot(exprs = {
     "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("ID")) > 0
@@ -418,7 +418,7 @@ AssessLinearity <- function(
     processingFeature <- data.table::data.table(dplyr::full_join(dataSB, processingFeature[!IDintern %in% dataSB$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'SignalBlank' :=any(signalBlankRatio %in% TRUE), groupIndices][,.(groupIndices, SignalBlank)]), by = c("groupIndices"))
 
-    rlang::inform(paste(data.table::uniqueN(processingFeature |> dplyr::filter(signalBlankRatio %in% TRUE) %>% dplyr::select(IDintern)), " Signals were removed according to the Signal to blank ratio of ",NOISE,"."))
+    logr::put(paste(data.table::uniqueN(processingFeature |> dplyr::filter(signalBlankRatio %in% TRUE) %>% dplyr::select(IDintern)), " Signals were removed according to the Signal to blank ratio of ",NOISE,"."))
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
@@ -798,7 +798,7 @@ AssessLinearity <- function(
     logr::put(paste0(data.table::uniqueN(conflictBatches$ID), " ", Compounds, " were excluded, because they do not show repeatable ", Series, "."))
     logr::put(paste0("Final Data set with ", data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, ID]), " ", Compounds,
             " and ", data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, Batch]), " Batch(es) -> ",
-            data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, groupIndices]), " ", Series,".\n"))
+            data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, groupIndices]), " ", Series,"."))
 
   }
 
@@ -810,7 +810,7 @@ AssessLinearity <- function(
     logr::put("Back calculation of concentration for the concentration series signals")
     Y <- ifelse(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y), "Y_trans", COLNAMES[["Y"]])
     processingFeature$xfactor <- round(processingFeature$X/processingFeature[[COLNAMES[["X"]]]],3)
-    processingGroup <- dplyr::right_join(processingGroup, unique(processingFeature[,c("groupIndices", "xfactor")]), by = "groupIndices")
+    processingGroup <- dplyr::full_join(processingGroup, unique(processingFeature[,c("groupIndices", "xfactor")]), by = "groupIndices")
     processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y)
 
     table.backcalc <- processingFeature[,c(1:9)]
@@ -832,7 +832,7 @@ AssessLinearity <- function(
 
 
     logr::put(paste("Concentration Back calculation", ":"))
-    logr::put(print(t, n = nrow(t)))
+    logr::put(t, n = nrow(t))
 
 
 

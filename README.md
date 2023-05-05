@@ -116,7 +116,7 @@ The example data set is an targeted data set with 34 metabolites measured in two
 -   884 Reference QC signals (34 metabolites a two batches a 13 repeats)
 -   3434 biological sample signals ( 34 metabolites a 101 patients)
 
-The 3434 biological samples were randomly assigned to either statistical group " healthy" (n = 1653) or "patient" (n = 1781)
+The 101 biological samples were randomly assigned to either statistical group "control" (n = 65) or "patient" (n = 36)
 
 ``` r
 library(MSlineaR)

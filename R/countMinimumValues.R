@@ -55,8 +55,8 @@ checkLength <- function(step, processingGroup, processingFeature, Compounds,
   nReplicatesNew <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("Batch"))
   nSeriesNew <- data.table::uniqueN(processingGroup[get(peaksNew) %in% TRUE], by = c("groupIndices"))
 
-  logr::put(paste0("Removed ", nSeriesOld - nSeriesNew, " ", Series, " with less than ", MIN_FEATURE, " Signals.","\n",
-                 "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series),"\n--------------------------------------------------------\n")
+  logr::put(paste0("Removed ", nSeriesOld - nSeriesNew, " ", Series, " with less than ", MIN_FEATURE, " Signals."))
+  logr::put(paste0("Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series))
 
   stopifnot(exprs = {
     "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[get(peaksNew) %in% FALSE], by = c("ID")) > 0
