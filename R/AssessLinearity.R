@@ -147,8 +147,7 @@ AssessLinearity <- function(
     #output
     get_output = c(TRUE, FALSE)[1],
     output_name = NULL,
-    which_output = c("all","R_object", "allCurveSignal", "allCurveFeature",
-                     "filteredCurveSignal", "allBioSampleSignal", "filteredBioSampleSignal", "plots")[1],
+    which_output = c("all","R_object", "DilutionCurves", "BiologicalSamples", "Plots")[1],
     output_dir = NULL
 ) {
 
@@ -788,7 +787,7 @@ AssessLinearity <- function(
     processingFeature$Y_allBatches <- processingFeature$Y_LR
 
     if(BATCH_HARMONIZATION == TRUE){
-      processingFeature[groupIndices %in% conflictBatches$groupIndices, Y_allBatches := NA]
+      processingFeature[groupIndices %in% conflictBatches$groupIndices, Y_allBatches := FALSE]
       processingFeature[groupIndices %in% conflictBatches$groupIndices, color := "grey"]
       }
 
@@ -813,9 +812,10 @@ AssessLinearity <- function(
     processingGroup <- dplyr::full_join(processingGroup, unique(processingFeature[,c("groupIndices", "xfactor")]), by = "groupIndices")
     processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y)
 
-    table.backcalc <- processingFeature[,c(1:9)]
-    table.backcalc$ConcentrationLR <- processingFeature$ConcentrationLR
-    table.backcalc$Status_LR <- processingFeature$Status_LR
+    table.backcalc.all <- processingFeature[processingFeature$ID %in% processingGroup$ID[processingGroup$enoughPeak_allBatches %in% TRUE]]
+    table.backcalc <- table.backcalc.all[,1:9]
+    table.backcalc$ConcentrationLR <- table.backcalc.all$ConcentrationLR
+    table.backcalc$Status_LR <- table.backcalc.all$Status_LR
     table.backcalc$precision <- abs(table.backcalc$ConcentrationLR*100/table.backcalc[[COLNAMES[["X"]]]] -100)
 
     t1 <- table.backcalc |> dplyr::group_by(ID, Batch) |>
@@ -870,7 +870,14 @@ AssessLinearity <- function(
       SampleFeature  <- getLRstatus(dats = SampleFeature, datCal = processingGroup,y =  column_Y_sample)
         #data_Sample$Status_LR <-  data.table::between(lower = data_Sample$LRStartY, x = data_Sample[, c("Area.CorrDrift")], upper = data_Sample$LREndY, NAbounds = NA)
 
+      SampleFeature[groupIndices %in% conflictBatches$groupIndices,
+                    ':=' (LRFlag = "notEnoughPeaksInAllBatches",
+                            Status_LR = FALSE)]
+
+
     }
+
+
 
 
 
@@ -881,7 +888,7 @@ AssessLinearity <- function(
 
   if(!is.null(QC)){
 
-    logr::sep("check Qc samples")
+    logr::sep("check QC samples")
     # rlang::inform("
     #               --------------------------------------------------------
     #               \tcheck QC samples
@@ -954,153 +961,69 @@ AssessLinearity <- function(
   #2) full table dilution/concentration curves - Feature based
   output2 <- processingGroup
 
-  #3) filtered table dilution/concentration curves - Signal based (high quality)
-  output3 <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_",step)) %in% TRUE, groupIndices]]
-  output3 <- output3 |> dplyr::group_by(groupIndices) |> dplyr::filter(!all(is.na(Y_allBatches)))
+
+  # #3) filtered table dilution/concentration curves - Signal based (high quality)
+  # output3 <- processingFeature[groupIndices %in% processingGroup[
+  #   get(paste0("enoughPeaks_",step)) %in% TRUE, groupIndices]]
+  # output3 <- output3 |> dplyr::group_by(groupIndices) |> dplyr::filter(!all(is.na(Y_allBatches)))
+  #
 
   #4) full table biological Samples - Signal based
-  output4 <- SampleFeature
+  output3 <- SampleFeature
 
-  #5) filtered table biological Samples - Signal based (high quality)
-  output5 <- SampleFeature[Status_LR %in% TRUE]
+  # #5) filtered table biological Samples - Signal based (high quality)
+  # output5 <- SampleFeature |> dplyr::filter(get(COLNAMES[["ID"]]) %in% unlist(unique(output3[COLNAMES[["ID"]]])))
 
-  #6) table per Compound
-
-  output6 <- SampleFeature |>
+  #6) summary table
+  output4 <- SampleFeature |>
     #subset(get(COLNAMES[["Sample_type"]]) %in% QC) |>
-    dplyr::group_by(ID = get(COLNAMES[["ID"]]), Batch = get(COLNAMES[["Batch"]]), "Type" = get(COLNAMES[["Sample_type"]])) |>
+    dplyr::group_by(ID = get(COLNAMES[["ID"]]),
+                    Batch = get(COLNAMES[["Batch"]]),
+                    Type = get(COLNAMES[["Sample_type"]]),
+                    Class = get(COLNAMES[["Class"]])) |>
     dplyr::summarize(
       'LR_TRUE' = sum(Status_LR),
       'LR_TRUE[%]' = round(sum(Status_LR)/length(Status_LR)*100,2),
       rsd_all = round(sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100,2),
       rsd_LR_TRUE = round(sd(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T)/mean(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T) * 100,2),
-    ) |>
-
-    tidyr::pivot_wider(names_from = c(Type),
-                       values_from = c('LR_TRUE', 'LR_TRUE[%]', rsd_all, rsd_LR_TRUE)
-    ) |>
-
-    dplyr::select(tidyr::contains(unique(SampleFeature$Sample.Type)) )
-
-
-  htmloutput6 <-  DT::datatable(output6) %>%
-    DT::formatStyle(dplyr::select(output6,tidyr::contains("%"))|> colnames(),
-                backgroundColor = DT::styleInterval(c(20,80), c('red','yellow', 'green'))
-    )
-  htmlwidgets::saveWidget(htmloutput6,
-                          file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_summary.html" , sep = "_")),
-                          selfcontained = TRUE)
-
-  output6.1 <- SampleFeature |>
-    subset(get(COLNAMES[["Sample_type"]]) %in% SAMPLE ) |>
-    dplyr::group_by(ID = get(COLNAMES[["ID"]]), Batch = get(COLNAMES[["Batch"]])) |>
-    dplyr::select(Sample_ID = all_of(SAMPLE_ID), Y = all_of(Y_SAMPLE)) |>
-    tidyr::pivot_wider(names_from = Sample_ID,
-                       values_from = Y
-    ) |>
-    dplyr::full_join(output6 |> dplyr::select(ID, Batch, 'LR_TRUE[%]_Sample'), . , by = c("ID", "Batch")) |>
-    dplyr::select("ID", "Batch", "LR_TRUE[%]_Sample", everything())
-
-  htmloutput6.1 <-  DT::datatable(output6.1, filter = 'top',
-                              extensions = 'Buttons', options = list(
-                                pageLength = nrow(output6.1),
-                                dom = 'Bfrtip',
-                                buttons = c('copy', 'csv', 'excel', 'print')
-                              )) %>%
-    DT::formatStyle("LR_TRUE[%]_Sample",
-                backgroundColor = DT::styleInterval(c(20,80), c('red','yellow', 'green'))
-    )
-  htmlwidgets::saveWidget(htmloutput6.1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_biol_samples.html" , sep = "_")), selfcontained = FALSE)
+     ) #|>
+    #
+    # tidyr::pivot_wider(names_from = c(Type),
+    #                    values_from = c('LR_TRUE', 'LR_TRUE[%]', rsd_all, rsd_LR_TRUE)
+    # ) |>
+    #
+    # dplyr::select(tidyr::contains(unique(SampleFeature$Sample.Type)) )
 
 
-
-
-
-  #7) bar plot summary per dilution/concentration
-
-  summary_barplot <- plot_Barplot_Summary(inputData_Series = output1, COLNAMES = COLNAMES, X = Xraw, Y = Yraw,
-                                          output_dir = IMG_OUTPUT_DIR)
-  logr::put("summary_barplot was created")
-
-  #8) scatter plot
-  FDS_scatterplot <- plot_FDS(inputData_Series = output1,
-                              inputData_BioSamples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
-                              inputData_QC = SampleQC,
-                              COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
-                              Series = Series, output_dir = IMG_OUTPUT_DIR
-  )
-
-  logr::put("Scatterplot was created")
-  #9) bar plot summary for all samples
-
-
-  summary_barplot_all <- plot_Barplot_Summary_Sample(inputData_Samples = output4,
-                                                        COLNAMES = COLNAMES,
-                                                        X = Xraw, Y = Yraw,
-                                                        output_dir = IMG_OUTPUT_DIR,
-                                                     group = "Batch",
-                                                     outputfileName = c("Summary_Barplot_All"))
-
-  logr::put("summary_barplot_all was created")
-
-  #10) bar plot summary for biological samples
-
-  summary_barplot_sample <- plot_Barplot_Summary_Sample(inputData_Samples = output4 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
-                                                     COLNAMES = COLNAMES,
-                                                     X = Xraw, Y = Yraw,
-                                                     output_dir = IMG_OUTPUT_DIR,
-                                                     group = "Class",
-                                                     outputfileName = c("Summary_Barplot_Samples"))
-
-  logr::put("summary_barplot_sample was created")
-
-
-  #11) barplot summary for QC samples
-
-  summary_barplot_QC <- plot_Barplot_Summary_Sample(inputData_Samples = SampleQC,
-                                                        COLNAMES = COLNAMES,
-                                                        X = Xraw, Y = Yraw,
-                                                        output_dir = IMG_OUTPUT_DIR,
-                                                    group = "Sample.Type",
-                                                    outputfileName = c("Summary_Barplot_QC"))
-
-  logr::put("summary_barplot_sample was created")
-
-
-
-  data.table::setnames(skip_absent = T, processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"),
-                       c(COLNAMES[["ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
-
-  # <!-- processList$SummaryAll <- getAllList(processList) -->
+  # htmloutput6 <-  DT::datatable(output6) %>%
+  #   DT::formatStyle(dplyr::select(output6,tidyr::contains("%"))|> colnames(),
+  #               backgroundColor = DT::styleInterval(c(20,80), c('red','yellow', 'green'))
+  #   )
+  # htmlwidgets::saveWidget(htmloutput6,
+  #                         file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_summary.html" , sep = "_")),
+  #                         selfcontained = TRUE)
   #
+  # output6.1 <- SampleFeature |>
+  #   subset(get(COLNAMES[["Sample_type"]]) %in% SAMPLE ) |>
+  #   dplyr::group_by(ID = get(COLNAMES[["ID"]]), Batch = get(COLNAMES[["Batch"]])) |>
+  #   dplyr::select(Sample_ID = all_of(SAMPLE_ID), Y = all_of(Y_SAMPLE)) |>
+  #   tidyr::pivot_wider(names_from = Sample_ID,
+  #                      values_from = Y
+  #   ) |>
+  #   dplyr::full_join(output6 |> dplyr::select(ID, Batch, 'LR_TRUE[%]_Sample'), . , by = c("ID", "Batch")) |>
+  #   dplyr::select("ID", "Batch", "LR_TRUE[%]_Sample", everything())
+  #
+  # htmloutput6.1 <-  DT::datatable(output6.1, filter = 'top',
+  #                             extensions = 'Buttons', options = list(
+  #                               pageLength = nrow(output6.1),
+  #                               dom = 'Bfrtip',
+  #                               buttons = c('copy', 'csv', 'excel', 'print')
+  #                             )) %>%
+  #   DT::formatStyle("LR_TRUE[%]_Sample",
+  #               backgroundColor = DT::styleInterval(c(20,80), c('red','yellow', 'green'))
+  #   )
+  # htmlwidgets::saveWidget(htmloutput6.1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_biol_samples.html" , sep = "_")), selfcontained = FALSE)
 
-
-
-  processList <- list(
-    "All_DilutionCurves_Signals" = output1,
-    "All_DilutionCurves_Features" = output2,
-    "High_Quality_DilutionCurves_Signals" = output3,
-    "All_Samples_Signals" = output4,
-    "High_Quality_Samples_Signals" = output5,
-    "Summary_per_Compound" = output6,
-    "dataModel_FOD" = dataFODModel,
-    "dataModel_SOD" = dataSODModel#,
-    # "Parameters" = list(
-    #   data = DAT,
-    #   COLNAMES = COLNAMES,
-    #   nCORE = nCORE,
-    #   LOG_TRANSFORM = LOG_TRANSFORM,
-    #   R2min = R2min,
-    #   res = res,
-    #   #calcFor = calcFor,
-    #   #SRES = SRES,
-    #   #R2FOD = R2FOD,
-    #   #R2SOD = R2SOD,
-    #   MIN_FEATURE = MIN_FEATURE,
-    #   X = X,
-    #   Y = Y
-    # )
-  )
 
   if(TRANSFORM_Y %in% TRUE){
     colnames(output1)[which(colnames(output1) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
@@ -1122,12 +1045,117 @@ AssessLinearity <- function(
 
 
   if(GET_OUTPUT %in% TRUE){
-    if(any(c("allCurveSignal", "all") %in% which_output)) write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_DilutionCurves_Signals.csv" , sep = "_")))
-    if(any(c("allCurveFeature", "all") %in% which_output)) write.csv(output2, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_DilutionCurves_Features.csv" , sep = "_")))
-    if(any(c("filteredCurveSignal", "all") %in% which_output)) write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "High_Quality_DilutionCurves_Signals.csv" , sep = "_")))
-    if(any(c("allBioSampleSignal", "all") %in% which_output)) write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "All_Samples_Signals.csv" , sep = "_")))
-    if(any(c("filteredBioSampleSignal", "all") %in% which_output)) write.csv(output5, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "High_Quality_Samples_Signals.csv" , sep = "_")))
+
+    if(any(c("DilutionCurves", "all") %in% which_output)){
+    writexl::write_xlsx(x = list(Signals = output1, Features = output2),
+                        path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,".xlsx")))}
+
+    if(any(c("BiologicalSamples", "all") %in% which_output)){
+      writexl::write_xlsx(x = list(Signals = output3, summary = output4),
+                          path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples.xlsx")))}
+
   }
+
+  ## Plots
+
+  #7) bar plot summary per dilution/concentration
+
+  printPlot <- ifelse(any(c("Plots", "all") %in% which_output), TRUE, FALSE)
+
+  summary_barplot <- plot_Barplot_Summary(printPDF = printPlot,
+                                          inputData_Series = output1,
+                                          COLNAMES = COLNAMES,
+                                          X = Xraw, Y = Yraw,
+                                          output_dir = IMG_OUTPUT_DIR)
+  logr::put("summary_barplot was created")
+
+  #8) scatter plot
+  FDS_scatterplot <- plot_FDS(printPDF = printPlot,
+                              inputData_Series = output1,
+                              inputData_BioSamples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+                              inputData_QC = SampleQC,
+                              COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
+                              Series = Series, output_dir = IMG_OUTPUT_DIR
+  )
+
+  logr::put("Scatterplot was created")
+  #9) bar plot summary for all samples
+
+
+  summary_barplot_all <- plot_Barplot_Summary_Sample(printPDF = printPlot,
+                                                     inputData_Samples = output3,
+                                                        COLNAMES = COLNAMES,
+                                                        X = Xraw, Y = Yraw,
+                                                        output_dir = IMG_OUTPUT_DIR,
+                                                     group = "Batch",
+                                                     ordered = "Sample.Type",
+                                                     outputfileName = c("Summary_Barplot_All"))
+
+  logr::put("summary_barplot_all was created")
+
+  #10) bar plot summary for biological samples
+
+  summary_barplot_sample <- plot_Barplot_Summary_Sample(printPDF = printPlot,
+                                                        inputData_Samples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+                                                        COLNAMES = COLNAMES,
+                                                        X = Xraw, Y = Yraw,
+                                                        output_dir = IMG_OUTPUT_DIR,
+                                                        group = "Batch",
+                                                        fill = "Class",
+                                                        ordered = "Class",
+                                                        outputfileName = c("Summary_Barplot_Samples"))
+
+  logr::put("summary_barplot_sample was created")
+
+
+  #11) barplot summary for QC samples
+
+  summary_barplot_QC <- plot_Barplot_Summary_Sample(printPDF = printPlot,
+                                                    inputData_Samples = SampleQC,
+                                                    COLNAMES = COLNAMES,
+                                                    X = Xraw, Y = Yraw,
+                                                    output_dir = IMG_OUTPUT_DIR,
+                                                    group = "Batch",
+                                                    fill = "Sample.Type",
+                                                    ordered = "Sample.Type",
+                                                    outputfileName = c("Summary_Barplot_QC"))
+
+  logr::put("summary_barplot_sample was created")
+
+
+
+  data.table::setnames(skip_absent = T, processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"),
+                       c(COLNAMES[["ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
+
+  # <!-- processList$SummaryAll <- getAllList(processList) -->
+  #
+
+
+
+  processList <- list(
+    "All_DilutionCurves_Signals" = output1,
+    "All_DilutionCurves_Features" = output2,
+    "All_Samples_Signals" = output3,
+    "Summary_per_Compound" = output4,
+    "dataModel_FOD" = dataFODModel,
+    "dataModel_SOD" = dataSODModel#,
+    # "Parameters" = list(
+    #   data = DAT,
+    #   COLNAMES = COLNAMES,
+    #   nCORE = nCORE,
+    #   LOG_TRANSFORM = LOG_TRANSFORM,
+    #   R2min = R2min,
+    #   res = res,
+    #   #calcFor = calcFor,
+    #   #SRES = SRES,
+    #   #R2FOD = R2FOD,
+    #   #R2SOD = R2SOD,
+    #   MIN_FEATURE = MIN_FEATURE,
+    #   X = X,
+    #   Y = Y
+    # )
+  )
+
 
   #sink()
   log_close()

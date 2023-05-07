@@ -380,7 +380,9 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
                                         printPDF = TRUE, GroupIndices = "all",  Feature = "all",
                                         outputfileName = c("Summary_Barplot_Samples"),
                                         COLNAMES, X, Y , output_dir,
-                                        group = "Sample.Type"){
+                                        group = "Sample.Type",
+                                        fill = "Batch",
+                                        ordered = "Sample_ID"){
 
 
   assertthat::not_empty(inputData_Samples)
@@ -399,41 +401,44 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
     dplyr::summarize(
       Missing = sum(is.na(y), na.rm = T),
       LR_TRUE = sum(Status_LR %in% TRUE, na.rm = T),
-      LR_FALSE = sum(Status_LR %in% FALSE, na.rm = T)
+      LR_FALSE = sum(Status_LR %in% FALSE, na.rm = T),
+      LR_TRUE_perc = LR_TRUE /(Missing + LR_TRUE + LR_FALSE)
     ) |>
     tidyr::pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:4))
 
 
 
-  data_Signals_sample_summary$Type <- factor(data_Signals_sample_summary$Type, levels = rev(c("LR_TRUE", "LR_FALSE", "Missing", "OutlierFOD", "OutlierSOD", "Trim")))
-  data_Signals_sample_summary <- data_Signals_sample_summary |> dplyr::filter(count > 0)
-  setorder(data_Signals_sample_summary, Sample.Type)
+  data_Signals_sample_summary$Type <- factor(data_Signals_sample_summary$Type, levels = rev(c("LR_TRUE_perc","LR_TRUE", "LR_FALSE", "Missing")))
+  #data_Signals_sample_summary <- data_Signals_sample_summary |> dplyr::filter(count > 0)
+  setorderv(data_Signals_sample_summary, ordered)
   data_Signals_sample_summary$Sample_ID <- factor(data_Signals_sample_summary$Sample_ID, levels = unique(data_Signals_sample_summary$Sample_ID))
 
 
   plot_Summary_samples <-
-    ggplot2::ggplot(data = data_Signals_sample_summary |> dplyr::filter(Type %in% "LR_TRUE"), ggplot2::aes(x = Sample_ID, y = count, label = count, fill = Batch)) +
+    ggplot2::ggplot(data = data_Signals_sample_summary |> dplyr::filter(Type %in% "LR_TRUE_perc"),
+                    ggplot2::aes(x = Sample_ID, y = count, label = count, fill = get(fill))) +
     ggplot2::geom_bar(stat="identity",
                       position="dodge",
                       #position="fill",
                       width = 0.5 ) +
     #geom_text(size = 3, position = position_fill(vjust = 0.5)) +
-    ggplot2::facet_grid(. ~ get(group), scales = "free_x", space = "free_x")
+    ggplot2::facet_wrap(. ~ get(group), scales = "free_x", ncol = 1 )
 
   plot_Summary_samples <- plot_Summary_samples +
     #scale_x_continuous(breaks = data_Signals$DilutionPoint) +
-    #ggplot2:: scale_y_continuous(labels = scales::percent) +
+    ggplot2:: scale_y_continuous(labels = scales::percent, name = "Signals within linear Range[%]", limits = c(0,1)) +
     ggplot2::scale_fill_manual(name = "", values = c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
-    ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
+    ggplot2::theme(panel.grid.major.x =ggplot2::element_blank()) +
     ggplot2:: theme(panel.background=ggplot2::element_blank()) +
     ggplot2:: theme(axis.text.x = ggplot2::element_text(angle=90)) +
-    ggplot2:: theme(axis.line=ggplot2::element_line())
+    ggplot2:: theme(axis.line=ggplot2::element_line()) #+
+    #ggplot2::theme(legend.position = "none")
 
   if(printPDF %in% TRUE){
 
-    pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)}
+    pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 4.5 * data.table::uniqueN(data_Signals_sample_summary$Batch ))}
 
 
   plot( plot_Summary_samples)

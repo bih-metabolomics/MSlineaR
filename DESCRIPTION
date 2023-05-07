@@ -31,7 +31,8 @@ Imports:
     DescTools,
     ggplot2,
     DT,
-    logr
+    logr,
+    writexl
 Suggests: 
     testthat,
     tidyselect,

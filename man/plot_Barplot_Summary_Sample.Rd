@@ -13,7 +13,10 @@ plot_Barplot_Summary_Sample(
   COLNAMES,
   X,
   Y,
-  output_dir
+  output_dir,
+  group = "Sample.Type",
+  fill = "Batch",
+  ordered = "Sample_ID"
 )
 }
 \arguments{

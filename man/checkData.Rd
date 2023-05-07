@@ -36,7 +36,8 @@ checkData(
   CAL_CONC = parent.frame()$CAL_CONC,
   GET_LR_STATUS = parent.frame()$GET_LR_STATUS,
   nCORE = parent.frame()$nCORE,
-  GET_OUTPUT = parent.frame()$GET_OUTPUT
+  GET_OUTPUT = parent.frame()$GET_OUTPUT,
+  IMG_OUTPUT_DIR = parent.frame()$IMG_OUTPUT_DIR
 )
 }
 \arguments{
