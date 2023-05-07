@@ -69,9 +69,7 @@ MS_filterSamples <- function(
         dplyr::filter(Filter >= filter.calc.x.Batch) |>
         dplyr::select(ID) |> unique()
     }
-  }
-
-  if(filter.type %in% "Class"){
+  }else if(filter.type %in% "Class"){
 
     ClassSummary <- datSummary |>
       dplyr::group_by(ID, Class) |>
@@ -98,9 +96,7 @@ MS_filterSamples <- function(
         dplyr::filter(Filter >= filter.calc.x.Batch) |>
         dplyr::select(ID) |> unique()
     }
-  }
-
-  if(filter.type %in% "Batch_Class"){
+  }else if(filter.type %in% "Batch_Class"){
 
     BatchClassSummary <- datSummary |>
       dplyr::group_by(ID, Batch,Class) |>

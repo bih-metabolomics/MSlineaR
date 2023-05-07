@@ -945,7 +945,9 @@ MS_AssessLinearity <- function(
                              by = colnames(cutoff))
 
 
-  processingFeature <- dplyr::full_join(processingFeature, cutoff, by = colnames(cutoff))
+  processingFeature <- dplyr::full_join(processingFeature, cutoff, by = colnames(cutoff)) |>
+    tidyr::drop_na(IDintern)
+
 
   assertthat::are_equal(nrow(processingFeature), nrow(processingFeatureCal))
 
