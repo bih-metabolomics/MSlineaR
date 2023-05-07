@@ -871,8 +871,7 @@ AssessLinearity <- function(
         #data_Sample$Status_LR <-  data.table::between(lower = data_Sample$LRStartY, x = data_Sample[, c("Area.CorrDrift")], upper = data_Sample$LREndY, NAbounds = NA)
 
       SampleFeature[groupIndices %in% conflictBatches$groupIndices,
-                    ':=' (LRFlag = "notEnoughPeaksInAllBatches",
-                            Status_LR = FALSE)]
+                    ':=' (LRFlag = "notEnoughPeaksInAllBatches")]
 
 
     }
@@ -980,8 +979,10 @@ AssessLinearity <- function(
     dplyr::group_by(ID = get(COLNAMES[["ID"]]),
                     Batch = get(COLNAMES[["Batch"]]),
                     Type = get(COLNAMES[["Sample_type"]]),
-                    Class = get(COLNAMES[["Class"]])) |>
+                    Class = get(COLNAMES[["Class"]]),
+                    LRFlag) |>
     dplyr::summarize(
+      'Signals' = length(Status_LR),
       'LR_TRUE' = sum(Status_LR),
       'LR_TRUE[%]' = round(sum(Status_LR)/length(Status_LR)*100,2),
       rsd_all = round(sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100,2),
