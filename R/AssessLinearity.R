@@ -1158,7 +1158,7 @@ AssessLinearity <- function(
 
 
   #sink()
-  log_close()
+  logr::log_close()
 
   return(processList)
 
