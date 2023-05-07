@@ -86,7 +86,7 @@
 #'
 #' @examples
 #'
-AssessLinearity <- function(
+MS_AssessLinearity <- function(
     analysis_type = c("targeted", "untargeted", NULL)[3],
 
     #input_data
