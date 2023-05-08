@@ -18,7 +18,8 @@
 #' @param column_X String; Column name of the independent variable,
 #'  e.g. Concentration, Dilution,... . Highest number should be the highest concentration or lowest dilution.
 #'  For untargeted data use a vector with consecutive numbers, e.g. c(1, 2, 3 , ...) with 1 beeing the highest dilution
-#' @param dilution_factor
+#' @param dilution_factor Numeric, distance between the dilution/concentration steps,
+#'  e.g. dilution_factor = 2 means, that the concentration of dilution 1 is half the concentration of dilution 2
 #' @param column_Y String; Column name of the dependent variable,
 #'  e.g. Intensity, Area,..
 #' @param column_class_sample String, Column name used for statistical classes
@@ -27,6 +28,7 @@
 #' String; Which transformation should be used for the independent variable (concentration/dilution) or/and
 #' the dependent variable of the serial diluted/concentrated samples?
 #' Default for both is "log". If no transformation should be performed for one variable use NA.
+#' @param signal_blank_ratio Numeric,
 #' @param first_outlier_detection,second_outlier_detection Boolean;
 #' Should an outlier detection be performed before/after the exclusion of
 #' nonlinear portions at the beginning/ end of the concentration/dilution range?
@@ -272,13 +274,13 @@ MS_AssessLinearity <- function(
                file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[4],".pdf")))))){
 
 
-        imgexist <- which(c(file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[1],".pdf"))),
+        img.exist <- which(c(file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[1],".pdf"))),
                             file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[2],".pdf"))),
                             file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[3],".pdf"))),
                             file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[4],".pdf")))))
 
 
-        check <- sapply(imgexist, function(i) {file.rename(from = file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[i],".pdf")),
+        check <- sapply(img.exist, function(i) {file.rename(from = file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[i],".pdf")),
                                                               to = file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[i],".pdf")) )
         })
 
