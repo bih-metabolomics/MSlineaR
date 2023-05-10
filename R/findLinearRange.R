@@ -153,9 +153,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
           dat$IsLinear = FALSE
           dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
           dat$color[dat$IsLinear %in% FALSE] <- "black"
-          dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
-          dat$abline[dat$IsLinear %in% TRUE] = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))
+          dat$R2 <- NA
+          dat$abline <- NA
 
+          tmpGroup$linear = FALSE
           tmpGroup$LRStart = NA
           tmpGroup$LRStartY = NA
           tmpGroup$LRStartX =  NA
