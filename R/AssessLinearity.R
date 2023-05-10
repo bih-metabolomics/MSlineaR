@@ -1052,12 +1052,19 @@ MS_AssessLinearity <- function(
   if(GET_OUTPUT %in% TRUE){
 
     if(any(c("DilutionCurves", "all") %in% which_output)){
-    writexl::write_xlsx(x = list(Signals = output1, Features = output2),
-                        path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,".xlsx")))}
+      write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_signalBased.xlsx")))
+      write.csv(output2, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_featureBased.xlsx")))
+    # writexl::write_xlsx(x = list(Signals = output1, Features = output2),
+    #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,".xlsx")))
+      }
 
     if(any(c("BiologicalSamples", "all") %in% which_output)){
-      writexl::write_xlsx(x = list(Signals = output3, summary = output4),
-                          path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples.xlsx")))}
+      write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_signalBased.xlsx")))
+      write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_summary.xlsx")))
+
+      # writexl::write_xlsx(x = list(Signals = output3, summary = output4),
+      #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples.xlsx")))
+      }
 
   }
 
