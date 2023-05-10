@@ -913,7 +913,7 @@ MS_AssessLinearity <- function(
 
 
       rsd_before <- SampleQC |>
-        dplyr::group_by(Batch, Compound, Sample.Type = get(COLNAMES[["Sample_type"]])) |>
+        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
         dplyr::summarize(.groups = "keep", rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
@@ -922,7 +922,7 @@ MS_AssessLinearity <- function(
 
       rsd_after <- SampleQC |>
         dplyr::filter(Status_LR %in% TRUE) |>
-        dplyr::group_by(Batch, Compound, Sample.Type = get(COLNAMES[["Sample_type"]])) |>
+        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
         dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
