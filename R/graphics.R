@@ -71,8 +71,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   y <- Y
 
   data.table::setDT(inputData_Series)
-  data.table::setDT(inputData_BioSamples)
-  data.table::setDT(inputData_QC)
+  if(!is.null(inputData_BioSamples))data.table::setDT(inputData_BioSamples)
+  if(!is.null(inputData_QC))data.table::setDT(inputData_QC)
   #data.table::setDT(inputData_Blank)
 
 
@@ -82,14 +82,18 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   data_Signal$ID = data_Signal[[ID]]
   data_Signal$Batch = data_Signal[[Col_Batch]]
 
-  QCs = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
-                        x = -c(3 : (length(unique(inputData_QC[[Sample.Type]])) + 2))
-  )
+
+  if(!is.null(inputData_QC)){
+    QCs = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
+                     x = -c(3 : (length(unique(inputData_QC[[Sample.Type]])) + 2)))
 
 
 
 
-  data_Signal <- dplyr::full_join(data_Signal, QCs, by = "Sample.Type")
+
+                     data_Signal <- dplyr::full_join(data_Signal, QCs, by = "Sample.Type")
+
+    }
 
   data.table::setorderv(data_Signal, ID)
 
@@ -115,9 +119,9 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       nrRow = 5
     }
   }
-
-    nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
-    npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
+  nrRow = 10
+  nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
+  npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
 
 
   for(page in 1:npage) {
