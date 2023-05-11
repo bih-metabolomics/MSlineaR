@@ -59,8 +59,8 @@ checkLength <- function(step, processingGroup, processingFeature, Compounds,
   logr::put(paste0("Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series))
 
   stopifnot(exprs = {
-    "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[get(peaksNew) %in% FALSE], by = c("ID")) > 0
-    "all Dilution/Concentration-Series were removed" = nSeriesNew - data.table::uniqueN(processingGroup[get(peaksNew) %in% FALSE], by = c("groupIndices")) > 0
+    "all Compounds were removed" = nCompoundsNew  > 0
+    "all Dilution/Concentration-Series were removed" = nSeriesNew > 0
   })
 
   cutoff <- processingFeature[groupIndices %in% processingGroup[get(peaksNew) %in% FALSE, groupIndices]]
