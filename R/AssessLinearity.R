@@ -624,7 +624,7 @@ MS_AssessLinearity <- function(
     # check length of points
     checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
     processingFeature <- checkData[[1]]
-    cutoffnew <- checkData [[2]]
+    cutoffNew <- checkData [[2]]
 
     cutoff <- dplyr::full_join(cutoff, cutoffNew, by = colnames(cutoff))
 
@@ -685,7 +685,7 @@ MS_AssessLinearity <- function(
     # check length of points
     checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
     processingFeature <- checkData[[1]]
-    cutoffnew <- checkData [[2]]
+    cutoffNew <- checkData [[2]]
 
     cutoff <- dplyr::full_join(cutoff, cutoffNew, by = colnames(cutoff))
 
