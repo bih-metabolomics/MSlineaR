@@ -97,7 +97,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   if(any(Feature != "all" & Feature != "")) data_Signal <- data_Signal[get(ID) %in% Feature]
   if(Feature %in% "all" & GroupIndices %in% "all" & data.table::uniqueN(data_Signal[[ID]]) > nrFeature){
     randomIDs <- sample(unique(data_Signal[[ID]]), nrFeature, replace = F)
-    data_Signal <- data_Signal[get(ID) %in% randomIDs]
+    data_Signal <- data_Signal[ID %in% randomIDs]
   }
 
 
@@ -255,7 +255,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     ggplot2::geom_text(ggplot2::aes(x = -3.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2, na.rm = TRUE)+
     ggplot2::scale_color_manual(name = "In linear Range:",
                        values = c("FALSE" = "red", "TRUE" = "purple")) +
-    ggplot2::scale_shape_manual(values = c(0, 2, 5, 1), breaks=rev(legend_order)) +
+    ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3), breaks=rev(legend_order)) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
     ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +

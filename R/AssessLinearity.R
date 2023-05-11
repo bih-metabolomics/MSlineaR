@@ -1030,43 +1030,6 @@ MS_AssessLinearity <- function(
   # htmlwidgets::saveWidget(htmloutput6.1, file.path( REPORT_OUTPUT_DIR, paste(Sys.Date(), PREFIX, "Compounds_biol_samples.html" , sep = "_")), selfcontained = FALSE)
 
 
-  if(TRANSFORM_Y %in% TRUE){
-    colnames(output1)[which(colnames(output1) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
-    colnames(output2)[which(colnames(output2) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
-    colnames(output3)[which(colnames(output3) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
-    colnames(output4)[which(colnames(output4) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
-    colnames(output5)[which(colnames(output5) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
-
-  }
-
-  if(TRANSFORM_X %in% TRUE){
-    colnames(output1)[which(colnames(output1) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
-    colnames(output2)[which(colnames(output2) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
-    colnames(output3)[which(colnames(output3) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
-    colnames(output4)[which(colnames(output4) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
-    colnames(output5)[which(colnames(output5) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
-
-  }
-
-
-  if(GET_OUTPUT %in% TRUE){
-
-    if(any(c("DilutionCurves", "all") %in% which_output)){
-      write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_signalBased.xlsx")))
-      write.csv(output2, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_featureBased.xlsx")))
-    # writexl::write_xlsx(x = list(Signals = output1, Features = output2),
-    #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,".xlsx")))
-      }
-
-    if(any(c("BiologicalSamples", "all") %in% which_output)){
-      write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_signalBased.xlsx")))
-      write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_summary.xlsx")))
-
-      # writexl::write_xlsx(x = list(Signals = output3, summary = output4),
-      #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples.xlsx")))
-      }
-
-  }
 
   ## Plots
 
@@ -1141,6 +1104,44 @@ MS_AssessLinearity <- function(
 
   # <!-- processList$SummaryAll <- getAllList(processList) -->
   #
+
+  if(any(colnames(processingFeature) %in% "Y_trans")){
+    colnames(output1)[which(colnames(output1) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+    colnames(output2)[which(colnames(output2) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+    colnames(output3)[which(colnames(output3) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+    colnames(output4)[which(colnames(output4) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+
+  }
+
+  if(any(colnames(processingFeature) %in% "X_trans")){
+    colnames(output1)[which(colnames(output1) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+    colnames(output2)[which(colnames(output2) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+    colnames(output3)[which(colnames(output3) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+    colnames(output4)[which(colnames(output4) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+
+  }
+
+
+  if(GET_OUTPUT %in% TRUE){
+
+    if(any(c("DilutionCurves", "all") %in% which_output)){
+      write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_signalBased.csv")))
+      write.csv(output2, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_featureBased.csv")))
+      # writexl::write_xlsx(x = list(Signals = output1, Features = output2),
+      #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,".xlsx")))
+    }
+
+    if(any(c("BiologicalSamples", "all") %in% which_output)){
+      write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_signalBased.csv")))
+      write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_summary.csv")))
+
+      # writexl::write_xlsx(x = list(Signals = output3, summary = output4),
+      #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples.xlsx")))
+    }
+
+  }
+
+
 
 
 
