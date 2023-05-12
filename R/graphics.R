@@ -59,7 +59,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
                      nrFeature = 50,
                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
                     outputfileName = c("Calibrationplot"), TRANSFORM_Y, inverse_y,
-                    COLNAMES, X, Y, Series, output_dir ){
+                    COLNAMES, X, Y, Series = "QC dilution Curves", output_dir ){
 
   assertthat::not_empty(inputData_Series)
 # LR_object,statusLinear = c(TRUE, FALSE),
@@ -125,7 +125,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
   for(page in 1:npage) {
-
+print(paste0(page, " of ", npage))
     data_Signals <- data_Signal#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
 
   plotlinearData <-
@@ -253,13 +253,16 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-
+  if(!is.null(inputData_BioSamples ) | !is.null(inputData_QC )){
 
   plotlinearData <-  plotlinearData +
     ggplot2::geom_text(ggplot2::aes(x = -3.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2, na.rm = TRUE)+
     ggplot2::scale_color_manual(name = "In linear Range:",
                        values = c("FALSE" = "red", "TRUE" = "purple")) +
-    ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3), breaks=rev(legend_order)) +
+    ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3), breaks=rev(legend_order))
+    }
+
+  plotlinearData <-  plotlinearData +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
     ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
