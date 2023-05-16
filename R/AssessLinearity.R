@@ -340,7 +340,7 @@ MS_AssessLinearity <- function(
   processingFeature <- data.table::copy(dataPrep)
 
   step <- 1
-  countList <- countMinimumValue(DAT = processingFeature,step = step,y = Y)
+  countList <- countMinimumValue(DAT = processingFeature,MIN_FEATURE,step = step,y = Y)
   processingFeature <- data.table::data.table(countList[[1]])
   processingGroup <- data.table::data.table(countList[[2]])
 

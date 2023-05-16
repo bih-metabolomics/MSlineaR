@@ -108,24 +108,13 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-  if(printPDF %in% TRUE){
 
-    #plotObj <- vector("list", npage)
-    if(data.table::uniqueN(data_Signal$Batch) <=2){
-      pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 9, height = 15)
-      nrRow = 10
-    }else {
-      pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
-      nrRow = 5
-    }
-  }
-  nrRow = 10
+  nrRow <- ifelse(data.table::uniqueN(data_Signal$Batch) <=2, 10, 5)
   nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
-  npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
+  #npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
 
 
-  for(page in 1:npage) {
-print(paste0(page, " of ", npage))
+
     data_Signals <- data_Signal#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
 
   plotlinearData <-
@@ -222,7 +211,7 @@ print(paste0(page, " of ", npage))
   if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
     plotlinearData <-  plotlinearData +
       ggforce::facet_grid_paginate(ID ~ Batch ,
-                                   scales = "free", ncol = nCol,nrow = nrRow, page = page )
+                                   scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
   }
 
 
@@ -274,10 +263,31 @@ print(paste0(page, " of ", npage))
            shape = ggplot2::guide_legend(order = 2))
 
 
-      print(plotlinearData)
+  if(printPDF %in% TRUE){
+
+    #plotObj <- vector("list", npage)
+    if(data.table::uniqueN(data_Signal$Batch) <=2){
+      pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 9, height = 15)
+      nrRow = 10
+    }else {
+      pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
+      nrRow = 5
+    }
+
+    n <- ggforce::n_pages(plotlinearData)
+
+    for(i in 1:n) {
+      print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
+                                                          scales = "free", ncol = nCol,nrow = nrRow, page = i ))
+      print(paste0(i, " of ", n))
+
+
+
+  }
+
+    dev.off()
 
     }
-  if(printPDF %in% TRUE){dev.off()}
 
   return(plotlinearData)
   }
