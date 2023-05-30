@@ -299,8 +299,8 @@ MS_AssessLinearity <- function(
 
 
   if(TRANSFORM %in% TRUE){
-    X <- ifelse(is.na(TRANSFORM_X), "X", "X_trans")
-    Y <- ifelse(is.na(TRANSFORM_Y), "Y", "Y_trans")
+    X <- ifelse(is.null(TRANSFORM_X), "X", "X_trans")
+    Y <- ifelse(is.null(TRANSFORM_Y), "Y", "Y_trans")
 
   } else{
     X <- "X"
