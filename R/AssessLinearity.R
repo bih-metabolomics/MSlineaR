@@ -24,10 +24,10 @@
 #'  e.g. Intensity, Area,..
 #' @param column_class_sample String, Column name used for statistical classes
 #' @param transform Boolean; Should the data be transformed? Default is `TRUE`.
-#' @param transform_x,transformy If `transform` is `TRUE`.
+#' @param transform_x,transform_y If `transform` is `TRUE`.
 #' String; Which transformation should be used for the independent variable (concentration/dilution) or/and
 #' the dependent variable of the serial diluted/concentrated samples?
-#' Default for both is "log". If no transformation should be performed for one variable use NA.
+#' Default for both is "log". If no transformation should be performed for one variable use NULL.
 #' @param signal_blank_ratio Numeric,
 #' @param first_outlier_detection,second_outlier_detection Boolean;
 #' Should an outlier detection be performed before/after the exclusion of
@@ -56,7 +56,7 @@
 #' Minimum number of points present in one serial diluted/concentrated series
 #' marked as linear to consider this signal as linear. Default to 6, according to EMA guidelines2022.
 #' @param LR_sd_res_factor Integer; points of serial diluted/concentrated series,
-#' which are lower than `LR_sd_res_factor` times residual standard deviation are considered as linear.
+#' which are less than `LR_sd_res_factor` times residual standard deviation are considered as linear.
 #' Default to 2.
 #' @param calculate_concentration Boolean; For targeted analysis. Should the
 #' concentration of samples in regard to the linear regression equation be calculated? Default is `TRUE`.

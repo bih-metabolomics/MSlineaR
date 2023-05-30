@@ -213,12 +213,12 @@ prepareData <- function(dat,
 
   processed$X = DILUTION_FACTOR^processed$DilutionPoint
 
-  if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_X)){
+  if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_X)){
     processed$X_trans = get(TRANSFORM_X)(processed$X)
     processed$X_trans[is.infinite(processed$X_trans)] <- NA
   }
 
-  if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
+  if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)){
     processed$Y_trans = get(TRANSFORM_Y)(processed$Y)
     processed$Y_trans[is.infinite(processed$Y_trans)] <- NA
   }
