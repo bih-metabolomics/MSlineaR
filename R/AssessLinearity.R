@@ -721,7 +721,7 @@ MS_AssessLinearity <- function(
   dataLinearRange <- my_fcn(
     #cl = myCluster,
     nCORE,
-    xs = 1: data.table::uniqueN(processingFeature$groupIndices),
+    xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
     inputData = processingFeature,
     func = findLinearRange,
     x = X,
@@ -856,7 +856,7 @@ MS_AssessLinearity <- function(
   #               --------------------------------------------------------\n")
     SampleFeature <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% SAMPLE]
 
-    if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
+    if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)){
       SampleFeature$Y_trans <- get(TRANSFORM_Y)(SampleFeature[[column_Y_sample]])
       SampleFeature$Y_trans[is.infinite(SampleFeature$Y_trans)] <- NA
       Y_SAMPLE <- "Y_trans"
@@ -905,7 +905,7 @@ MS_AssessLinearity <- function(
     }
 
 
-    if(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y)){
+    if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)){
       SampleQC$Y_trans <- get(TRANSFORM_Y)(SampleQC[[column_Y_sample]])
       SampleQC$Y_trans[is.infinite(SampleQC$Y_trans)] <- NA
       Y_SAMPLE <- "Y_trans"

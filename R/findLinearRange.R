@@ -38,10 +38,11 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
 
   ###use residuals
 
-  sd_residuals <- abs(sd_res_factor*sd(residuals(linearRange)[which(abs(residuals(linearRange)) < 1)]))
+  std_residuals <- residuals(linearRange)/sd(residuals(linearRange))
+  sd_residuals <- abs(sd_res_factor*sd(std_residuals[which(abs(std_residuals) < 1)]))
   if(sd_residuals < 1) sd_residuals <- 1
 
-  lr <- abs(residuals(linearRange)) < ceiling(sd_residuals*10)/10
+  lr <- abs(std_residuals) < ceiling(sd_residuals*10)/10
 
 
    consNDX <- rle(lr)
@@ -49,7 +50,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   consNDX$position <- cumsum(consNDX$length)
 
 
-  if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= min_feature) ){ #& any(consNDX$position[consNDX$values %in% TRUE] >= int50)
+  if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= min_feature)){ #& any(consNDX$position[consNDX$values %in% TRUE] >= int50)
 
     TRUEpos <- Position(function(fi) fi >= int50, consNDX$position[consNDX$values %in% TRUE], right = TRUE)
     maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE
@@ -78,7 +79,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
                 #modelFit = modelObject$fit,
                 #ablineLimit1 = limitup,
                 #ablineLimit2 = limitdown,
-                Residuals = residuals(linearRange)
+                Residuals = std_residuals
 
     )]
     dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
@@ -196,7 +197,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
                     #modelFit = modelObject$fit,
                     #ablineLimit1 = limitup,
                     #ablineLimit2 = limitdown,
-                    Residuals = residuals(linearRange),
+                    Residuals = std_residuals,
                     R2 = NA,
                     abline = NA
         )]
