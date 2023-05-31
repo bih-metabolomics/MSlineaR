@@ -369,8 +369,8 @@ MS_AssessLinearity <- function(
                  "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series,"."))
 
   stopifnot(exprs = {
-    "all Compounds were removed" = nCompoundsNew - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("ID")) > 0
-    "all Dilution/Concentration-Series were removed" = nSeriesNew - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("groupIndices")) > 0
+    "all Compounds were removed" = nCompounds - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("ID")) > 0
+    "all Dilution/Concentration-Series were removed" = nSeries - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("groupIndices")) > 0
   })
 
   cutoff <- processingFeature[groupIndices %in% processingGroup[enoughPeaks_1 %in% FALSE, groupIndices]]
