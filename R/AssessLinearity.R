@@ -809,7 +809,7 @@ MS_AssessLinearity <- function(
 
   if(TYPE %in% "targeted"){
     logr::put("Back calculation of concentration for the concentration series signals")
-    Y <- ifelse(TRANSFORM %in% TRUE & !is.na(TRANSFORM_Y), "Y_trans", COLNAMES[["Y"]])
+    Y <- ifelse(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y), "Y_trans", COLNAMES[["Y"]])
     processingFeature$xfactor <- round(processingFeature$X/processingFeature[[COLNAMES[["X"]]]],3)
     processingGroup <- dplyr::full_join(processingGroup, unique(processingFeature[,c("groupIndices", "xfactor")]), by = "groupIndices")
     processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y)
