@@ -198,12 +198,12 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   }
 
 
-
+if(!is.null(TRANSFORM_Y)){
   plotlinearData <- plotlinearData +
     ggplot2:: scale_y_continuous(name = "Area", labels = scales::trans_format(get(inverse_y)),
                                  limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
 
-
+}
 
 
 
