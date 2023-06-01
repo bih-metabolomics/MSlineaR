@@ -152,7 +152,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       Xinterend = data_Signals[[indipendent]][data_Signals$LREnd +1]
 
 
-    if(TRANSFORM_Y !="" & !is.null(TRANSFORM_Y)){
+    if(!is.null(TRANSFORM_Y)){
       Yinterstart = get(TRANSFORM_Y)(data_Signals$LRStartY)
       Yinterend = get(TRANSFORM_Y)(data_Signals$LREndY)
     } else{
