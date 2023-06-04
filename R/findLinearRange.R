@@ -33,13 +33,13 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   #we = NULL
 
 
-  linearRange <- lm(dat[[y]] ~ dat[[x]], weights = we)
+  linearRange <- lm(log(dat[[y]]) ~ dat[[x]], weights = we)
   ablineIntensity <- fitted(linearRange)
 
   ###use residuals
 
   std_residuals <- residuals(linearRange)/sd(residuals(linearRange))
-  sd_residuals <- abs(sd_res_factor*sd(std_residuals[which(abs(std_residuals) < 1)]))
+  sd_residuals <- abs(sd_res_factor*sd(std_residuals[which(abs(std_residuals) < 2)]))
   if(sd_residuals < 1) sd_residuals <- 1
 
   lr <- abs(std_residuals) < ceiling(sd_residuals*10)/10
