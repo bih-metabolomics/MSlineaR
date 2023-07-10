@@ -29,6 +29,7 @@ getLRstatus <- function(dats, datCal, y){
   dat$Status_LR <- NA
   dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[[y]], upper = dat$LREndY, NAbounds = NA)
 
+  dat$Status_LR[dat$aboveR2 %in% FALSE] <- FALSE
 
   dats <- dats[dat[ ,.( IDintern,LRFlag, Status_LR, LRStartY, LREndY)], on = "IDintern"]
   if(any(startsWith(names(dats), "i."))){
@@ -71,7 +72,7 @@ getConc <- function(dats, datCal, y, INVERSE_Y){
   #y = b0 + b1*x
   dat[, ConcentrationLR := (get(y) - Intercept)/slope, by = .I]
 
-  if(!is.na(INVERSE_Y) & INVERSE_Y !=""){
+  if(!is.null(INVERSE_Y) ){
     dat$ConcentrationLR <- sapply(paste0(INVERSE_Y,"(",dat$ConcentrationLR,")"),function(i) eval(parse(text = i)))
   }
   dat$ConcentrationLR <- dat$ConcentrationLR/dat$xfactor

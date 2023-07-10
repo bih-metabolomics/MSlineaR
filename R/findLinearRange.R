@@ -33,7 +33,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   #we = NULL
 
 
-  linearRange <- lm(log(dat[[y]]) ~ dat[[x]], weights = we)
+  linearRange <- lm(dat[[y]] ~ dat[[x]], weights = we)
   ablineIntensity <- fitted(linearRange)
 
   ###use residuals
