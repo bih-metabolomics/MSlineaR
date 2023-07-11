@@ -721,7 +721,7 @@ MS_AssessLinearity <- function(
   dataLinearRange <- my_fcn(
     #cl = myCluster,
     nCORE,
-    xs = 1 : 2,#data.table::uniqueN(processingFeature$groupIndices),
+    xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
     inputData = processingFeature,
     func = findLinearRange,
     x = X,
