@@ -126,8 +126,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     plotlinearData <-  plotlinearData +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) &
                                           signalBlankRatio %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "grey") +
-      ggplot2::geom_hline(yintercept = medblank*signal_blank_ratio, color = "black") +
-      ggplot2::annotate(x = max(get(indipendent), na.rm = T)/2, y = medblank*signal_blank_ratio*3,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
+      ggplot2::geom_hline(yintercept = medBlank*signal_blank_ratio, color = "black") +
+      ggplot2::annotate(x = max(get(indipendent), na.rm = T)/2, y = medBlank*signal_blank_ratio*3,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
   }
 
   if("OutlierFOD" %in% colnames(data_Signals)){
