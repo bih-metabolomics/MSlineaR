@@ -57,6 +57,7 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 #' @examples
 plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#inputData_Blank,
                      nrFeature = 50,
+                     signal_blank_ratio = parent.frame()$NOISE,
                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
                     outputfileName = c("Calibrationplot"), TRANSFORM_Y, inverse_y,
                     COLNAMES, X, Y, Series = "QC dilution Curves", output_dir ){
@@ -123,7 +124,10 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
   if("signalBlankRatio" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & signalBlankRatio %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "grey")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) &
+                                          signalBlankRatio %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "grey") +
+      ggplot2::geom_hline(yintercept = medblank*signal_blank_ratio, color = "black") +
+      ggplot2::annotate(x = max(get(indipendent), na.rm = T)/2, y = medblank*signal_blank_ratio*3,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black")
   }
 
   if("OutlierFOD" %in% colnames(data_Signals)){
@@ -184,7 +188,7 @@ legend_order <- c()
   if(!is.null(inputData_BioSamples )){
     plotlinearData <-  plotlinearData +
       #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ), ggplot2::aes( x = -2, y = get(y),  shape = Sample.Type, color = Status_LR), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ), ggplot2::aes( x = -2, y = get(y),  shape = Sample.Type, color = Class), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
     legend_order <- c(unique(inputData_BioSamples$Sample.Type))
   }
 
@@ -193,7 +197,7 @@ legend_order <- c()
     plotlinearData <-  plotlinearData +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
                           ggplot2::aes( x = x, y = get(y),  shape = Sample.Type,
-                                        color = Status_LR), size = 2, na.rm = TRUE) #+, shape = 5
+                                        color = Class), size = 2, na.rm = TRUE) #+, shape = 5
     legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
   }
 
@@ -246,8 +250,8 @@ if(!is.null(TRANSFORM_Y)){
 
   plotlinearData <-  plotlinearData +
     ggplot2::geom_text(ggplot2::aes(x = -3.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2, na.rm = TRUE)+
-    ggplot2::scale_color_manual(name = "In linear Range:",
-                       values = c("FALSE" = "red", "TRUE" = "purple")) +
+    #ggplot2::scale_color_manual(name = "In linear Range:",
+    #                   values = c("FALSE" = "red", "TRUE" = "purple")) +
     ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3), breaks=rev(legend_order))
     }
 
