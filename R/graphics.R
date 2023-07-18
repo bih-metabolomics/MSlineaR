@@ -116,7 +116,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-    data_Signals <- data_Signal#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
+    data_Signals <- data_Signal |> dplyr::arrange(groupIndices)#[groupIndices %in% 1, ]#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
 
   plotlinearData <-
     ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(y)), shape = Sample.Type) +
@@ -125,11 +125,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   if("signalBlankRatio" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) &
-                                          signalBlankRatio %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "grey") +
-      ggplot2::geom_hline(yintercept = medBlank*signal_blank_ratio, color = "black") +
-      ggplot2::annotate(x = max(get(indipendent), na.rm = T)/2, y = medBlank*signal_blank_ratio*3,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
-  }
-
+                                          signalBlankRatio %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "grey")
+}
   if("OutlierFOD" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "red")
@@ -166,8 +163,10 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "seagreen") +
-      ggplot2::geom_line(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),ggplot2::aes(x = get(indipendent), y = abline), col = "orange", na.rm = TRUE) +
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),
+                          ggplot2::aes(x = get(indipendent), y = get(y)), colour = "seagreen") +
+      ggplot2::geom_line(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),
+                         ggplot2::aes(x = get(indipendent), y = abline), col = "orange", na.rm = TRUE) +
       ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
       ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
       ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
@@ -188,7 +187,8 @@ legend_order <- c()
   if(!is.null(inputData_BioSamples )){
     plotlinearData <-  plotlinearData +
       #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ), ggplot2::aes( x = -2, y = get(y),  shape = Sample.Type, color = Class), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
+                          ggplot2::aes( x = -2, y = get(y),  shape = Sample.Type, colour = ifelse(!is.na(Class),Class, "black")), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
     legend_order <- c(unique(inputData_BioSamples$Sample.Type))
   }
 
@@ -204,10 +204,30 @@ legend_order <- c()
 
 if(!is.null(TRANSFORM_Y)){
   plotlinearData <- plotlinearData +
-    ggplot2:: scale_y_continuous(name = "Area", labels = scales::trans_format(get(inverse_y)),
-                                 limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
+    ggplot2:: scale_y_continuous(name = "Area", labels = function(y) paste0(TRANSFORM_Y,"(", scientific(get(inverse_y)(y)), ")"))
+                                 #labels = scales::trans_format(get(inverse_y)),
+                                 #limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
+   if("signalBlankRatio" %in% colnames(data_Signals)){
+   plotlinearData <- plotlinearData +
+     ggplot2::geom_hline(ggplot2::aes(yintercept = get(TRANSFORM_Y)(medBlank*signal_blank_ratio)), color = "grey", linewidth = 0.5)
+  #   ggplot2::geom_hline(yintercept = get(TRANSFORM_Y)(unique(na.omit(data_Signals$medBlank))*signal_blank_ratio), color = "black") +
+  #   ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = get(TRANSFORM_Y)(data_Signals$medBlank*signal_blank_ratio)+0.2,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
+   }
 
-}
+} else{
+
+  plotlinearData <- plotlinearData +
+    ggplot2:: scale_y_continuous(name = "Area", labels = scales::scientific_format())
+
+  # if("signalBlankRatio" %in% colnames(data_Signals)){
+  #
+  #   plotlinearData <- plotlinearData +
+  #     ggplot2::geom_hline(yintercept = unique(na.omit(data_Signals$medBlank))*signal_blank_ratio, color = "black") +
+  #     ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = data_Signals$medBlank*signal_blank_ratio+200,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
+
+
+
+  }
 
 
 
@@ -217,6 +237,30 @@ if(!is.null(TRANSFORM_Y)){
       ggforce::facet_grid_paginate(ID ~ Batch ,
                                    scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
   }
+
+
+if("signalBlankRatio" %in% colnames(data_Signals)){
+
+  blankmedian <- data.frame(
+    data_Signals |> dplyr::select(groupIndices, ID, Batch) |> unique()
+  )
+
+
+    blankmedian$label <- paste(signal_blank_ratio," x median blank")
+    blankmedian$xtext <- data_Signals |> dplyr::group_by(groupIndices) |> dplyr::summarize(xblank = max(get(indipendent), na.rm = T)/2 + 2) |> dplyr::select(xblank) |>  unlist(use.names = F)
+    blankmedian$ytext <- data_Signals |> dplyr::group_by(groupIndices) |> dplyr::summarize(yblank = na.omit(medBlank*signal_blank_ratio)) |> unique() |> dplyr::ungroup() |>  dplyr::select(yblank) |>  unlist(use.names = F)
+
+
+
+
+  plotlinearData <- plotlinearData +
+
+    ggplot2::geom_text(data = blankmedian, mapping = ggplot2::aes(x = xtext, y = get(TRANSFORM_Y)(ytext) + 0.5, label = label),size = 2) #+
+
+
+
+}
+
 
 
   if(printR2 %in% TRUE) {

@@ -747,7 +747,7 @@ MS_AssessLinearity <- function(
   dataLRGroup$enoughPointsWithinLR[dataLRGroup$aboveR2 %in% FALSE] = FALSE
 
 
-  dataLRFeaturesub <- dataLRFeature[groupIndices %in% dataLRGroup[aboveR2 %in% FALSE, groupIndices] & color %in% "darkseagreen", .(IDintern, color, IsLinear, Comment)]
+  dataLRFeaturesub <- dataLRFeature[groupIndices %in% dataLRGroup[aboveR2 %in% FALSE, groupIndices] & IsLinear %in% "darkseagreen", .(IDintern, color, IsLinear, Comment)]
   dataLRFeature[dataLRFeaturesub,':=' ( color = "black",
                                         IsLinear = FALSE,
                                         Comment = paste0(Comment, "_small R2")) , on = "IDintern"]

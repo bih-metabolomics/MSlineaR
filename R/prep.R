@@ -149,7 +149,7 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)) if(!is.character(TRANSFORM_Y)) rlang::abort("Argument 'transform_X' and 'transform_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)) if(!class(get(TRANSFORM_Y)) == "function") rlang::abort("Argument 'transform_X' and 'transform_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
   if(TRANSFORM %in% TRUE & !is.null(INVERSE_X))   if(!is.character(INVERSE_X)) rlang::abort("Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
-  if(TRANSFORM %in% TRUE & !is.null(INVERSE_X))   if(!class(get(INVERSE_X)) == "function") rlang::abort("Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NUL")
+  if(TRANSFORM %in% TRUE & !is.null(INVERSE_X))   if(!class(get(INVERSE_X)) == "function") rlang::abort("Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
   if(TRANSFORM %in% TRUE & !is.null(INVERSE_Y))   if(!is.character(INVERSE_Y)) rlang::abort("Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
   if(TRANSFORM %in% TRUE & !is.null(INVERSE_Y))   if(!class(get(INVERSE_Y)) == "function") rlang::abort("Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_X)) if(is.null(INVERSE_X)) rlang::abort("Argument 'inverse_X' must be provided if Argument 'transform_X' is provided")
