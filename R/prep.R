@@ -212,6 +212,7 @@ prepareData <- function(dat,
     by = c("ID", "Batch")]
 
   processed$X = DILUTION_FACTOR^processed$DilutionPoint
+  processed$DilutionPoint <- processed$DilutionPoint + 1
 
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_X)){
     processed$X_trans = get(TRANSFORM_X)(processed$X)
