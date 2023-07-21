@@ -160,8 +160,8 @@ data.table::setDT(dats)
 
         first_max <- which(dat[[y]] %in% max(dat[[y]][1: exspected_min]))
 
-        second_max <- which(dat[[y]] %in% min(dat[[y]][dat[[y]] > dat[[y]][first_max]]))
-        dat <- dat[[y]][1:second_max,
+        second_max <- which(dat[[y]] %in% min(dat[[y]][dat[[y]] > dat[[y]][first_max]])) -1
+        dat <- dat[1:second_max,
                         ':=' (trimPos = TRUE,
                               Comment = paste(Comment,"trimPos", sep = "_"))]
       }else{

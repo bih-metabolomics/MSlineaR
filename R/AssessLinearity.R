@@ -639,6 +639,7 @@ MS_AssessLinearity <- function(
     #               --------------------------------------------------------
     #               \tCheck if data curves have a positive slope
     #               --------------------------------------------------------\n")
+  processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE, groupIndices]]
 
 
   #sink()
