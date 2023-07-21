@@ -204,7 +204,7 @@ legend_order <- c()
 
 if(!is.null(TRANSFORM_Y)){
   plotlinearData <- plotlinearData +
-    ggplot2:: scale_y_continuous(name = "Area", labels = function(y) paste0(TRANSFORM_Y,"(", scientific(get(inverse_y)(y)), ")"))
+    ggplot2:: scale_y_continuous(name = "Area", labels = function(y) paste0(TRANSFORM_Y,"(", scales::scientific(get(inverse_y)(y)), ")"))
                                  #labels = scales::trans_format(get(inverse_y)),
                                  #limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
    if("signalBlankRatio" %in% colnames(data_Signals)){
