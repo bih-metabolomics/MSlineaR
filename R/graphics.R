@@ -149,8 +149,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
   if("IsLinear" %in% colnames(data_Signals)){
 
-      Xinterstart = data_Signals[[indipendent]][data_Signals$LRStart +1]
-      Xinterend = data_Signals[[indipendent]][data_Signals$LREnd +1]
+      Xinterstart = data_Signals[[indipendent]][data_Signals$LRStart ]
+      Xinterend = data_Signals[[indipendent]][data_Signals$LREnd ]
 
 
     if(!is.null(TRANSFORM_Y)){
@@ -265,7 +265,7 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
 
   if(printR2 %in% TRUE) {
 
-    text_label <- data_Signals[, .(ID, Batch, R2)]
+    text_label <- data_Signals[IsLinear %in% TRUE, .(ID, Batch, R2)]
     text_label <- text_label |> dplyr::group_by(ID, Batch) |>
       dplyr::mutate(R2 = ifelse(any(!is.na(R2)), R2[!is.na(R2)] , NA))
     text_label <- unique(text_label)
