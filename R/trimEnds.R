@@ -159,7 +159,7 @@ trim_pos_associated <- function(dats, y, x, MIN_Feature){
 
         first_max <- which(dat[[y]] %in% max(dat[[y]][1: exspected_min]))
 
-        second_max <- which(dat[[y]] %in% min(dat[[y]][dat[[Y]] > dat[[y]][first_max]]))
+        second_max <- which(dat[[y]] %in% min(dat[[y]][dat[[y]] > dat[[y]][first_max]]))
         dat <- dat[[y]][1:second_max,
                         ':=' (trimPos = TRUE,
                               Comment = paste(Comment,"trimPos", sep = "_"))]
