@@ -130,6 +130,7 @@ trim_pos_associated <- function(dats, y, x, MIN_Feature){
   dats$trimPos <- FALSE
   dats$trimPos[is.na(dats[[y]])] <- NA # | dats$OutlierFOD %in% TRUE
   dat <- data.table::setorderv(dats,x)[!is.na(get(y))]# & !OutlierFOD %in% TRUE]
+  dats$trimPos <- c(dat[[y]][1] < dat[[y]][2], (dat[[y]][-1] - data.table::shift(dat[[y]], 1, type = "lag")[-1]) > 0)
 
 
   IsPositivAssociated =rle(c(dat[[y]][1] < dat[[y]][2], (dat[[y]][-1] - data.table::shift(dat[[y]], 1, type = "lag")[-1]) > 0))
