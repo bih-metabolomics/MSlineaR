@@ -126,6 +126,7 @@ trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, thresh=0)
 #'
 #' @examples
 trim_pos_associated <- function(dats, y, x, MIN_Feature){
+data.table::setDT(dats)
 
   dats$trimPos <- FALSE
   dats$trimPos[is.na(dats[[y]])] <- NA # | dats$OutlierFOD %in% TRUE
