@@ -32,19 +32,19 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
 
   lost <- diff(dat[dat$color %in% "black", DilutionPoint]) > 2
   if(any(lost)){
-
+    range <- dat[dat$color %in% "black", DilutionPoint]
     lost.pos <- which(lost)
     left <- length(1:lost.pos)
-    right <- length((lost.pos + 1) : length(lost))
+    right <- length((lost.pos + 1) : length(range))
 
     if(left < right & left < 3 ) {
 
-      dat$signalBlankRatio[dat$color %in% "black", 1:lost.pos] <- TRUE
+      dat$signalBlankRatio[dat$color %in% "black"][1:lost.pos] <- TRUE
 
 
     } else if(right < left & right < 3 ){
 
-      dat$signalBlankRatio[dat$color %in% "black", (lost.pos + 1) : length(lost)] <- TRUE
+      dat$signalBlankRatio[dat$color %in% "black"][ (lost.pos + 1) : length(lost)] <- TRUE
 
     }
 
