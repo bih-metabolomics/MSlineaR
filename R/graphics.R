@@ -232,7 +232,7 @@ if(!is.null(TRANSFORM_Y)){
 
 
 
-  if(length(GroupIndices > 1) | GroupIndices %in% "all" | length(Feature > 1) | Feature %in% "all" ){
+  if(length(GroupIndices > 1) | any(GroupIndices %in% "all") | length(Feature > 1) | any(Feature %in% "all" )){
     plotlinearData <-  plotlinearData +
       ggforce::facet_grid_paginate(ID ~ Batch ,
                                    scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
