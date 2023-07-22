@@ -100,7 +100,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
   if(any(GroupIndices != "all" & GroupIndices != "")) data_Signal <- data_Signal[groupIndices %in% GroupIndices]
   if(any(Feature != "all" & Feature != "")) data_Signal <- data_Signal[get(ID) %in% Feature]
-  if(Feature %in% "all" & GroupIndices %in% "all" & data.table::uniqueN(data_Signal[[ID]]) > nrFeature){
+  if(any(Feature %in% "all") & any(GroupIndices %in% "all") & data.table::uniqueN(data_Signal[[ID]]) > nrFeature){
     randomIDs <- sample(unique(data_Signal[[ID]]), nrFeature, replace = F)
     data_Signal <- data_Signal[ID %in% randomIDs]
   }
