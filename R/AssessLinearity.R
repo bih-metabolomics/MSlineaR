@@ -1170,6 +1170,7 @@ MS_AssessLinearity <- function(
     # )
   )
 
+  save.image(file = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_image.RData")))
 
   #sink()
   logr::log_close()
