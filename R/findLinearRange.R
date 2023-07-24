@@ -48,7 +48,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   cook <- cooks.distance(linearRange)
   cookref <- c()
   dataNew <- dat
-
+if(any(cook >1)){
   while(any(cook > 1)){
     cookref <- c(cookref, dataNew$DilutionPoint[which(cook > sd_res_factor)])
     dataNew <- dataNew[-which(cook > 1)]
@@ -57,6 +57,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
     cook <- cooks.distance(linearRangeCooks)
 
   }
+}
 lr <- !dat$DilutionPoint %in% cookref
 
    consNDX <- rle(lr)
