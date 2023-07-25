@@ -29,7 +29,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
 
   #create linear regression line going through int50
   we <- rep(1, length(dat[[x]]))
-  we[(int50 - 1) : (int50 + 1)] <- 1000
+  we[(int50 - 1) : (int50 + 1)] <- 100
   #we = NULL
 
 
@@ -47,7 +47,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   #cook <- cooks.distance(linearRange)
   #cookref <- dat$DilutionPoint[which(cook > 1)]
 
-  lr <- abs(std_residuals) < ceiling(sd_residuals*10)/10
+  lr <- abs(std_residuals) < sd_res_factor#ceiling(sd_residuals*10)/10
 
   #lr <- !(abs(std_residuals) >= ceiling(sd_residuals*10)/10 & dat$DilutionPoint %in% cookref)
 
