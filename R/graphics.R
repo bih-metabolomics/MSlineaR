@@ -70,6 +70,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   Sample.Type <- COLNAMES[["Sample_type"]]
   indipendent <- X
   y <- Y
+  ClassCol <- COLNAMES[["Class"]]
 
   data.table::setDT(inputData_Series)
   if(!is.null(inputData_BioSamples))data.table::setDT(inputData_BioSamples)
@@ -184,20 +185,21 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 # }
 
 legend_order <- c()
+
   if(!is.null(inputData_BioSamples )){
     plotlinearData <-  plotlinearData +
       #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
-                          ggplot2::aes( x = -2, y = get(y),  shape = Sample.Type, colour = ifelse(!is.na(Class),Class, "black")), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
+                          ggplot2::aes( x = -2, y = get(y),  shape = Sample.Type, colour = get(ClassCol)), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
     legend_order <- c(unique(inputData_BioSamples$Sample.Type))
   }
-
+#ifelse(!is.na(Class),get(Class), "black")
 
   if(!is.null(inputData_QC )){
     plotlinearData <-  plotlinearData +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
                           ggplot2::aes( x = x, y = get(y),  shape = Sample.Type,
-                                        color = Class), size = 2, na.rm = TRUE) #+, shape = 5
+                                        color = get(ClassCol)), size = 2, na.rm = TRUE) #+, shape = 5
     legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
   }
 
@@ -247,8 +249,19 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
 
 
     blankmedian$label <- paste(signal_blank_ratio," x median blank")
-    blankmedian$xtext <- data_Signals |> dplyr::group_by(groupIndices) |> dplyr::summarize(xblank = max(get(indipendent), na.rm = T)/2 + 2) |> dplyr::select(xblank) |>  unlist(use.names = F)
-    blankmedian$ytext <- data_Signals |> dplyr::group_by(groupIndices) |> dplyr::summarize(yblank = na.omit(medBlank*signal_blank_ratio)) |> unique() |> dplyr::ungroup() |>  dplyr::select(yblank) |>  unlist(use.names = F)
+    blankmedian$xtext <- data_Signals |>
+      dplyr::group_by(groupIndices) |>
+      dplyr::summarize(xblank = max(get(indipendent), na.rm = T)/2 + 2) |>
+      dplyr::select(xblank) |>
+      unlist(use.names = F)
+    blankmedian <- data_Signals |>
+      dplyr::group_by(groupIndices) |>
+      dplyr::summarize(ytext = na.omit(medBlank*signal_blank_ratio)) |>
+      unique() |>
+      dplyr::ungroup() |>
+      dplyr::right_join(blankmedian, by = "groupIndices")
+      #dplyr::select(yblank) |>
+      #unlist(use.names = F)
 
 
 
