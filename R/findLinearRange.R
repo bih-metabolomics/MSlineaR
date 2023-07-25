@@ -40,25 +40,14 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
 
   std_residuals <- residuals(linearRange)/sd(residuals(linearRange))
   sd_residuals <- abs(sd_res_factor*sd(std_residuals[which(abs(std_residuals) < 3)]))
-  #if(sd_residuals < 1) sd_residuals <- 1
+  if(sd_residuals < 1) sd_residuals <- 1
 
-  #lr <- abs(std_residuals) < ceiling(sd_residuals*10)/10
 
   ##use cooks distance
   cook <- cooks.distance(linearRange)
-  cookref <- c()
-  dataNew <- dat
-if(any(cook > 1)){
-  while(any(cook > 1)){
-    cookref <- c(cookref, dataNew$DilutionPoint[which(cook > sd_res_factor)])
-    dataNew <- dataNew[-which(cook > 1)]
+  cookref <- dat$DilutionPoint[which(cook > 1)]
 
-    linearRangeCooks <- lm(formula = get(y) ~ get(x), data = dataNew)
-    cook <- cooks.distance(linearRangeCooks)
-
-  }
-}
-lr <- !dat$DilutionPoint %in% cookref
+  lr <- !(abs(std_residuals) >= ceiling(sd_residuals*10)/10 & dat$DilutionPoint %in% cookref)
 
    consNDX <- rle(lr)
 
