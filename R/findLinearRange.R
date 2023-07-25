@@ -44,7 +44,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
 
   #use slope
   refslope <- coef(linearRange)[2]*100/2
-  slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(y) ~ get(x)))[2]*100)
+  slopes <- c(TRUE,sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(y) ~ get(x)))[2]*100))
 
 
   ##use cooks distance
