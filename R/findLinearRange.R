@@ -43,7 +43,8 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   if(sd_residuals < 1) sd_residuals <- 1
 
   #use slope
-  refslope <- coef(linearRange)[2]*100/3
+  refslopemin <- coef(linearRange)[2]*100/3
+  refslopemax <- coef(linearRange)[2]*100*3
   slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(y) ~ get(x)))[2]*100)
 if(slopes[1] > refslope){ slopes <- c(refslope*2, slopes)} else{slopes <- c(refslope/2, slopes)}
 
@@ -51,7 +52,7 @@ if(slopes[1] > refslope){ slopes <- c(refslope*2, slopes)} else{slopes <- c(refs
   #cook <- cooks.distance(linearRange)
   #cookref <- dat$DilutionPoint[which(cook > 1)]
 
-  lr <- abs(std_residuals) < ceiling(sd_residuals*10)/10 &  slopes > refslope
+  lr <- abs(std_residuals) < ceiling(sd_residuals*10)/10 &  (slopes > refslopemin & slopes < refslopemax)
 
   #lr <- !(abs(std_residuals) >= ceiling(sd_residuals*10)/10 & dat$DilutionPoint %in% cookref)
 
