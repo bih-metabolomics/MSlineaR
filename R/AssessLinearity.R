@@ -119,7 +119,7 @@ MS_AssessLinearity <- function(
     first_outlier_detection = c(TRUE, FALSE)[1],
     FOD_model = c("logistic", "linear", "quadratic"),
     FOD_sdres_min = 1,
-    FOD_stdres_max = 3,
+    FOD_stdres_max = 2,
 
     trimming = c(TRUE, FALSE)[1],
 
@@ -127,7 +127,7 @@ MS_AssessLinearity <- function(
     second_outlier_detection = c(TRUE, FALSE)[1],
     SOD_model = c("logistic", "linear", "quadratic"),
     SOD_sdres_min = 1,
-    SOD_stdres_max = 3,
+    SOD_stdres_max = 2,
 
     #linear_range
     min_feature = 6,
