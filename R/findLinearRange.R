@@ -29,7 +29,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
 
   #create linear regression line going through int50
   we <- rep(1, length(dat[[x]]))
-  we[(int50 - 1) : (int50 + 1)] <- 100
+  we[(int50 - 1) : (int50 + 1)] <- 1000
   #we = NULL
 
 
