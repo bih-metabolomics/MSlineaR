@@ -220,7 +220,15 @@ if(!is.null(TRANSFORM_Y)){
 } else{
 
   plotlinearData <- plotlinearData +
-    ggplot2:: scale_y_continuous(name = "Area", labels = scales::scientific_format())
+    ggplot2:: scale_y_continuous(name = "Area", labels = scales::scientific_format(get(y)))
+
+  if("signalBlankRatio" %in% colnames(data_Signals)){
+
+    plotlinearData <- plotlinearData +
+      ggplot2::geom_hline(ggplot2::aes(yintercept = medBlank*signal_blank_ratio), color = "grey", linewidth = 0.5)
+    #   ggplot2::geom_hline(yintercept = get(TRANSFORM_Y)(unique(na.omit(data_Signals$medBlank))*signal_blank_ratio), color = "black") +
+    #   ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = get(TRANSFORM_Y)(data_Signals$medBlank*signal_blank_ratio)+0.2,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
+  }
 
   # if("signalBlankRatio" %in% colnames(data_Signals)){
   #
