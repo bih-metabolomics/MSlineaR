@@ -30,7 +30,7 @@ chooseModel <- function(dats,
     if(any(abs(residuals(logistic, typeRes = "standard")) > STDRES) & abs(sd(residuals(logistic))) > SDRES_MIN){
       datOutLog <- dat
       datOutLog[[y]][which(abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- NA
-      datOutLog[[outlierName]][which(abs(rstandard(logistic)) > STDRES)] <- TRUE
+      datOutLog[[outlierName]][abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- TRUE
 
       logisticOut <- drc::drm(get(y) ~ get(x), fct = drc::L.3(), data = datOutLog)
       #RMSE
