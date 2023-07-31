@@ -242,7 +242,7 @@ if(!is.null(TRANSFORM_Y)){
                                    scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
     } else {
       plotlinearData <-  plotlinearData +
-        ggforce::facet_grid_paginate(~ ID ,
+        ggforce::facet_grid_paginate(ID ,
                                      scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
     }
     }
@@ -350,7 +350,7 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
         print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
                                                           scales = "free", ncol = nCol,nrow = nrRow, page = i ))
       } else {
-        print(plotlinearData + ggforce::facet_grid_paginate(~ ID,
+        print(plotlinearData + ggforce::facet_grid_paginate(ID,
                                                             scales = "free", ncol = nCol,nrow = nrRow, page = i ))
 
       }
