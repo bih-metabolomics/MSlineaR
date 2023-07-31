@@ -14,7 +14,7 @@ chooseModel <- function(dats,
                         y = parent.frame()$Y,
                         x = parent.frame()$X,
                         model = c("logistic", "linear", "quadratic"),
-                        SDRES_MIN = 1,
+                        SDRES_MIN = 0,
                         STDRES = 2,
                         abbr){
  # .datatable.aware=TRUE
@@ -27,16 +27,20 @@ chooseModel <- function(dats,
 
   if ("logistic" %in% model) {
     logistic <- drc::drm(get(y) ~ get(x), fct = drc::L.3(), data = dat)
-    if(any(abs(residuals(logistic)/sd(residuals(logistic))) > STDRES) & abs(sd(residuals(logistic))) > SDRES_MIN){
+    if(any(abs(residuals(logistic, typeRes = "standard")) > STDRES) & abs(sd(residuals(logistic))) > SDRES_MIN){
       datOutLog <- dat
-      datOutLog[[y]][which(abs(residuals(logistic)/sd(residuals(logistic))) > STDRES)] <- NA
+      datOutLog[[y]][which(abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- NA
+      datOutLog[[outlierName]][which(abs(rstandard(logistic)) > STDRES)] <- TRUE
+
       logisticOut <- drc::drm(get(y) ~ get(x), fct = drc::L.3(), data = datOutLog)
       #RMSE
       logisticRMSE <- Metrics::rmse(dat[[y]], predict(logistic))
       logisticOutRMSE <- Metrics::rmse(na.exclude(datOutLog[[y]]), predict(logisticOut))
       logistic1 <- get(c("logistic", "logisticOut")[which(c(logisticRMSE, logisticOutRMSE) %in% min(logisticRMSE, logisticOutRMSE))])
+      logistic1.dat <- datOutLog
     } else{
       logistic1 <- logistic
+      logistic1.dat <- dat
     }
 
     logistic1RMSE <- Metrics::rmse(logistic1$data$`get(y)`, predict(logistic1))
@@ -49,17 +53,20 @@ chooseModel <- function(dats,
 
   if ("linear" %in% model) {
     linear <- lm(get(y) ~ get(x), data = dat)
-    if(any(abs(residuals(linear)/sd(residuals(linear))) > STDRES) & abs(sd(residuals(linear))) > SDRES_MIN){
+    if(any(abs(rstandard(linear)) > STDRES) & abs(sd(residuals(linear))) > SDRES_MIN){
       datOutLin <- dat
-      datOutLin[[y]][which(abs(residuals(linear)/sd(residuals(linear))) > STDRES)] <- NA
+      datOutLin[[y]][which(abs(rstandard(linear)) > STDRES)] <- NA
+      datOutLin[[outlierName]][which(abs(rstandard(linear)) > STDRES)] <- TRUE
+
       linearOut <- lm(get(y) ~ get(x), data = datOutLin)
       #RMSE
       linearRMSE <- Metrics::rmse(dat[[y]], predict(linear))
       linearOutRMSE <- Metrics::rmse(na.exclude(datOutLin[[y]]), predict(linearOut))
       linear1 <- get(c("linear", "linearOut")[which(c(linearRMSE, linearOutRMSE) %in% min(linearRMSE, linearOutRMSE))])
-
+      linear1.dat <- datOutLin
     } else{
       linear1 <- linear
+      linear1.dat <- dat
     }
     linear1RMSE <- Metrics::rmse(linear1$model$`get(y)`, predict(linear1))
 
@@ -72,16 +79,20 @@ chooseModel <- function(dats,
 
   if ("quadratic" %in% model) {
     quadratic <- lm(get(y) ~ poly(get(x), 2, raw = TRUE), data = dat)
-    if(any(abs(residuals(quadratic)/sd(residuals(quadratic))) > STDRES) & abs(sd(residuals(quadratic))) > SDRES_MIN){
+    if(any(abs(rstandard(quadratic)) > STDRES) & abs(sd(residuals(quadratic))) > SDRES_MIN){
       datOutQuad <- dat
-      datOutQuad[[y]][which(abs(residuals(quadratic)/sd(residuals(quadratic))) > STDRES)] <- NA
+      datOutQuad[[y]][which(abs(rstandard(quadratic)) > STDRES)] <- NA
+      datOutQuad[[outlierName]][which(abs(rstandard(linear)) > STDRES)] <- TRUE
+
       quadraticOut <- lm(get(y) ~ poly(get(x), 2, raw = TRUE), data = datOutQuad)
       #RMSE
       quadraticRMSE <- Metrics::rmse(dat[[y]], predict(quadratic))
       quadraticOutRMSE <- Metrics::rmse(na.exclude(datOutQuad[[y]]), predict(quadraticOut))
       quadratic1 <- get(c("quadratic", "quadraticOut")[which(c(quadraticRMSE, quadraticOutRMSE) %in% min(quadraticRMSE, quadraticOutRMSE))])
+      quadratic1.dat <-  datOutQuad
     } else{
       quadratic1 <- quadratic
+      quadratic1.dat <- dat
     }
 
     quadratic1RMSE <- Metrics::rmse(quadratic1$model$`get(y)`, predict(quadratic1))
@@ -100,10 +111,13 @@ chooseModel <- function(dats,
   ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2) %in% min(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2),na.rm = TRUE))]
   if ("linear1" %in% ModelName) {ModelName = "linear1"} else if (all(c("logistic1", "quadratic1") %in% ModelName)) {ModelName = "logistic1"}  # if same correlation
 
- if(abs(sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = ""))))) > SDRES_MIN) dat[[outlierName]][which(abs(residuals(get(gsub(pattern = "1", x = ModelName, replacement = "")))/sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = ""))))) > STDRES)] <- TRUE
- if(abs(sd(residuals(get(ModelName)))) > SDRES_MIN & any(abs(sd(residuals(get(ModelName)))/sd(residuals(get(ModelName)))) > STDRES)){
-   dat[IDintern %in% get(get(ModelName)$call$data)[!is.na(get(y))][which(abs(residuals(get(ModelName))/sd(residuals(get(ModelName)))) > STDRES)]$IDintern][[outlierName]] <- TRUE
-}
+  datName <- paste0(ModelName,".dat")
+
+ #if(abs(sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = ""))))) > SDRES_MIN) dat[[outlierName]][which(abs(residuals(get(gsub(pattern = "1", x = ModelName, replacement = "")))/sd(residuals(get(gsub(pattern = "1", x = ModelName, replacement = ""))))) > STDRES)] <- TRUE
+ #if(abs(sd(residuals(get(ModelName)))) > SDRES_MIN & any(abs(sd(residuals(get(ModelName)))/sd(residuals(get(ModelName)))) > STDRES)){
+ #  dat[IDintern %in% get(get(ModelName)$call$data)[!is.na(get(y))][which(abs(residuals(get(ModelName))/sd(residuals(get(ModelName)))) > STDRES)]$IDintern][[outlierName]] <- TRUE
+#}
+  dat <- get(datName)
   dat <- data.table::setorder(dplyr::full_join(dat, dats[!IDintern %in% dat$IDintern], by = colnames(dats)), DilutionPoint)
   dat$color[dat[[outlierName]] %in% TRUE] <- "red"
   dat$Comment[dat[[outlierName]] %in% TRUE] <- paste0(dat$Comment[dat[[outlierName]] %in% TRUE], "_Outlier",abbr)
