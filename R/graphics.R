@@ -220,7 +220,7 @@ if(!is.null(TRANSFORM_Y)){
 } else{
 
   plotlinearData <- plotlinearData +
-    ggplot2:: scale_y_continuous(name = "Area", labels = scales::scientific_format(get(y)))
+    ggplot2:: scale_y_continuous(name = "Area", labels = scales::scientific_format())
 
   if("signalBlankRatio" %in% colnames(data_Signals)){
 

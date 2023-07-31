@@ -1032,72 +1032,6 @@ MS_AssessLinearity <- function(
 
 
 
-  ## Plots
-
-  #7) bar plot summary per dilution/concentration
-
-  printPlot <- ifelse(any(c("Plots", "all") %in% which_output), TRUE, FALSE)
-
-  summary_barplot <- plot_Barplot_Summary(printPDF = printPlot,
-                                          inputData_Series = output1,
-                                          COLNAMES = COLNAMES,
-                                          X = Xraw, Y = Yraw,
-                                          output_dir = IMG_OUTPUT_DIR)
-  logr::put("summary_barplot was created")
-
-  #8) scatter plot
-  FDS_scatterplot <- plot_FDS(printPDF = printPlot,
-                              inputData_Series = output1,
-                              inputData_BioSamples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
-                              inputData_QC = SampleQC,
-                              COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
-                              Series = Series, output_dir = IMG_OUTPUT_DIR
-  )
-
-  logr::put("Scatterplot was created")
-  #9) bar plot summary for all samples
-
-
-  summary_barplot_all <- plot_Barplot_Summary_Sample(printPDF = printPlot,
-                                                     inputData_Samples = output3,
-                                                        COLNAMES = COLNAMES,
-                                                        X = Xraw, Y = Yraw,
-                                                        output_dir = IMG_OUTPUT_DIR,
-                                                     group = "Batch",
-                                                     ordered = "Sample.Type",
-                                                     outputfileName = c("Summary_Barplot_All"))
-
-  logr::put("summary_barplot_all was created")
-
-  #10) bar plot summary for biological samples
-
-  summary_barplot_sample <- plot_Barplot_Summary_Sample(printPDF = printPlot,
-                                                        inputData_Samples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
-                                                        COLNAMES = COLNAMES,
-                                                        X = Xraw, Y = Yraw,
-                                                        output_dir = IMG_OUTPUT_DIR,
-                                                        group = "Batch",
-                                                        fill = "Class",
-                                                        ordered = "Class",
-                                                        outputfileName = c("Summary_Barplot_Samples"))
-
-  logr::put("summary_barplot_sample was created")
-
-
-  #11) barplot summary for QC samples
-
-  summary_barplot_QC <- plot_Barplot_Summary_Sample(printPDF = printPlot,
-                                                    inputData_Samples = SampleQC,
-                                                    COLNAMES = COLNAMES,
-                                                    X = Xraw, Y = Yraw,
-                                                    output_dir = IMG_OUTPUT_DIR,
-                                                    group = "Batch",
-                                                    fill = "Sample.Type",
-                                                    ordered = "Sample.Type",
-                                                    outputfileName = c("Summary_Barplot_QC"))
-
-  logr::put("summary_barplot_sample was created")
-
 
 
   data.table::setnames(skip_absent = T, processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"),
@@ -1141,6 +1075,72 @@ MS_AssessLinearity <- function(
     }
 
   }
+
+  ## Plots
+
+  #7) bar plot summary per dilution/concentration
+
+  printPlot <- ifelse(any(c("Plots", "all") %in% which_output), TRUE, FALSE)
+
+  summary_barplot <- plot_Barplot_Summary(printPDF = printPlot,
+                                          inputData_Series = output1,
+                                          COLNAMES = COLNAMES,
+                                          X = Xraw, Y = Yraw,
+                                          output_dir = IMG_OUTPUT_DIR)
+  logr::put("summary_barplot was created")
+
+  #8) scatter plot
+  FDS_scatterplot <- plot_FDS(printPDF = printPlot,
+                              inputData_Series = output1,
+                              inputData_BioSamples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+                              inputData_QC = SampleQC,
+                              COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
+                              Series = Series, output_dir = IMG_OUTPUT_DIR
+  )
+
+  logr::put("Scatterplot was created")
+  #9) bar plot summary for all samples
+
+
+  summary_barplot_all <- plot_Barplot_Summary_Sample(printPDF = printPlot,
+                                                     inputData_Samples = output3,
+                                                     COLNAMES = COLNAMES,
+                                                     X = Xraw, Y = Yraw,
+                                                     output_dir = IMG_OUTPUT_DIR,
+                                                     group = "Batch",
+                                                     ordered = "Sample.Type",
+                                                     outputfileName = c("Summary_Barplot_All"))
+
+  logr::put("summary_barplot_all was created")
+
+  #10) bar plot summary for biological samples
+
+  summary_barplot_sample <- plot_Barplot_Summary_Sample(printPDF = printPlot,
+                                                        inputData_Samples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+                                                        COLNAMES = COLNAMES,
+                                                        X = Xraw, Y = Yraw,
+                                                        output_dir = IMG_OUTPUT_DIR,
+                                                        group = "Batch",
+                                                        fill = "Class",
+                                                        ordered = "Class",
+                                                        outputfileName = c("Summary_Barplot_Samples"))
+
+  logr::put("summary_barplot_sample was created")
+
+
+  #11) barplot summary for QC samples
+
+  summary_barplot_QC <- plot_Barplot_Summary_Sample(printPDF = printPlot,
+                                                    inputData_Samples = SampleQC,
+                                                    COLNAMES = COLNAMES,
+                                                    X = Xraw, Y = Yraw,
+                                                    output_dir = IMG_OUTPUT_DIR,
+                                                    group = "Batch",
+                                                    fill = "Sample.Type",
+                                                    ordered = "Sample.Type",
+                                                    outputfileName = c("Summary_Barplot_QC"))
+
+  logr::put("summary_barplot_sample was created")
 
 
 
