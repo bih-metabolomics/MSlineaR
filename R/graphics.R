@@ -59,7 +59,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
                      nrFeature = 50,
                      signal_blank_ratio = parent.frame()$NOISE,
                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
-                    outputfileName = c("Calibrationplot"), TRANSFORM_Y = parent.frame()$TRANSFORM_Y, inverse_y parent.frame()$INVERSE_Y,
+                    outputfileName = c("Calibrationplot"), TRANSFORM_Y = parent.frame()$TRANSFORM_Y, inverse_y = parent.frame()$INVERSE_Y,
                     COLNAMES, X, Y, Series = "QC dilution Curves", output_dir ){
 
   assertthat::not_empty(inputData_Series)
