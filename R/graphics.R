@@ -334,7 +334,7 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
   if(printPDF %in% TRUE){
 
     #plotObj <- vector("list", npage)
-    if(data.table::uniqueN(data_Signal$Batch) <=2){
+    if(data.table::uniqueN(data_Signal$Batch) <= 2){
       pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 9, height = 15)
       nrRow = 10
     }else {
@@ -345,8 +345,15 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
     n <- ggforce::n_pages(plotlinearData)
 
     for(i in 1:n) {
-      print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
+
+      if(data.table::uniqueN(data_Signal$Batch) > 1){
+        print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
                                                           scales = "free", ncol = nCol,nrow = nrRow, page = i ))
+      } else {
+        print(plotlinearData + ggforce::facet_grid_paginate(~ ID,
+                                                            scales = "free", ncol = nCol,nrow = nrRow, page = i ))
+
+      }
       print(paste0(i, " of ", n))
 
 
