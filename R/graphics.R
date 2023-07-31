@@ -210,6 +210,7 @@ if(!is.null(TRANSFORM_Y)){
                                  #labels = scales::trans_format(get(inverse_y)),
                                  #limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
    if("signalBlankRatio" %in% colnames(data_Signals)){
+
    plotlinearData <- plotlinearData +
      ggplot2::geom_hline(ggplot2::aes(yintercept = get(TRANSFORM_Y)(medBlank*signal_blank_ratio)), color = "grey", linewidth = 0.5)
   #   ggplot2::geom_hline(yintercept = get(TRANSFORM_Y)(unique(na.omit(data_Signals$medBlank))*signal_blank_ratio), color = "black") +
@@ -242,7 +243,7 @@ if(!is.null(TRANSFORM_Y)){
                                    scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
     } else {
       plotlinearData <-  plotlinearData +
-        ggforce::facet_grid_paginate(ID ,
+        ggforce::facet_grid_paginate(ID ~. ,
                                      scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
     }
     }
@@ -271,12 +272,14 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
       #unlist(use.names = F)
 
 
-
+    if(!is.null(TRANSFORM_Y)){
 
   plotlinearData <- plotlinearData +
 
     ggplot2::geom_text(data = blankmedian, mapping = ggplot2::aes(x = xtext, y = get(TRANSFORM_Y)(ytext) + 0.5, label = label),size = 2) #+
-
+    } else{
+      ggplot2::geom_text(data = blankmedian, mapping = ggplot2::aes(x = xtext, y = ytext + 50, label = label),size = 2) #+
+}
 
 
 }
@@ -350,7 +353,7 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
         print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
                                                           scales = "free", ncol = nCol,nrow = nrRow, page = i ))
       } else {
-        print(plotlinearData + ggforce::facet_grid_paginate(ID,
+        print(plotlinearData + ggforce::facet_grid_paginate(ID ~.,
                                                             scales = "free", ncol = nCol,nrow = nrRow, page = i ))
 
       }
