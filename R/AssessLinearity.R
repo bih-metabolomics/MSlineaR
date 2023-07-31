@@ -961,9 +961,11 @@ MS_AssessLinearity <- function(
 
   #1)full table dilution/concentration curves - Signal based
   output1 <- processingFeature
+  output1.1 <- processingFeature
 
   #2) full table dilution/concentration curves - Feature based
   output2 <- processingGroup
+  output2.1 <- processingGroup
 
 
   # #3) filtered table dilution/concentration curves - Signal based (high quality)
@@ -974,6 +976,7 @@ MS_AssessLinearity <- function(
 
   #4) full table biological Samples - Signal based
   output3 <- SampleFeature
+  output3.1 <- SampleFeature
 
   # #5) filtered table biological Samples - Signal based (high quality)
   # output5 <- SampleFeature |> dplyr::filter(get(COLNAMES[["ID"]]) %in% unlist(unique(output3[COLNAMES[["ID"]]])))
@@ -1083,7 +1086,7 @@ MS_AssessLinearity <- function(
   printPlot <- ifelse(any(c("Plots", "all") %in% which_output), TRUE, FALSE)
 
   summary_barplot <- plot_Barplot_Summary(printPDF = printPlot,
-                                          inputData_Series = output1,
+                                          inputData_Series = output1.1,
                                           COLNAMES = COLNAMES,
                                           X = Xraw, Y = Yraw,
                                           output_dir = IMG_OUTPUT_DIR)
@@ -1091,8 +1094,8 @@ MS_AssessLinearity <- function(
 
   #8) scatter plot
   FDS_scatterplot <- plot_FDS(printPDF = printPlot,
-                              inputData_Series = output1,
-                              inputData_BioSamples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+                              inputData_Series = output1.1,
+                              inputData_BioSamples = output3.1 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                               inputData_QC = SampleQC,
                               COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
                               Series = Series, output_dir = IMG_OUTPUT_DIR
@@ -1103,7 +1106,7 @@ MS_AssessLinearity <- function(
 
 
   summary_barplot_all <- plot_Barplot_Summary_Sample(printPDF = printPlot,
-                                                     inputData_Samples = output3,
+                                                     inputData_Samples = output3.1,
                                                      COLNAMES = COLNAMES,
                                                      X = Xraw, Y = Yraw,
                                                      output_dir = IMG_OUTPUT_DIR,
@@ -1116,7 +1119,7 @@ MS_AssessLinearity <- function(
   #10) bar plot summary for biological samples
 
   summary_barplot_sample <- plot_Barplot_Summary_Sample(printPDF = printPlot,
-                                                        inputData_Samples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+                                                        inputData_Samples = output3.1 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                                                         COLNAMES = COLNAMES,
                                                         X = Xraw, Y = Yraw,
                                                         output_dir = IMG_OUTPUT_DIR,
