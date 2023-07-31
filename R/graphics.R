@@ -176,7 +176,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   }
 
   plotlinearData <-  plotlinearData +
-    ggplot2::scale_x_continuous(name = "Dilution", limits = c(-5, NA) ,breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
+    ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
     ggplot2::geom_vline(ggplot2::aes( xintercept = -1, color = "darkgrey"), linetype = "solid", col = "black", na.rm = TRUE)
 
 # if(!is.null(inputData_BioSamples) | !is.null(inputData_QC)| !is.null(inputData_QCref) | !is.null(inputData_Blank)){
@@ -235,10 +235,17 @@ if(!is.null(TRANSFORM_Y)){
 
 
   if(length(GroupIndices > 1) | any(GroupIndices %in% "all") | length(Feature > 1) | any(Feature %in% "all" )){
+
+    if(data.table::uniqueN(plotlinearData[[Batch]]) > 1){
     plotlinearData <-  plotlinearData +
       ggforce::facet_grid_paginate(ID ~ Batch ,
                                    scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
-  }
+    } else {
+      plotlinearData <-  plotlinearData +
+        ggforce::facet_grid_paginate(~ ID ,
+                                     scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
+    }
+    }
 
 
 if("signalBlankRatio" %in% colnames(data_Signals)){
