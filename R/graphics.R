@@ -60,7 +60,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
                      signal_blank_ratio = parent.frame()$NOISE,
                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
                     outputfileName = c("Calibrationplot"), TRANSFORM_Y = parent.frame()$TRANSFORM_Y, inverse_y = parent.frame()$INVERSE_Y,
-                    COLNAMES, X, Y, Series = "QC dilution Curves", output_dir ){
+                    COLNAMES, Xcol, Ycol, Series = "QC dilution Curves", output_dir ){
 
   assertthat::not_empty(inputData_Series)
 # LR_object,statusLinear = c(TRUE, FALSE),
@@ -68,8 +68,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   ID <-  COLNAMES[["ID"]]
   Col_Batch <-  COLNAMES[["Batch"]]
   Sample.Type <- COLNAMES[["Sample_type"]]
-  indipendent <- X
-  y <- Y
+  indipendent <- Xcol
+  dependent <- Ycol
   ClassCol <- COLNAMES[["Class"]]
 
   data.table::setDT(inputData_Series)
@@ -120,32 +120,32 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     data_Signals <- data_Signal |> dplyr::arrange(groupIndices)#[groupIndices %in% 1, ]#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
 
   plotlinearData <-
-    ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(y)), shape = Sample.Type) +
+    ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(dependent)), shape = Sample.Type) +
     ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type])),colour = "black")
 
   if("signalBlankRatio" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) &
-                                          signalBlankRatio %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "grey")
+                                          signalBlankRatio %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
 }
   if("OutlierFOD" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "red")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "red")
   }
 
   if("trim" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trim %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "grey")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trim %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
   }
 
   if("OutlierSOD" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierSOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "red")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierSOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "red")
   }
 
   if("trimPos" %in% colnames(data_Signals)){
     plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(y)), colour = "grey")
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
   }
 
   if("IsLinear" %in% colnames(data_Signals)){
@@ -165,7 +165,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     plotlinearData <-  plotlinearData +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),
-                          ggplot2::aes(x = get(indipendent), y = get(y)), colour = "seagreen") +
+                          ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "seagreen") +
       ggplot2::geom_line(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),
                          ggplot2::aes(x = get(indipendent), y = abline), col = "orange", na.rm = TRUE) +
       ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
@@ -190,7 +190,7 @@ legend_order <- c()
     plotlinearData <-  plotlinearData +
       #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
-                          ggplot2::aes( x = -2, y = get(y),  shape = Sample.Type, colour = get(ClassCol)), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
+                          ggplot2::aes( x = -2, y = get(dependent),  shape = Sample.Type, colour = get(ClassCol)), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
     legend_order <- c(unique(inputData_BioSamples$Sample.Type))
   }
 #ifelse(!is.na(Class),get(Class), "black")
@@ -198,7 +198,7 @@ legend_order <- c()
   if(!is.null(inputData_QC )){
     plotlinearData <-  plotlinearData +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
-                          ggplot2::aes( x = x, y = get(y),  shape = Sample.Type,
+                          ggplot2::aes( x = x, y = get(dependent),  shape = Sample.Type,
                                         color = get(ClassCol)), size = 2, na.rm = TRUE) #+, shape = 5
     legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
   }
@@ -206,7 +206,7 @@ legend_order <- c()
 
 if(!is.null(TRANSFORM_Y)){
   plotlinearData <- plotlinearData +
-    ggplot2:: scale_y_continuous(name = "Area", labels = function(y) paste0(TRANSFORM_Y,"(", scales::scientific(get(inverse_y)(y)), ")"))
+    ggplot2:: scale_y_continuous(name = "Area", labels = function(y) paste0(TRANSFORM_Y,"(", scales::scientific(get(inverse_y)(dependent)), ")"))
                                  #labels = scales::trans_format(get(inverse_y)),
                                  #limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
    if("signalBlankRatio" %in% colnames(data_Signals)){

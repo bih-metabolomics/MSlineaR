@@ -954,6 +954,11 @@ MS_AssessLinearity <- function(
 
   assertthat::are_equal(nrow(processingFeature), nrow(processingFeatureCal))
 
+  output1.1 <- data.table::copy(processingFeature)
+  output2.1 <- data.table::copy(processingGroup)
+  output3.1 <- data.table::copy(SampleFeature)
+
+
   #output:
   data.table::setnames(processingFeature, c("ID","Sample.Type", "Batch", "Y"), c(COLNAMES[["ID"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["Y"]] ))
   data.table::setnames(processingGroup, c("ID", "Batch"), c(COLNAMES[["ID"]], COLNAMES[["Batch"]]))
@@ -961,11 +966,11 @@ MS_AssessLinearity <- function(
 
   #1)full table dilution/concentration curves - Signal based
   output1 <- processingFeature
-  output1.1 <- processingFeature
+  #output1.1 <- processingFeature
 
   #2) full table dilution/concentration curves - Feature based
   output2 <- processingGroup
-  output2.1 <- processingGroup
+  #output2.1 <- processingGroup
 
 
   # #3) filtered table dilution/concentration curves - Signal based (high quality)
@@ -976,7 +981,7 @@ MS_AssessLinearity <- function(
 
   #4) full table biological Samples - Signal based
   output3 <- SampleFeature
-  output3.1 <- SampleFeature
+  #output3.1 <- SampleFeature
 
   # #5) filtered table biological Samples - Signal based (high quality)
   # output5 <- SampleFeature |> dplyr::filter(get(COLNAMES[["ID"]]) %in% unlist(unique(output3[COLNAMES[["ID"]]])))
@@ -989,7 +994,7 @@ MS_AssessLinearity <- function(
                     Type = get(COLNAMES[["Sample_type"]]),
                     Class = get(COLNAMES[["Class"]]),
                     LRFlag) |>
-    dplyr::summarize(
+    dplyr::summarize(.groups = "drop",
       'Signals' = length(Status_LR),
       'LR_TRUE' = sum(Status_LR),
       'LR_TRUE[%]' = round(sum(Status_LR)/length(Status_LR)*100,2),
@@ -1097,7 +1102,7 @@ MS_AssessLinearity <- function(
                               inputData_Series = output1.1,
                               inputData_BioSamples = output3.1 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                               inputData_QC = SampleQC,
-                              COLNAMES = COLNAMES, X = Xraw, Y = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
+                              COLNAMES = COLNAMES, Xcol = Xraw, Ycol = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
                               Series = Series, output_dir = IMG_OUTPUT_DIR
   )
 
