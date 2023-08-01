@@ -954,9 +954,9 @@ MS_AssessLinearity <- function(
 
   assertthat::are_equal(nrow(processingFeature), nrow(processingFeatureCal))
 
-  output1.1 <- data.table::copy(processingFeature)
-  output2.1 <- data.table::copy(processingGroup)
-  output3.1 <- data.table::copy(SampleFeature)
+  #output1.1 <- data.table::copy(processingFeature)
+  #output2.1 <- data.table::copy(processingGroup)
+  #output3.1 <- data.table::copy(SampleFeature)
 
 
   #output:
@@ -965,11 +965,11 @@ MS_AssessLinearity <- function(
 
 
   #1)full table dilution/concentration curves - Signal based
-  output1 <- processingFeature
+  output1 <- data.table::copy(processingFeature)
   #output1.1 <- processingFeature
 
   #2) full table dilution/concentration curves - Feature based
-  output2 <- processingGroup
+  output2 <- data.table::copy(processingGroup)
   #output2.1 <- processingGroup
 
 
@@ -980,14 +980,14 @@ MS_AssessLinearity <- function(
   #
 
   #4) full table biological Samples - Signal based
-  output3 <- SampleFeature
+  output3 <- data.table::copy(SampleFeature)
   #output3.1 <- SampleFeature
 
   # #5) filtered table biological Samples - Signal based (high quality)
   # output5 <- SampleFeature |> dplyr::filter(get(COLNAMES[["ID"]]) %in% unlist(unique(output3[COLNAMES[["ID"]]])))
 
   #6) summary table
-  output4 <- SampleFeature |>
+  output4 <- data.table::copy(SampleFeature) |>
     #subset(get(COLNAMES[["Sample_type"]]) %in% QC) |>
     dplyr::group_by(ID = get(COLNAMES[["ID"]]),
                     Batch = get(COLNAMES[["Batch"]]),
@@ -1089,9 +1089,22 @@ MS_AssessLinearity <- function(
   #7) bar plot summary per dilution/concentration
 
   printPlot <- ifelse(any(c("Plots", "all") %in% which_output), TRUE, FALSE)
+  if(is.null(TRANSFORM_Y)){
+    Yraw <- COLNAMES[["Y"]]
+  } else {
+    Yraw <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+  }
+
+  if(is.null(TRANSFORM_X)){
+    Xraw <- COLNAMES[["X"]]
+  } else {
+    Xraw <- paste0("X_transformed(",TRANSFORM_X, ")")
+  }
+
+
 
   summary_barplot <- plot_Barplot_Summary(printPDF = printPlot,
-                                          inputData_Series = output1.1,
+                                          inputData_Series = output1,
                                           COLNAMES = COLNAMES,
                                           X = Xraw, Y = Yraw,
                                           output_dir = IMG_OUTPUT_DIR)
@@ -1099,8 +1112,8 @@ MS_AssessLinearity <- function(
 
   #8) scatter plot
   FDS_scatterplot <- plot_FDS(printPDF = printPlot,
-                              inputData_Series = output1.1,
-                              inputData_BioSamples = output3.1 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+                              inputData_Series = output1,
+                              inputData_BioSamples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                               inputData_QC = SampleQC,
                               COLNAMES = COLNAMES, Xcol = Xraw, Ycol = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
                               Series = Series, output_dir = IMG_OUTPUT_DIR

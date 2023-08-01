@@ -247,7 +247,7 @@ if(!is.null(TRANSFORM_Y)){
 
     if(data.table::uniqueN(data_Signals[[Col_Batch]]) > 1){
     plotlinearData <-  plotlinearData +
-      ggforce::facet_grid_paginate(ID ~ Batch ,
+      ggforce::facet_grid_paginate(ID ~ Col_Batch ,
                                    scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
     } else {
       plotlinearData <-  plotlinearData +
