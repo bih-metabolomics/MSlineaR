@@ -247,7 +247,7 @@ if(!is.null(TRANSFORM_Y)){
 
     if(data.table::uniqueN(data_Signals[[Col_Batch]]) > 1){
     plotlinearData <-  plotlinearData +
-      ggforce::facet_grid_paginate(ID ~ Col_Batch ,
+      ggforce::facet_grid_paginate(ID ~ Batch ,
                                    scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
     } else {
       plotlinearData <-  plotlinearData +
@@ -267,12 +267,12 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
     blankmedian$label <- paste(signal_blank_ratio," x median blank")
     blankmedian$xtext <- data_Signals |>
       dplyr::group_by(groupIndices) |>
-      dplyr::summarize(xblank = max(get(indipendent), na.rm = T)/2 + 2) |>
+      dplyr::summarize(.groups = "drop", xblank = max(get(indipendent), na.rm = T)/2 + 2) |>
       dplyr::select(xblank) |>
       unlist(use.names = F)
     blankmedian <- data_Signals |>
       dplyr::group_by(groupIndices) |>
-      dplyr::summarize(ytext = na.omit(medBlank*signal_blank_ratio)) |>
+      dplyr::summarize(.groups = "drop",ytext = na.omit(medBlank*signal_blank_ratio)) |>
       unique() |>
       dplyr::ungroup() |>
       dplyr::right_join(blankmedian, by = "groupIndices")
