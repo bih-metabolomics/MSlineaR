@@ -1124,7 +1124,7 @@ MS_AssessLinearity <- function(
 
 
   summary_barplot_all <- plot_Barplot_Summary_Sample(printPDF = printPlot,
-                                                     inputData_Samples = output3.1,
+                                                     inputData_Samples = output3,
                                                      COLNAMES = COLNAMES,
                                                      X = Xraw, Y = Yraw,
                                                      output_dir = IMG_OUTPUT_DIR,
@@ -1137,7 +1137,7 @@ MS_AssessLinearity <- function(
   #10) bar plot summary for biological samples
 
   summary_barplot_sample <- plot_Barplot_Summary_Sample(printPDF = printPlot,
-                                                        inputData_Samples = output3.1 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
+                                                        inputData_Samples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                                                         COLNAMES = COLNAMES,
                                                         X = Xraw, Y = Yraw,
                                                         output_dir = IMG_OUTPUT_DIR,
