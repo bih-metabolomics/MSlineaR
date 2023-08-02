@@ -18,13 +18,14 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   #modelObject <- unique(dat[[modelObject]])
   #modelObject <- unlist(modelObject, recursive = F)
   #int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(modelObject$fit) -min(modelObject$fit))/2 + min(modelObject$fit), which = TRUE, na.rm = T)
-  int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(dat[[y]]) -min(dat[[y]]))/2 + min(dat[[y]]), which = TRUE, na.rm = T)
+  #int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(dat[[y]]) -min(dat[[y]]))/2 + min(dat[[y]]), which = TRUE, na.rm = T)
 
-  if(length(int50) > 1) int50 <- max(int50)
-  if(int50 == length(dat[[x]])) int50 <- length(dat[[x]]) -1
-  if(int50 == 1) int50 = 2
+  #if(length(int50) > 1) int50 <- max(int50)
+  #if(int50 == length(dat[[x]])) int50 <- length(dat[[x]]) -1
+  #if(int50 == 1) int50 = 2
   #dat$color[int50] <-  "green"
 
+  int50 <- ceiling(length(dat[[y]])/2)
 
 
   #create linear regression line going through int50
