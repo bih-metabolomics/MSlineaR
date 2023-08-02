@@ -21,7 +21,7 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
 
   medblank <- median(blank[[y]], na.rm = T)
 
-  dat$signalBlankRatio[dat$Y <= (medblank * noise)] <- TRUE
+  dat$signalBlankRatio[dat[[y]] <= (medblank * noise)] <- TRUE
   dat$medBlank <- medblank
   dat$color[dat$signalBlankRatio %in% TRUE] <- "grey"
   dat$Comment[dat$signalBlankRatio %in% FALSE] <- paste0(dat$Comment[dat$signalBlankRatio], "_>s/b")
