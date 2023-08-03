@@ -28,14 +28,14 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
 
 
 
-  dat$signalBlankRatio[dat[[y]] <= (medblank * noise)] <- TRUE
+  dat$'signalBlankRatio'[dat[[y]] <= (medblank * noise)] <- TRUE
   dat$medBlank <- medblank
-  dat$color[dat$signalBlankRatio %in% TRUE] <- "grey"
-  dat$Comment[dat$signalBlankRatio %in% FALSE] <- paste0(dat$Comment[dat$signalBlankRatio], "_>s/b")
-  dat$Comment[dat$signalBlankRatio %in% TRUE] <- paste0(dat$Comment[dat$signalBlankRatio], "_<s/b")
-  dat$signalBlankRatio[is.na(dat[[y_trans]])] <- NA
+  dat$color[dat$'signalBlankRatio' %in% TRUE] <- "grey"
+  dat$Comment[dat$'signalBlankRatio' %in% FALSE] <- paste0(dat$Comment[dat$'signalBlankRatio'], "_>s/b")
+  dat$Comment[dat$'signalBlankRatio' %in% TRUE] <- paste0(dat$Comment[dat$'signalBlankRatio'], "_<s/b")
+  dat$'signalBlankRatio'[is.na(dat[[y_trans]])] <- NA
 
-  dat$Y_sb[dat$signalBlankRatio %in% TRUE] <- NA
+  dat$Y_sb[dat$'signalBlankRatio' %in% TRUE] <- NA
 
   lost <- diff(dat[dat$color %in% "black", DilutionPoint]) > 2
   if(any(lost)){
@@ -46,19 +46,19 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
 
     if(left < right & left < 3 ) {
 
-      dat$signalBlankRatio[dat$color %in% "black"][1:lost.pos] <- TRUE
+      dat$'signalBlankRatio'[dat$color %in% "black"][1:lost.pos] <- TRUE
 
 
     } else if(right < left & right < 3 ){
 
-      dat$signalBlankRatio[dat$color %in% "black"][ (lost.pos + 1) : length(lost)] <- TRUE
+      dat$'signalBlankRatio'[dat$color %in% "black"][ (lost.pos + 1) : length(lost)] <- TRUE
 
     }
 
 
-    dat$color[dat$signalBlankRatio %in% TRUE] <- "grey"
-    dat$Comment[dat$signalBlankRatio %in% TRUE] <- paste0(dat$Comment[dat$signalBlankRatio], "_<s/b")
-    dat$Y_sb[dat$signalBlankRatio %in% TRUE] <- NA
+    dat$color[dat$'signalBlankRatio' %in% TRUE] <- "grey"
+    dat$Comment[dat$'signalBlankRatio' %in% TRUE] <- paste0(dat$Comment[dat$signalBlankRatio], "_<s/b")
+    dat$Y_sb[dat$'signalBlankRatio' %in% TRUE] <- NA
 
   }
 
