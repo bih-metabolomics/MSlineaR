@@ -65,6 +65,7 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
   }else{
 
     dat$Comment <- paste0(dat$Comment, "_noBlank")
+    dat$medBlank <- NA
 
   }
 
