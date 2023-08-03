@@ -203,7 +203,7 @@ prepareData <- function(dat,
   data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "ID","Sample_ID", "Sample.Type","Class", "Batch",COLNAMES[["X"]], "Y"))
   data.table::setorderv(processed, c("ID", "Batch", COLNAMES[["X"]]))
 
-  processed[ , ":="(Comment = NA, pch = data.table::fcase(!is.na(Y), 19), color = data.table::fcase(!is.na(Y), "black"))]
+  processed[ , ":="(Comment = NA, pch = data.table::fcase(!is.na(Y), 19), color = data.table::fcase(is.na(Y), "grey", default = "black"))]
   processed[ , ":="(#YNorm = Y / max(Y, na.rm = T) * 100,
     #Y_trans = log(Y),
     #X_trans = log(X),
