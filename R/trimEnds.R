@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
+trimm_signalBlank <- function(dats, blanks, y, y_trans,yblank, noise){
 
   setDT(dats)
   setDT(blanks)
@@ -21,7 +21,7 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
   dat$Y_sb <- dat[[y_trans]]
 
 
-  medblank <- median(blank[[y]], na.rm = T)
+  medblank <- median(blank[[yblank]], na.rm = T)
 
   if(!is.na(medblank)){
 
@@ -31,8 +31,8 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
   dat$'signalBlankRatio'[dat[[y]] <= (medblank * noise)] <- TRUE
   dat$medBlank <- medblank
   dat$color[dat$'signalBlankRatio' %in% TRUE] <- "grey"
-  dat$Comment[dat$'signalBlankRatio' %in% FALSE] <- paste0(dat$Comment[dat$'signalBlankRatio'], "_>s/b")
-  dat$Comment[dat$'signalBlankRatio' %in% TRUE] <- paste0(dat$Comment[dat$'signalBlankRatio'], "_<s/b")
+  dat$Comment[dat$'signalBlankRatio' %in% FALSE] <- paste0(dat$Comment[dat$'signalBlankRatio' %in% FALSE], "_>s/b")
+  dat$Comment[dat$'signalBlankRatio' %in% TRUE] <- paste0(dat$Comment[dat$'signalBlankRatio' %in% TRUE], "_<s/b")
   dat$'signalBlankRatio'[is.na(dat[[y_trans]])] <- NA
 
   dat$Y_sb[dat$'signalBlankRatio' %in% TRUE] <- NA

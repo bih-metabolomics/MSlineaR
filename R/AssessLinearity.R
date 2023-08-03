@@ -297,7 +297,8 @@ MS_AssessLinearity <- function(
     }
   #}
 
-
+Xorigin <- "X"
+Yorigin <- "Y"
   if(TRANSFORM %in% TRUE){
     X <- ifelse(is.null(TRANSFORM_X), "X", "X_trans")
     Y <- ifelse(is.null(TRANSFORM_Y), "Y", "Y_trans")
@@ -391,6 +392,7 @@ MS_AssessLinearity <- function(
     #            --------------------------------------------------------\n")
 
     blanks <-  dataOrigin[get(COLNAMES[["Sample_type"]]) %in% BLANK]
+    Yblank <- COLNAMES[["Y"]]
 
 
 #closeAllConnections()
@@ -401,8 +403,9 @@ MS_AssessLinearity <- function(
       nCORE,
       xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
-      y = COLNAMES[["Y"]],
+      y = Yorigin,
       y_trans = Y,
+      yblank = Yblank,
       func = trimm_signalBlank,#(function in trimmEnds.R)
       blanks = blanks,
       noise = NOISE
