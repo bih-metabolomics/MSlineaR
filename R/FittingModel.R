@@ -82,7 +82,7 @@ chooseModel <- function(dats,
     if(any(abs(rstandard(quadratic)) > STDRES) & abs(sd(residuals(quadratic))) > SDRES_MIN){
       datOutQuad <- dat
       datOutQuad[[y]][which(abs(rstandard(quadratic)) > STDRES)] <- NA
-      datOutQuad[[outlierName]][which(abs(rstandard(linear)) > STDRES)] <- TRUE
+      datOutQuad[[outlierName]][which(abs(rstandard(quadratic)) > STDRES)] <- TRUE
 
       quadraticOut <- lm(get(y) ~ poly(get(x), 2, raw = TRUE), data = datOutQuad)
       #RMSE
