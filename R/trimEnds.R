@@ -18,8 +18,15 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
   blank <- data.table::copy(blanks)
   blank <- dplyr::filter(blank, groupIndices %in% dat$groupIndices)
   dat$'signalBlankRatio' <- FALSE
+  dat$Y_sb <- dat[[y_trans]]
+
 
   medblank <- median(blank[[y]], na.rm = T)
+
+  if(!is.na(medblank)){
+
+
+
 
   dat$signalBlankRatio[dat[[y]] <= (medblank * noise)] <- TRUE
   dat$medBlank <- medblank
@@ -27,7 +34,7 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
   dat$Comment[dat$signalBlankRatio %in% FALSE] <- paste0(dat$Comment[dat$signalBlankRatio], "_>s/b")
   dat$Comment[dat$signalBlankRatio %in% TRUE] <- paste0(dat$Comment[dat$signalBlankRatio], "_<s/b")
   dat$signalBlankRatio[is.na(dat[[y_trans]])] <- NA
-  dat$Y_sb <- dat[[y_trans]]
+
   dat$Y_sb[dat$signalBlankRatio %in% TRUE] <- NA
 
   lost <- diff(dat[dat$color %in% "black", DilutionPoint]) > 2
@@ -52,6 +59,12 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,noise){
     dat$color[dat$signalBlankRatio %in% TRUE] <- "grey"
     dat$Comment[dat$signalBlankRatio %in% TRUE] <- paste0(dat$Comment[dat$signalBlankRatio], "_<s/b")
     dat$Y_sb[dat$signalBlankRatio %in% TRUE] <- NA
+
+  }
+
+  }else{
+
+    dat$Comment <- paste0(dat$Comment, "_noBlank")
 
   }
 
