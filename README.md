@@ -35,20 +35,22 @@ As long as `MSlineaR` is not a public package, you need to have access to my rep
 
 Install `MSlineaR` by running the following commands in R:
 
-    if (!requireNamespace("usethis")) install.packages("usethis")
-      
-    # set config
-    # add github user name and email adress, which you are using for github
-    usethis::use_git_config(user.name = "USERNAME", user.email = "EMAIL")
+```         
+if (!requireNamespace("usethis")) install.packages("usethis")
+  
+# set config
+# add github user name and email adress, which you are using for github
+usethis::use_git_config(user.name = "USERNAME", user.email = "EMAIL")
 
-    #Go to github page to generate token only for first time
-    usethis::create_github_token()
+#Go to github page to generate token only for first time
+usethis::create_github_token()
 
-    #paste your PAT into pop-up that follows...
-    credentials::set_github_pat()
+#paste your PAT into pop-up that follows...
+credentials::set_github_pat()
 
-    # install.packages("devtools")
-    devtools::install_github("bih-metabolomics/MSlineaR")
+# install.packages("devtools")
+devtools::install_github("bih-metabolomics/MSlineaR")
+```
 
 ## Input Data Table
 
@@ -159,7 +161,7 @@ targetedMSCal <- AssessLinearity(
 
 -   *column_Batch = "Batch"*
 
--   *column_Y\_sample = "Area"*
+-   *column_Y_sample = "Area"*
 
 -   *column_class_sample = NULL*
 

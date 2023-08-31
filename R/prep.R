@@ -211,7 +211,7 @@ prepareData <- function(dat,
     #groupIndices = .GRP),
     by = c("ID", "Batch")]
 
-  processed$X = COLNAMES[["X"]] * 100
+  processed$X = processed[[COLNAMES[["X"]]]] * 100
   #processed$DilutionPoint <- processed$DilutionPoint + 1
 
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_X)){
