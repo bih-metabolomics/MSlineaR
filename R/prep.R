@@ -207,7 +207,8 @@ prepareData <- function(dat,
   processed[ , ":="(#YNorm = Y / max(Y, na.rm = T) * 100,
     #Y_trans = log(Y),
     #X_trans = log(X),
-    DilutionPoint = 1 : (.N)),
+    DilutionPoint = 1 : (.N),
+    X = cumprod(c(1,get(COLNAMES[["X"]])[-1]/get(COLNAMES[["X"]])[- (.N)])) * 3),
     #groupIndices = .GRP),
     by = c("ID", "Batch")]
 
