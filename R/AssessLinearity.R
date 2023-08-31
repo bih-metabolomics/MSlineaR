@@ -1056,6 +1056,9 @@ Yorigin <- "Y"
     colnames(output2)[which(colnames(output2) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
     colnames(output3)[which(colnames(output3) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
     colnames(output4)[which(colnames(output4) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+    colnames(SampleQC)[which(colnames(SampleQC) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+
+
 
   }
 
@@ -1064,6 +1067,7 @@ Yorigin <- "Y"
     colnames(output2)[which(colnames(output2) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
     colnames(output3)[which(colnames(output3) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
     colnames(output4)[which(colnames(output4) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+    colnames(SampleQC)[which(colnames(SampleQC) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
 
   }
 
