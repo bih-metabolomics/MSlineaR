@@ -141,7 +141,7 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
   if(!any(dat[[COLNAMES[["Sample_type"]]]] %in% CALIBRANTS)) rlang::abort("Argument 'sample_type_serial' was not found in column 'column_sample_type'")
   if(!data.table::between(x = R2_MIN, lower = 0, upper = 1)) rlang::abort("Argument 'R2_min' needs to be from type double and in the range between 0 and 1")
   if(!TYPE %in% c("untargeted", "targeted")) rlang::abort("Argument 'analysis_type' need to be either 'untargeted' or 'targeted'")
-  if(TYPE %in% "untargeted")if(!(!is.null(DILUTION_FACTOR) | DILUTION_FACTOR != " " | !is.na(DILUTION_FACTOR))) rlang::abort("Argument 'dilution_factor ' must be provided for untargeted analysis")
+  #if(TYPE %in% "untargeted")if(!(!is.null(DILUTION_FACTOR) | DILUTION_FACTOR != " " | !is.na(DILUTION_FACTOR))) rlang::abort("Argument 'dilution_factor ' must be provided for untargeted analysis")
 
   if(!is.logical(TRANSFORM) | is.na(TRANSFORM)) rlang::abort("Argument 'transform' needs to be from type logical")
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_X)) if(!is.character(TRANSFORM_X)) rlang::abort("Argument 'transform_X' and 'transform_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
@@ -162,7 +162,7 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
   if(!is.null(SAMPLE)) if(!any(colnames(dat) %in% Y_SAMPLE))rlang::abort("Column 'column_Y_sample' was not found in input data.")
 
   if(!is.null(QC)) if(!all( QC %in% dat[[COLNAMES[["Sample_type"]]]])) rlang::abort("Argument 'sample_type_QC' was not found in column 'column_sample_type'")
-  if(!is.numeric(DILUTION_FACTOR)) rlang::abort("Argument 'dilution_factor' needs to be from type numeric.")
+  #if(!is.numeric(DILUTION_FACTOR)) rlang::abort("Argument 'dilution_factor' needs to be from type numeric.")
   if(!is.logical(BATCH_HARMONIZATION) | is.na(BATCH_HARMONIZATION)) rlang::abort("Argument 'Batch_harmonization' needs to be from type logical")
   if(!is.null(NOISE)) if(!is.numeric(NOISE) | NOISE < 1) rlang::abort("Argument 'signal_blank_ration' needs to be from type integer and greater than 0.")
   if(!is.null(NOISE)) if(!BLANK %in% dat[[COLNAMES[["Sample_type"]]]]) rlang::abort("Argument 'sample_type_blank' was not found in column 'column_sample_type'")
@@ -207,12 +207,12 @@ prepareData <- function(dat,
   processed[ , ":="(#YNorm = Y / max(Y, na.rm = T) * 100,
     #Y_trans = log(Y),
     #X_trans = log(X),
-    DilutionPoint = 0 : (.N-1)),
+    DilutionPoint = 1 : (.N)),
     #groupIndices = .GRP),
     by = c("ID", "Batch")]
 
-  processed$X = DILUTION_FACTOR^processed$DilutionPoint
-  processed$DilutionPoint <- processed$DilutionPoint + 1
+  processed$X = COLNAMES[["X"]] * 100
+  #processed$DilutionPoint <- processed$DilutionPoint + 1
 
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_X)){
     processed$X_trans = get(TRANSFORM_X)(processed$X)
