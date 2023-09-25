@@ -64,7 +64,7 @@ if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- 
 
   if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= min_feature)){ #& any(consNDX$position[consNDX$values %in% TRUE] >= int50)
 
-    TRUEpos <- Position(function(fi) fi >= int50, consNDX$position[consNDX$length >= min_feature & consNDX$values %in% TRUE], right = TRUE)
+    TRUEpos <- Position(function(fi) fi >= int50 & fi >= min_feature , consNDX$position[consNDX$values %in% TRUE], right = TRUE)
     maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE
     ][TRUEpos] - consNDX$length[consNDX$values %in% TRUE][TRUEpos] +1) : consNDX$position[consNDX$values %in% TRUE][TRUEpos]
     maxTrueRange <- maxTrueRange[maxTrueRange!=0]
