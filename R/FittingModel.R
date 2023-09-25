@@ -46,7 +46,7 @@ chooseModel <- function(dats,
         slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(outlierY) ~ get(x)))[2]*100)
         if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- c(slopes[1],refslopemin*2, slopes[-1])}
 
-        if(any(slopes[c(which(abs(rstandard(logistic)) > STDRES), which(abs(rstandard(logistic)) > STDRES) + 1)] < 0)){
+        if(any(slopes[c(which(abs(rstandard(logistic)) > STDRES), which(abs(residuals(logistic, typeRes = "standard")) > STDRES) + 1)] < 0)){
 
           datOutLog <- dat
           datOutLog[[outlierY]][which(abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- NA
