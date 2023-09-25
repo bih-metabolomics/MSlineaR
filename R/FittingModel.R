@@ -24,18 +24,19 @@ chooseModel <- function(dats,
   outlierY <- paste0("Y_", abbr)
   dat <- data.table::setorder(dat,DilutionPoint)[!is.na(get(y))]
   dat[[outlierName]] <- FALSE
+  dat[[outlierY]] <- dat[[y]]
 
   if ("logistic" %in% model) {
-    logistic <- drc::drm(get(y) ~ get(x), fct = drc::L.3(), data = dat)
-    if(any(abs(residuals(logistic, typeRes = "standard")) > STDRES) & abs(sd(residuals(logistic))) > SDRES_MIN){
+    logistic <- drc::drm(get(outlierY) ~ get(x), fct = drc::L.3(), data = dat)
+    if(any(abs(residuals(logistic, typeRes = "standard")) > STDRES) ){ #& abs(sd(residuals(logistic))) > SDRES_MIN
       datOutLog <- dat
-      datOutLog[[y]][which(abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- NA
+      datOutLog[[outlierY]][which(abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- NA
       datOutLog[[outlierName]][which(abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- TRUE
 
-      logisticOut <- drc::drm(get(y) ~ get(x), fct = drc::L.3(), data = datOutLog)
+      logisticOut <- drc::drm(get(outlierY) ~ get(x), fct = drc::L.3(), data = datOutLog)
       #RMSE
-      logisticRMSE <- Metrics::rmse(dat[[y]], predict(logistic))
-      logisticOutRMSE <- Metrics::rmse(na.exclude(datOutLog[[y]]), predict(logisticOut))
+      logisticRMSE <- Metrics::rmse(dat[[outlierY]], predict(logistic))
+      logisticOutRMSE <- Metrics::rmse(na.exclude(datOutLog[[outlierY]]), predict(logisticOut))
       logistic1 <- get(c("logistic", "logisticOut")[which(c(logisticRMSE, logisticOutRMSE) %in% min(logisticRMSE, logisticOutRMSE))])
       logistic1.dat <- datOutLog
     } else{
@@ -43,7 +44,7 @@ chooseModel <- function(dats,
       logistic1.dat <- dat
     }
 
-    logistic1RMSE <- Metrics::rmse(logistic1$data$`get(y)`, predict(logistic1))
+    logistic1RMSE <- Metrics::rmse(logistic1$data$`get(outlierY)`, predict(logistic1))
 
     #cor.logistic <- cor(dat[[tidyselect::all_of(y)]], predict(logistic))
   } else{
@@ -52,23 +53,23 @@ chooseModel <- function(dats,
   }
 
   if ("linear" %in% model) {
-    linear <- lm(get(y) ~ get(x), data = dat)
-    if(any(abs(rstandard(linear)) > STDRES) & abs(sd(residuals(linear))) > SDRES_MIN){
+    linear <- lm(get(outlierY) ~ get(x), data = dat)
+    if(any(abs(rstandard(linear)) > STDRES) ){ #& abs(sd(residuals(linear))) > SDRES_MIN
       datOutLin <- dat
-      datOutLin[[y]][which(abs(rstandard(linear)) > STDRES)] <- NA
+      datOutLin[[outlierY]][which(abs(rstandard(linear)) > STDRES)] <- NA
       datOutLin[[outlierName]][which(abs(rstandard(linear)) > STDRES)] <- TRUE
 
-      linearOut <- lm(get(y) ~ get(x), data = datOutLin)
+      linearOut <- lm(get(outlierY) ~ get(x), data = datOutLin)
       #RMSE
-      linearRMSE <- Metrics::rmse(dat[[y]], predict(linear))
-      linearOutRMSE <- Metrics::rmse(na.exclude(datOutLin[[y]]), predict(linearOut))
+      linearRMSE <- Metrics::rmse(dat[[outlierY]], predict(linear))
+      linearOutRMSE <- Metrics::rmse(na.exclude(datOutLin[[outlierY]]), predict(linearOut))
       linear1 <- get(c("linear", "linearOut")[which(c(linearRMSE, linearOutRMSE) %in% min(linearRMSE, linearOutRMSE))])
       linear1.dat <- datOutLin
     } else{
       linear1 <- linear
       linear1.dat <- dat
     }
-    linear1RMSE <- Metrics::rmse(linear1$model$`get(y)`, predict(linear1))
+    linear1RMSE <- Metrics::rmse(linear1$model$`get(outlierY)`, predict(linear1))
 
     #cor.linear <- cor(dat[[tidyselect::all_of(y)]], predict(linear))
   } else{
@@ -78,16 +79,16 @@ chooseModel <- function(dats,
 
 
   if ("quadratic" %in% model) {
-    quadratic <- lm(get(y) ~ poly(get(x), 2, raw = TRUE), data = dat)
-    if(any(abs(rstandard(quadratic)) > STDRES) & abs(sd(residuals(quadratic))) > SDRES_MIN){
+    quadratic <- lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = dat)
+    if(any(abs(rstandard(quadratic)) > STDRES) ){ #& abs(sd(residuals(quadratic))) > SDRES_MIN
       datOutQuad <- dat
-      datOutQuad[[y]][which(abs(rstandard(quadratic)) > STDRES)] <- NA
+      datOutQuad[[outlierY]][which(abs(rstandard(quadratic)) > STDRES)] <- NA
       datOutQuad[[outlierName]][which(abs(rstandard(quadratic)) > STDRES)] <- TRUE
 
-      quadraticOut <- lm(get(y) ~ poly(get(x), 2, raw = TRUE), data = datOutQuad)
+      quadraticOut <- lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = datOutQuad)
       #RMSE
-      quadraticRMSE <- Metrics::rmse(dat[[y]], predict(quadratic))
-      quadraticOutRMSE <- Metrics::rmse(na.exclude(datOutQuad[[y]]), predict(quadraticOut))
+      quadraticRMSE <- Metrics::rmse(dat[[outlierY]], predict(quadratic))
+      quadraticOutRMSE <- Metrics::rmse(na.exclude(datOutQuad[[outlierY]]), predict(quadraticOut))
       quadratic1 <- get(c("quadratic", "quadraticOut")[which(c(quadraticRMSE, quadraticOutRMSE) %in% min(quadraticRMSE, quadraticOutRMSE))])
       quadratic1.dat <-  datOutQuad
     } else{
@@ -95,7 +96,7 @@ chooseModel <- function(dats,
       quadratic1.dat <- dat
     }
 
-    quadratic1RMSE <- Metrics::rmse(quadratic1$model$`get(y)`, predict(quadratic1))
+    quadratic1RMSE <- Metrics::rmse(quadratic1$model$`get(outlierY)`, predict(quadratic1))
 
     #cor.quadratic <- cor(dat[[tidyselect::all_of(y)]], predict(quadratic))
   } else{
@@ -122,14 +123,14 @@ chooseModel <- function(dats,
   dat$color[dat[[outlierName]] %in% TRUE] <- "red"
   dat$Comment[dat[[outlierName]] %in% TRUE] <- paste0(dat$Comment[dat[[outlierName]] %in% TRUE], "_Outlier",abbr)
   dat$Comment[dat[[outlierName]] %in% FALSE] <- paste0(dat$Comment[dat[[outlierName]] %in% FALSE], "_NoOutlier",abbr)
-  dat[[outlierY]] <- dat[[y]]
+  #dat[[outlierY]] <- dat[[y]]
   dat[[outlierY]][is.na(dat[, get(y)]) | dat[[outlierName]] %in% TRUE] <- NA
 
 
 
-  modelNew <- if(ModelName %in% "logistic1"){drc::drm(get(y) ~ get(x), fct = drc::L.3(), data = dat[color %in% "black",])
-  } else if(ModelName %in% "linear1"){lm(get(y) ~ get(x), data = dat[color %in% "black",])
-      } else if(ModelName %in% "quadratic1"){lm(get(y) ~ poly(get(x), 2, raw = TRUE), data = dat[color %in% "black",])}
+  modelNew <- if(ModelName %in% "logistic1"){drc::drm(get(outlierY) ~ get(x), fct = drc::L.3(), data = dat[color %in% "black",])
+  } else if(ModelName %in% "linear1"){lm(get(outlierY) ~ get(x), data = dat[color %in% "black",])
+      } else if(ModelName %in% "quadratic1"){lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = dat[color %in% "black",])}
 
   ## calculate correlation
   # cor.poly <- c(
