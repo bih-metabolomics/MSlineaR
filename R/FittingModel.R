@@ -46,7 +46,10 @@ chooseModel <- function(dats,
         slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(outlierY) ~ get(x)))[2]*100)
         if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- c(slopes[1],refslopemin*2, slopes[-1])}
 
-        if(any(slopes[c(which(abs(residuals(logistic, typeRes = "standard")) > STDRES), which(abs(residuals(logistic, typeRes = "standard")) > STDRES) + 1)] < 0)){
+        pos_slope <- c(which(abs(residuals(logistic, typeRes = "standard")) > STDRES), which(abs(residuals(logistic, typeRes = "standard")) > STDRES) + 1)
+        pos_slope <- pos_slope[pos_slope <= nrow(dat)]
+
+        if(any(slopes[pos_slope] < 0)){
 
           datOutLog <- dat
           datOutLog[[outlierY]][which(abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- NA
@@ -67,12 +70,7 @@ chooseModel <- function(dats,
         }
 
       }
-    }
-
-
-
-
-      else{
+    }else{
       logistic1 <- logistic
       logistic1.dat <- dat
     }
@@ -105,7 +103,10 @@ chooseModel <- function(dats,
         slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(outlierY) ~ get(x)))[2]*100)
         if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- c(slopes[1],refslopemin*2, slopes[-1])}
 
-        if(any(slopes[c(which(abs(rstandard(linear)) > STDRES), which(abs(rstandard(linear)) > STDRES) + 1)] < 0)){
+        pos_slope <- c(which(abs(rstandard(linear)) > STDRES), which(abs(rstandard(linear)) > STDRES) + 1)
+        pos_slope <- pos_slope[pos_slope <= nrow(dat)]
+
+        if(any(slopes[pos_slope] < 0)){
 
           datOutLin <- dat
           datOutLin[[outlierY]][which(abs(rstandard(linear)) > STDRES)] <- NA
@@ -163,7 +164,11 @@ chooseModel <- function(dats,
         slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(outlierY) ~ get(x)))[2]*100)
         if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- c(slopes[1],refslopemin*2, slopes[-1])}
 
-        if(any(slopes[c(which(abs(rstandard(quadratic)) > STDRES), which(abs(rstandard(quadratic)) > STDRES) + 1)] < 0)){
+        pos_slope <- c(which(abs(rstandard(quadratic)) > STDRES), which(abs(rstandard(quadratic)) > STDRES) + 1)
+        pos_slope <- pos_slope[pos_slope <= nrow(dat)]
+
+
+        if(any(slopes[pos_slope] < 0)){
 
           datOutQuad <- dat
           datOutQuad[[outlierY]][which(abs(rstandard(quadratic)) > STDRES)] <- NA
