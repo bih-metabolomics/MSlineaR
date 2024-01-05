@@ -29,6 +29,10 @@ getLRstatus <- function(dats, datCal, y){
   dat$Status_LR <- NA
   dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[[y]], upper = dat$LREndY, NAbounds = NA)
 
+  dat$Status_LR[dat[[y]] < dat$LRStartY] <- "BLOL"
+  dat$Status_LR[dat[[y]] > dat$LRStartY] <- "ULOL"
+
+
   dat$Status_LR[dat$aboveR2 %in% FALSE] <- FALSE
 
   dats <- dats[dat[ ,.( IDintern,LRFlag, Status_LR, LRStartY, LREndY)], on = "IDintern"]

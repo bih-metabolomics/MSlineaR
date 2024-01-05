@@ -243,7 +243,7 @@ if(!is.null(TRANSFORM_Y)){
 
 
 
-  if(length(GroupIndices > 1) | any(GroupIndices %in% "all") | length(Feature > 1) | any(Feature %in% "all" )){
+  if(length(GroupIndices) > 1 | any(GroupIndices %in% "all") | length(Feature) > 1 | any(Feature %in% "all" )){
 
     if(data.table::uniqueN(data_Signals[[Col_Batch]]) > 1){
     plotlinearData <-  plotlinearData +

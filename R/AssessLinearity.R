@@ -999,8 +999,9 @@ Yorigin <- "Y"
                     LRFlag) |>
     dplyr::summarize(.groups = "drop",
       'Signals' = length(Status_LR),
-      'LR_TRUE' = sum(Status_LR),
-      'LR_TRUE[%]' = round(sum(Status_LR)/length(Status_LR)*100,2),
+      'LR_Status' = vctrs::vec_count(Status_LR)$key,
+      'LR_Status_n' = vctrs::vec_count(Status_LR)$count,
+      'LR_Status_n[%]' = round(vctrs::vec_count(Status_LR)$count/length(Status_LR)*100,2),
       rsd_all = round(sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100,2),
       rsd_LR_TRUE = round(sd(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T)/mean(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T) * 100,2),
      ) #|>

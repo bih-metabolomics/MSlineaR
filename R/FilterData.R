@@ -39,7 +39,7 @@ MS_filterSamples <- function(
   dat <- data.table::copy(inputData)
   datSummary <- data.table::copy(inputDataSummary)
 
-  datSummary <- datSummary[!grep("notEnoug", LRFlag)]
+  datSummary <- datSummary[!grep("notEnough", LRFlag)]
 
 
   if(filter.type %in% "Batch"){
