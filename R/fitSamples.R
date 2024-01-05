@@ -33,7 +33,7 @@ getLRstatus <- function(dats, datCal, y){
   dat$Status_LR[dat[[y]] > dat$LREndY] <- "ULOL"
 
 
-  dat$Status_LR[dat$aboveR2 %in% FALSE] <- FALSE
+  dat$Status_LR[dat$aboveR2 %in% c(NA,FALSE)] <- FALSE
 
   dats <- dats[dat[ ,.( IDintern,LRFlag, Status_LR, LRStartY, LREndY)], on = "IDintern"]
   if(any(startsWith(names(dats), "i."))){
