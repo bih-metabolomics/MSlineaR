@@ -9,17 +9,18 @@ plot_FDS(
   inputData_BioSamples,
   inputData_QC,
   nrFeature = 50,
+  signal_blank_ratio = parent.frame()$NOISE,
   printPDF = TRUE,
   GroupIndices = "all",
   Feature = "all",
   printR2 = TRUE,
   outputfileName = c("Calibrationplot"),
-  TRANSFORM_Y,
-  inverse_y,
+  TRANSFORM_Y = parent.frame()$TRANSFORM_Y,
+  inverse_y = parent.frame()$INVERSE_Y,
   COLNAMES,
-  X,
-  Y,
-  Series,
+  Xcol,
+  Ycol,
+  Series = "QC dilution Curves",
   output_dir
 )
 }

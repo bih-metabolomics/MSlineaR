@@ -6,14 +6,15 @@
 \usage{
 MS_filterSamples(
   inputData,
-  Compound_ID,
-  Sample_ID,
+  Compound_ID = "groupIndices",
+  Sample_ID = "SampleID",
+  col_Batch = "Batch",
+  col_Class = "Group",
   Y,
-  inputDataSummary,
-  outputformat = c("wide", "long", "both"),
+  outputformat = c("none", "wide", "long", "both"),
   PATH,
   filter.type = c("Batch", "Class", "Batch_Class"),
-  filter.calc = c("all", "at least one", "at least x"),
+  filter.calc = c("all", "at least one", "at least x", "linear or 2 levels different"),
   filter.calc.x.Batch = NULL,
   filter.calc.x.Class = NULL,
   filter.percent = 80

@@ -36,7 +36,7 @@ MS_AssessLinearity(
   SOD_sdres_min = 1,
   SOD_stdres_max = 2,
   min_feature = 6,
-  LR_sd_res_factor = 2,
+  LR_sd_res_factor = 3,
   R2_min = 0.9,
   Batch_harmonization = c(TRUE, FALSE)[1],
   calculate_concentration = c(TRUE, FALSE)[1],
@@ -64,6 +64,8 @@ samples, QC and serial samples.}
 
 \item{sample_type_serial}{String;Identification of serial data in \code{column_sample_type}.}
 
+\item{signal_blank_ratio}{Numeric,}
+
 \item{column_X}{String; Column name of the independent variable,
 e.g. Concentration, Dilution,... . Highest number should be the highest concentration or lowest dilution.
 For untargeted data use a vector with consecutive numbers, e.g. c(1, 2, 3 , ...) with 1 beeing the highest dilution}
@@ -73,12 +75,15 @@ e.g. Intensity, Area,..}
 
 \item{column_class_sample}{String, Column name used for statistical classes}
 
+\item{dilution_factor}{Numeric, distance between the dilution/concentration steps,
+e.g. dilution_factor = 2 means, that the concentration of dilution 1 is half the concentration of dilution 2}
+
 \item{transform}{Boolean; Should the data be transformed? Default is \code{TRUE}.}
 
-\item{transform_x, transformy}{If \code{transform} is \code{TRUE}.
+\item{transform_x, transform_y}{If \code{transform} is \code{TRUE}.
 String; Which transformation should be used for the independent variable (concentration/dilution) or/and
 the dependent variable of the serial diluted/concentrated samples?
-Default for both is "log". If no transformation should be performed for one variable use NA.}
+Default for both is "log". If no transformation should be performed for one variable use NULL.}
 
 \item{first_outlier_detection, second_outlier_detection}{Boolean;
 Should an outlier detection be performed before/after the exclusion of
@@ -110,7 +115,7 @@ Minimum number of points present in one serial diluted/concentrated series
 marked as linear to consider this signal as linear. Default to 6, according to EMA guidelines2022.}
 
 \item{LR_sd_res_factor}{Integer; points of serial diluted/concentrated series,
-which are lower than \code{LR_sd_res_factor} times residual standard deviation are considered as linear.
+which are less than \code{LR_sd_res_factor} times residual standard deviation are considered as linear.
 Default to 2.}
 
 \item{R2_min}{Numeric, ranges from 0 to 1; Minimum coefficient of determination,

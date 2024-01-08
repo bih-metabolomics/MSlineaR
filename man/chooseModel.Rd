@@ -9,7 +9,7 @@ chooseModel(
   y = parent.frame()$Y,
   x = parent.frame()$X,
   model = c("logistic", "linear", "quadratic"),
-  SDRES_MIN = 1,
+  SDRES_MIN = 0,
   STDRES = 2,
   abbr
 )

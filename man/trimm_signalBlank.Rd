@@ -4,7 +4,7 @@
 \alias{trimm_signalBlank}
 \title{Title}
 \usage{
-trimm_signalBlank(dats, blanks, y, y_trans, noise)
+trimm_signalBlank(dats, blanks, y, y_trans, yblank, noise)
 }
 \arguments{
 \item{noise}{}

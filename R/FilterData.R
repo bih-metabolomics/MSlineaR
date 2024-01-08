@@ -3,8 +3,9 @@
 #' @param inputData
 #' @param Compound_ID
 #' @param Sample_ID
+#' @param col_Batch
+#' @param col_Class
 #' @param Y
-#' @param inputDataSummary
 #' @param outputformat
 #' @param PATH
 #' @param filter.type
