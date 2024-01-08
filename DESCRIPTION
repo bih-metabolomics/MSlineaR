@@ -1,6 +1,6 @@
 Package: MSlineaR
 Title: Assessing Linearity in untargeted metabolomics dilution series
-Version: 0.0.0.9000
+Version: 0.1.0.0000
 Authors@R: 
     person(given = "Janine",
            family = "Wiebach",
