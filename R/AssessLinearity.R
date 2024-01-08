@@ -990,21 +990,21 @@ Yorigin <- "Y"
   # output5 <- SampleFeature |> dplyr::filter(get(COLNAMES[["ID"]]) %in% unlist(unique(output3[COLNAMES[["ID"]]])))
 
   #6) summary table
-  output4 <- data.table::copy(SampleFeature) |>
-    #subset(get(COLNAMES[["Sample_type"]]) %in% QC) |>
-    dplyr::group_by(ID = get(COLNAMES[["ID"]]),
-                    Batch = get(COLNAMES[["Batch"]]),
-                    Type = get(COLNAMES[["Sample_type"]]),
-                    Class = get(COLNAMES[["Class"]]),
-                    LRFlag) |>
-    dplyr::summarize(.groups = "drop",
-      'Signals' = length(Status_LR),
-      'LR_Status' = vctrs::vec_count(Status_LR)$key,
-      'LR_Status_n' = vctrs::vec_count(Status_LR)$count,
-      'LR_Status_n[%]' = round(vctrs::vec_count(Status_LR)$count/length(Status_LR)*100,2),
-      rsd_all = round(sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100,2),
-      rsd_LR_TRUE = round(sd(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T)/mean(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T) * 100,2),
-     ) #|>
+  # output4 <- data.table::copy(SampleFeature) |>
+  #   #subset(get(COLNAMES[["Sample_type"]]) %in% QC) |>
+  #   dplyr::group_by(ID = get(COLNAMES[["ID"]]),
+  #                   Batch = get(COLNAMES[["Batch"]]),
+  #                   Type = get(COLNAMES[["Sample_type"]]),
+  #                   Class = get(COLNAMES[["Class"]]),
+  #                   LRFlag) |>
+  #   dplyr::summarize(.groups = "drop",
+  #     'Signals' = length(Status_LR),
+  #     'LR_Status' = vctrs::vec_count(Status_LR)$key,
+  #     'LR_Status_n' = vctrs::vec_count(Status_LR)$count,
+  #     'LR_Status_n[%]' = round(vctrs::vec_count(Status_LR)$count/length(Status_LR)*100,2),
+  #     rsd_all = round(sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100,2),
+  #     rsd_LR_TRUE = round(sd(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T)/mean(get(Y_SAMPLE)[Status_LR %in% TRUE], na.rm = T) * 100,2),
+  #    ) #|>
     #
     # tidyr::pivot_wider(names_from = c(Type),
     #                    values_from = c('LR_TRUE', 'LR_TRUE[%]', rsd_all, rsd_LR_TRUE)
@@ -1056,7 +1056,7 @@ Yorigin <- "Y"
     colnames(output1)[which(colnames(output1) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
     colnames(output2)[which(colnames(output2) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
     colnames(output3)[which(colnames(output3) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
-    colnames(output4)[which(colnames(output4) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+    #colnames(output4)[which(colnames(output4) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
     colnames(SampleQC)[which(colnames(SampleQC) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
 
 
@@ -1067,7 +1067,7 @@ Yorigin <- "Y"
     colnames(output1)[which(colnames(output1) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
     colnames(output2)[which(colnames(output2) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
     colnames(output3)[which(colnames(output3) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
-    colnames(output4)[which(colnames(output4) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+    #colnames(output4)[which(colnames(output4) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
     colnames(SampleQC)[which(colnames(SampleQC) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
 
   }
@@ -1084,7 +1084,7 @@ Yorigin <- "Y"
 
     if(any(c("BiologicalSamples", "all") %in% which_output)){
       write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_signalBased.csv")))
-      write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_summary.csv")))
+      #write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_summary.csv")))
 
       # writexl::write_xlsx(x = list(Signals = output3, summary = output4),
       #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples.xlsx")))
@@ -1179,7 +1179,7 @@ Yorigin <- "Y"
     "All_DilutionCurves_Signals" = output1,
     "All_DilutionCurves_Features" = output2,
     "All_Samples_Signals" = output3,
-    "Summary_per_Compound" = output4,
+    #"Summary_per_Compound" = output4,
     "dataModel_FOD" = dataFODModel,
     "dataModel_SOD" = dataSODModel#,
     # "Parameters" = list(
