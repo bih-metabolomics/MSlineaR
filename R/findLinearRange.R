@@ -96,11 +96,11 @@ if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- 
 
     )]
     dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
-    dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
+    dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
     dat$abline[dat$IsLinear %in% TRUE] = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))
     tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
     tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
-    tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
+    tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
 
     dat$Comment[dat$IsLinear %in% TRUE] <- unlist(apply(cbind(dat$Comment[dat$IsLinear %in% TRUE], "linearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
 
@@ -124,7 +124,7 @@ if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- 
         dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length < min_feature)]), IsLinear := FALSE]
         dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
         dat$color[dat$IsLinear %in% FALSE] <- "black"
-        dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
+        dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
         dat$abline[dat$IsLinear %in% TRUE] = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))
 
         tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
@@ -137,7 +137,7 @@ if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- 
         tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= min_feature
         tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
         tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
-        tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
+        tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
 
         } else if(any(lengths(LR_TRUE_list) >= min_feature & length(LR_TRUE_list) > 1 & length(max(LR_TRUE_list_Length)) == 1)){
 
@@ -145,7 +145,7 @@ if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- 
           dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length != max(LR_TRUE_list_Length))]), IsLinear := FALSE]
           dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
           dat$color[dat$IsLinear %in% FALSE] <- "black"
-          dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
+          dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
           dat$abline[dat$IsLinear %in% TRUE] = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))
 
 
@@ -159,7 +159,7 @@ if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- 
           tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= min_feature
           tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
           tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
-          tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$r.squared
+          tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
           tmpGroup$LRFlag = "mutiple linear ranges"
 
         } else{
