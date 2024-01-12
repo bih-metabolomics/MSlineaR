@@ -826,7 +826,7 @@ Yorigin <- "Y"
 
     t1 <- table.backcalc |> dplyr::group_by(ID, Batch) |>
       dplyr::summarize( lr_signals = sum(!is.na(Y)),
-                        lr_signals_true = sum(Status_LR),
+                        lr_signals_true = sum(Status_LR %in% TRUE),
                         'prc_all_<=20' = sum(precision <= 20)
       )
     t2 <- table.backcalc |> dplyr::group_by(ID, Batch) |>
