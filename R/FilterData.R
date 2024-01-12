@@ -56,6 +56,7 @@ MS_filterSamples <- function(
                        'LR_Status_n' = vctrs::vec_count(Status_LR)$count,
                        'LR_Status_n[%]' = round(vctrs::vec_count(Status_LR)$count/length(Status_LR)*100,2))
     #LR_TRUE_Batch = round(sum(LR_TRUE, na.rm = TRUE)/sum(Signals)*100,2))
+    summaryData <- BatchSummary
 
     if(filter.calc %in% "all") {
 
@@ -86,7 +87,7 @@ MS_filterSamples <- function(
                        'LR_Status' = vctrs::vec_count(Status_LR)$key,
                        'LR_Status_n' = vctrs::vec_count(Status_LR)$count,
                        'LR_Status_n[%]' = round(vctrs::vec_count(Status_LR)$count/length(Status_LR)*100,2))
-
+    summaryData <- ClassSummary
 
     if(filter.calc %in% "all") {
 
@@ -208,7 +209,7 @@ MS_filterSamples <- function(
 
   filteredData <- dat |> dplyr::filter(get(Compound_ID) %in% unlist(Compounds))
 
-  return(filteredData)
+  return(list(filteredData, summaryData))
 
 }
 
