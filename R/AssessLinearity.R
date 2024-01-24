@@ -349,7 +349,7 @@ Yorigin <- "Y"
   # save key numbers
   nCompounds <- data.table::uniqueN(processingGroup, by = c("ID"))
   nReplicates <- data.table::uniqueN(processingFeature, by = c("Batch"))
-  nDilutions <- data.table::uniqueN(processingFeature, by = c("DilutionPoint"))
+  nDilutions <- data.table::uniqueN(processingFeature, by = c("DilutionPoint")  )
   nSeries <- data.table::uniqueN(processingGroup, by = c("groupIndices"))
   nPeaks <- data.table::uniqueN(processingFeature, by = c("IDintern"))
 
@@ -918,7 +918,7 @@ Yorigin <- "Y"
 
       rsd_before <- SampleQC |>
         dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
-        dplyr::summarize(.groups = "keep", rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+        dplyr::summarize(.groups = "keep", rsd = sd(get(column_Y_sample), na.rm = T)/mean(get(column_Y_sample), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
 
@@ -927,7 +927,7 @@ Yorigin <- "Y"
       rsd_after <- SampleQC |>
         dplyr::filter(Status_LR %in% TRUE) |>
         dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
-        dplyr::summarise(.groups = "keep",rsd = sd(get(Y_SAMPLE), na.rm = T)/mean(get(Y_SAMPLE), na.rm = T) * 100) |>
+        dplyr::summarise(.groups = "keep",rsd = sd(get(column_Y_sample), na.rm = T)/mean(get(column_Y_sample), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
 
