@@ -238,7 +238,8 @@ MS_AssessLinearity <- function(
   # progressbar
   pbapply::pboptions(type = "timer", char = "[=-]", style = 5)
 
-  progressr::handlers(global = TRUE)
+  progressr::handlers(global = NA)
+  progressr::handlers(on_missing = "ignore")
   progressr::handlers(
     progressr::handler_progress(
       format   = ":current/:total [:bar] :percent in :elapsed ETA: :eta",
