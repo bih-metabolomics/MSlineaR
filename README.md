@@ -52,31 +52,66 @@ credentials::set_github_pat()
 devtools::install_github("bih-metabolomics/MSlineaR")
 ```
 
-## Input Data Table
+## Input Data Tables
 
-The input data needs at least 5 columns, indicating:
+MSlineaR needs two tables as input, one with information about the features and one for the sample meta data.
 
--   the Identification of the samples
+**1) Feature Table**
 
--   the type of the samples, e.g. Calibrants, samples, pooled QC etc
+The Feature table should be present in long format with following columns:
 
--   the Identification of the compounds
+-   Identification of the samples
 
--   the Instrument response( y) , e.g. Area, Intensity etc
+-   Identification of the compounds
 
--   the dilution step (1, 2, 3...) of a pooled QC for untargeted analysis and of the Concentration of Calibrants for targeted analysis
+-   Instrument response( y) , e.g. Area, Intensity etc
 
-| Sample_ID |  Type   | Compound_ID |  Area  | Dilution |
-|:---------:|:-------:|:-----------:|:------:|:--------:|
-|   cal1    | QC pool |  compound1  | 13578  |    1     |
-|   cal2    | QC pool |  compound1  | 157898 |    2     |
-|    s25    | sample  |  compound1  | 136789 |    NA    |
+| Sample.Identification | Compound  |  Area  |
+|:---------------------:|:---------:|:------:|
+|          s25          | compound1 | 157898 |
+|          s14          | compound1 | 13578  |
+|          s67          | compound1 | 136789 |
 
-Optional the input data table could include:
+: example for feature table
 
--   a column to distinguish between different Batches if there are more than one batch
+**Reformating table from wide into long format**
 
--   a column to distinguish between different statistical classes e.g. healthy and treatment
+Many peakpicking software, e.g. xcms, providing the data in wide format. The data can be easily reformated into long format using following code:
+
+``` r
+library(tidyr)
+library(dplyr)
+
+feature_tlb_wide <- MSlineaR::Feature_tlb_wide
+
+feature_tbl_long <- feature_tlb_wide |> 
+pivot_longer(cols = c("Compound_01" : "Compound_34"),, names_to = "Sample.Identification", values_to = "Area")
+```
+
+**2) Sample Table**
+
+The Sample Table contains all meta data for the individual samples. The table needs to be present in long format and should contain following columns:
+
+-   Identification of the samples, the column name must be identical in both tables
+
+-   type of the samples, e.g. Calibrants, samples, pooled QC etc
+
+-   order of injection
+
+-   Dilution step normalized to the highest dilution. That means the highest diluted sample get a dilution factor of 1, if the dilution factor is 3 than the second highest diluted sample get 3, the next one 9 , the next one 27,...
+
+| Sample.Identification | Sample.Type | Compound  | Sequence.Position | Dilution |
+|:---------------------:|:-----------:|:---------:|:-----------------:|:--------:|
+|        blank1         |    blank    | compound1 |         1         |    NA    |
+|         cal1          |  dilution   | compound1 |         5         |    1     |
+|         cal2          |  dilution   | compound1 |         6         |    3     |
+|          s25          |   sample    | compound1 |        12         |    NA    |
+
+Optional the input tables could include:
+
+-   in both tables a column to distinguish between different Batches if there are more than one batch, the column name must be identical in both tables
+
+-   in the sample table a column to distinguish between different statistical classes e.g. healthy and treatment
 
 Additional columns will be ignored for calculations, but will be present in the final output.
 

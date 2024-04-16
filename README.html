@@ -354,8 +354,6 @@ display: none;
 
 <div id="mslinear" class="section level1">
 <h1>MSlineaR</h1>
-<!-- badges: start -->
-<!-- badges: end -->
 <p>The goal of <code>MSlineaR</code> is to clean up a data set of serial
 concentrated or diluted Compounds to only signals which show a linear
 response. It can be used for targeted and untargeted metabolomic data
@@ -418,59 +416,126 @@ credentials::set_github_pat()
 # install.packages(&quot;devtools&quot;)
 devtools::install_github(&quot;bih-metabolomics/MSlineaR&quot;)</code></pre>
 </div>
-<div id="input-data-table" class="section level2">
-<h2>Input Data Table</h2>
-<p>The input data needs at least 5 columns, indicating:</p>
+<div id="input-data-tables" class="section level2">
+<h2>Input Data Tables</h2>
+<p>MSlineaR needs two tables as input, one with information about the
+features and one for the sample meta data.</p>
+<p><strong>1) Feature Table</strong></p>
+<p>The Feature table should be present in long format with following
+columns:</p>
 <ul>
-<li><p>the Identification of the samples</p></li>
-<li><p>the type of the samples, e.g. Calibrants, samples, pooled QC
-etc</p></li>
-<li><p>the Identification of the compounds</p></li>
-<li><p>the Instrument response( y) , e.g. Area, Intensity etc</p></li>
-<li><p>the dilution step (1, 2, 3…) of a pooled QC for untargeted
-analysis and of the Concentration of Calibrants for targeted
-analysis</p></li>
+<li><p>Identification of the samples</p></li>
+<li><p>Identification of the compounds</p></li>
+<li><p>Instrument response( y) , e.g. Area, Intensity etc</p></li>
 </ul>
 <table>
+<caption>example for feature table</caption>
 <thead>
 <tr class="header">
-<th align="center">Sample_ID</th>
-<th align="center">Type</th>
-<th align="center">Compound_ID</th>
-<th align="center">Area</th>
+<th>Sample.Identification</th>
+<th>Compound</th>
+<th>Area</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>s25</td>
+<td>compound1</td>
+<td>157898</td>
+</tr>
+<tr class="even">
+<td>s14</td>
+<td>compound1</td>
+<td>13578</td>
+</tr>
+<tr class="odd">
+<td>s67</td>
+<td>compound1</td>
+<td>136789</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reformating table from wide into long format</strong></p>
+<p>Many peakpicking software, e.g. xcms, providing the data in wide
+format. The data can be easily reformated into long format using
+following code:</p>
+<pre class="r"><code>library(tidyr)
+library(dplyr)
+
+feature_tlb_wide &lt;- MSlineaR::Feature_tlb_wide
+
+feature_tbl_long &lt;- feature_tlb_wide |&gt; 
+pivot_longer(cols = c(&quot;Compound_01&quot; : &quot;Compound_34&quot;),, names_to = &quot;Sample.Identification&quot;, values_to = &quot;Area&quot;)</code></pre>
+<p><strong>2) Sample Table</strong></p>
+<p>The Sample Table contains all meta data for the individual samples.
+The table needs to be present in long format and should contain
+following columns:</p>
+<ul>
+<li><p>Identification of the samples, the column name must be identical
+in both tables</p></li>
+<li><p>type of the samples, e.g. Calibrants, samples, pooled QC
+etc</p></li>
+<li><p>order of injection</p></li>
+<li><p>Dilution step normalized to the highest dilution. That means the
+highest diluted sample get a dilution factor of 1, if the dilution
+factor is 3 than the second highest diluted sample get 3, the next one 9
+, the next one 27,…</p></li>
+</ul>
+<table>
+<colgroup>
+<col width="30%" />
+<col width="17%" />
+<col width="14%" />
+<col width="25%" />
+<col width="13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">Sample.Identification</th>
+<th align="center">Sample.Type</th>
+<th align="center">Compound</th>
+<th align="center">Sequence.Position</th>
 <th align="center">Dilution</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">cal1</td>
-<td align="center">QC pool</td>
+<td align="center">blank1</td>
+<td align="center">blank</td>
 <td align="center">compound1</td>
-<td align="center">13578</td>
 <td align="center">1</td>
+<td align="center">NA</td>
 </tr>
 <tr class="even">
-<td align="center">cal2</td>
-<td align="center">QC pool</td>
+<td align="center">cal1</td>
+<td align="center">dilution</td>
 <td align="center">compound1</td>
-<td align="center">157898</td>
-<td align="center">2</td>
+<td align="center">5</td>
+<td align="center">1</td>
 </tr>
 <tr class="odd">
+<td align="center">cal2</td>
+<td align="center">dilution</td>
+<td align="center">compound1</td>
+<td align="center">6</td>
+<td align="center">3</td>
+</tr>
+<tr class="even">
 <td align="center">s25</td>
 <td align="center">sample</td>
 <td align="center">compound1</td>
-<td align="center">136789</td>
+<td align="center">12</td>
 <td align="center">NA</td>
 </tr>
 </tbody>
 </table>
-<p>Optional the input data table could include:</p>
+<p>Optional the input tables could include:</p>
 <ul>
-<li><p>a column to distinguish between different Batches if there are
-more than one batch</p></li>
-<li><p>a column to distinguish between different statistical classes
-e.g. healthy and treatment</p></li>
+<li><p>in both tables a column to distinguish between different Batches
+if there are more than one batch, the column name must be identical in
+both tables</p></li>
+<li><p>in the sample table a column to distinguish between different
+statistical classes e.g. healthy and treatment</p></li>
 </ul>
 <p>Additional columns will be ignored for calculations, but will be
 present in the final output.</p>
@@ -511,11 +576,25 @@ a blank sample. Disable by setting the parameter to NULL.</p></li>
 guidelines 2012. Minimal number of consecutive signals present per
 dilution/concentration curve, to consider this curve as linear.</p></li>
 <li><p><em>output_name</em>: name of the output file</p></li>
-<li><p><em>output_dir: directory where the output files should be
-saved</em></p></li>
+<li><p><em>output_dir:</em> directory where the output files should be
+saved</p></li>
 </ul>
 <div id="with-these-arguments-you-can-run-the-example-data-set" class="section level3">
 <h3>With these arguments you can run the example data set:</h3>
+<p>The example data set is an targeted data set with 34 metabolites
+measured in two batches :</p>
+<ul>
+<li>680 Calibration Standard signals ( 34 metabolites a two batches a 10
+concentrations)</li>
+<li>1020 Blank signals (34 metabolites a two batches a 15 repeats)</li>
+<li>748 pooled QC signals (34 metabolites a two batches a 11
+repeats)</li>
+<li>884 Reference QC signals (34 metabolites a two batches a 13
+repeats)</li>
+<li>3434 biological sample signals ( 34 metabolites a 101 patients)</li>
+</ul>
+<p>The 101 biological samples were randomly assigned to either
+statistical group “control” (n = 65) or “patient” (n = 36)</p>
 <pre class="r"><code>library(MSlineaR)
 
 # load example data
@@ -539,6 +618,7 @@ targetedMSCal &lt;- AssessLinearity(
   signal_blank_ratio = 5,
   column_Y = &quot;Area&quot;,
   column_Y_sample = &quot;Area&quot;,
+  column_class_sample = &quot;Group&quot;,
   min_feature = 5,
   output_name = &quot;Test_targeted&quot;,
   output_dir = &quot; &quot;,
