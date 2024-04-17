@@ -214,7 +214,7 @@ MS_AssessLinearity <- function(
 
 
   # Create temp file location
-  tmp <- file.path(OUTPUT_DIR, "MSlineaR.log")
+  tmp <- file.path(OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_MSlineaR.log"))
 
   # Open log
   if (!dir.exists(OUTPUT_DIR)){
@@ -984,7 +984,7 @@ Yorigin <- "Y"
 
   #output:
   data.table::setnames(processingFeature, c("Feature_ID","Sample.Type", "Batch", "Y", "Injection_order"), c(COLNAMES[["Feature_ID"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["Injection_order"]] ))
-  data.table::setnames(processingGroup, c("Feature_ID", "Batch","Injection_order"), c(COLNAMES[["Feature_ID"]], COLNAMES[["Batch"]],COLNAMES[["Injection_order"]]))
+  data.table::setnames(processingGroup, c("Feature_ID", "Batch"), c(COLNAMES[["Feature_ID"]], COLNAMES[["Batch"]]))
 
 
   #1)full table dilution/concentration curves - Signal based
@@ -1003,7 +1003,9 @@ Yorigin <- "Y"
   #
 
   #4) full table biological Samples - Signal based
-  output3 <- data.table::copy(SampleFeature)
+  output3 <- dplyr::full_join(data.table::copy(SampleFeature), dataOrigin, by = colnames(dataOrigin))
+
+  output4 <- dplyr::full_join(data.table::copy(SampleFeature)[,c(colnames(dataOrigin), "Status_LR"), with = F], dataOrigin, by = colnames(dataOrigin))
   #output3.1 <- SampleFeature
 
   # #5) filtered table biological Samples - Signal based (high quality)
@@ -1104,7 +1106,7 @@ Yorigin <- "Y"
 
     if(any(c("BiologicalSamples", "all") %in% which_output)){
       write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_signalBased.csv")))
-      #write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_summary.csv")))
+      write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "result.csv")))
 
       # writexl::write_xlsx(x = list(Signals = output3, summary = output4),
       #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples.xlsx")))
@@ -1157,8 +1159,8 @@ Yorigin <- "Y"
                                                      X = Xraw, Y = Yraw,
                                                      output_dir = IMG_OUTPUT_DIR,
                                                      group = "Batch",
-                                                     ordered = "Injection_order",
-                                                     outputfileName = c("Summary_Barplot_All"))
+                                                     ordered = column_injectionOrder,
+                                                     outputfileName = paste0(Sys.Date(),"_", PREFIX,"_Summary_Barplot_All"))
 
   logr::put("summary_barplot_all was created")
 
@@ -1170,9 +1172,9 @@ Yorigin <- "Y"
                                                         X = Xraw, Y = Yraw,
                                                         output_dir = IMG_OUTPUT_DIR,
                                                         group = "Batch",
-                                                        fill = "Class",
+                                                        Plotfill = "Class",
                                                         ordered = "Class",
-                                                        outputfileName = c("Summary_Barplot_Samples"))
+                                                        outputfileName = paste0(Sys.Date(),"_", PREFIX,"_Summary_Barplot_Samples"))
 
   logr::put("summary_barplot_sample was created")
 
@@ -1185,9 +1187,9 @@ Yorigin <- "Y"
                                                     X = Xraw, Y = Yraw,
                                                     output_dir = IMG_OUTPUT_DIR,
                                                     group = "Batch",
-                                                    fill = "Sample.Type",
+                                                    Plotfill = "Sample.Type",
                                                     ordered = "Sample.Type",
-                                                    outputfileName = c("Summary_Barplot_QC"))
+                                                    outputfileName = paste0(Sys.Date(),"_", PREFIX,"_Summary_Barplot_QC"))
 
   logr::put("summary_barplot_sample was created")
 
@@ -1199,7 +1201,7 @@ Yorigin <- "Y"
     "All_DilutionCurves_Signals" = output1,
     "All_DilutionCurves_Features" = output2,
     "All_Samples_Signals" = output3,
-    #"Summary_per_Compound" = output4,
+    "result" = output4,
     "dataModel_FOD" = dataFODModel,
     "dataModel_SOD" = dataSODModel#,
     # "Parameters" = list(

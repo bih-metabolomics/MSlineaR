@@ -486,7 +486,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
                                         outputfileName = c("Summary_Barplot_Samples"),
                                         COLNAMES, X, Y , output_dir,
                                         group = "Sample.Type",
-                                        fill = "Batch",
+                                        Plotfill = "Batch",
                                         ordered = "Sample_ID"){
 
 
@@ -502,26 +502,26 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   data.table::setDT(inputData_Samples)
 
   data_Signals_sample_summary <- inputData_Samples |>
-    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), Sample.Type, Class = get( ClassGroup )) |>
-    dplyr::summarize(
+    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), Sample.Type, Class = get( ClassGroup ), PlotOrder = get(ordered)) |>
+    dplyr::reframe(
       Missing = sum(is.na(y), na.rm = T),
       LR_TRUE = sum(Status_LR %in% TRUE, na.rm = T),
       LR_FALSE = sum(Status_LR %in% FALSE, na.rm = T),
       LR_TRUE_perc = LR_TRUE /(Missing + LR_TRUE + LR_FALSE)
     ) |>
-    tidyr::pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:4))
+    tidyr::pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:5))
 
 
 
   data_Signals_sample_summary$Type <- factor(data_Signals_sample_summary$Type, levels = rev(c("LR_TRUE_perc","LR_TRUE", "LR_FALSE", "Missing")))
   #data_Signals_sample_summary <- data_Signals_sample_summary |> dplyr::filter(count > 0)
-  setorderv(data_Signals_sample_summary, ordered)
+  setorderv(data_Signals_sample_summary, "PlotOrder")
   data_Signals_sample_summary$Sample_ID <- factor(data_Signals_sample_summary$Sample_ID, levels = unique(data_Signals_sample_summary$Sample_ID))
 
 
   plot_Summary_samples <-
     ggplot2::ggplot(data = data_Signals_sample_summary |> dplyr::filter(Type %in% "LR_TRUE_perc"),
-                    ggplot2::aes(x = Sample_ID, y = count, label = count, fill = get(fill))) +
+                    ggplot2::aes(x = Sample_ID, y = count, label = count, fill = get(Plotfill))) +
     ggplot2::geom_bar(stat="identity",
                       position="dodge",
                       #position="fill",
