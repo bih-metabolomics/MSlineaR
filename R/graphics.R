@@ -416,7 +416,7 @@ plot_Barplot_Summary <- function(inputData_Series,
 
   data_Signals_summary <- inputData_Series |>
     dplyr::group_by(DilutionPoint, Batch = get(Col_Batch)) |>
-    dplyr::summarize(Missing = sum(is.na(y), na.rm = T),
+    dplyr::summarize(Missing = sum(is.na(get(y))),
               OutlierFOD = sum(OutlierFOD, na.rm = T),
               Trim = sum(trim %in% TRUE, na.rm = T),
               OutlierSOD = sum(OutlierSOD, na.rm = T),
