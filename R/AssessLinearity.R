@@ -871,7 +871,7 @@ Yorigin <- "Y"
 
   #### biological samples ####
 
-  if(CAL_CONC %in% TRUE | GET_LR_STATUS %in% TRUE){
+  if(GET_LR_STATUS %in% TRUE){ #CAL_CONC %in% TRUE |
 
     logr::sep("prepare biological samples")
   # rlang::inform("
