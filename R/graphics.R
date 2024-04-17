@@ -267,12 +267,12 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
     blankmedian$label <- paste(signal_blank_ratio," x median blank")
     blankmedian$xtext <- data_Signals |>
       dplyr::group_by(groupIndices) |>
-      dplyr::summarize(.groups = "drop", xblank = max(get(indipendent), na.rm = T)/2 + 2) |>
+      dplyr::reframe(.groups = "drop", xblank = max(get(indipendent), na.rm = T)/2 + 2) |>
       dplyr::select(xblank) |>
       unlist(use.names = F)
     blankmedian <- data_Signals |>
       dplyr::group_by(groupIndices) |>
-      dplyr::summarize(.groups = "drop",ytext = na.omit(medBlank*signal_blank_ratio)) |>
+      dplyr::reframe(.groups = "drop",ytext = na.omit(medBlank*signal_blank_ratio)) |>
       unique() |>
       dplyr::ungroup() |>
       dplyr::right_join(blankmedian, by = "groupIndices")
@@ -294,7 +294,7 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
 
 
 
-  if(printR2 %in% TRUE) {
+  if(printR2 %in% TRUE & any(!is.na(data_Signals$R2))) {
 
     text_label <- data_Signals[IsLinear %in% TRUE, .(ID, Batch, R2)]
     text_label <- text_label |> dplyr::group_by(ID, Batch) |>
