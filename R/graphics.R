@@ -65,7 +65,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   assertthat::not_empty(inputData_Series)
 # LR_object,statusLinear = c(TRUE, FALSE),
 
-  ID <-  COLNAMES[["ID"]]
+  ID <-  COLNAMES[["Feature_ID"]]
   Col_Batch <-  COLNAMES[["Batch"]]
   Sample.Type <- COLNAMES[["Sample_type"]]
   indipendent <- Xcol
