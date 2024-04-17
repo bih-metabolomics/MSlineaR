@@ -881,7 +881,7 @@ Yorigin <- "Y"
     SampleFeature <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% SAMPLE]
 
     if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)){
-      SampleFeature$Y_trans <- get(TRANSFORM_Y)(SampleFeature[[column_Y_sample]])
+      SampleFeature$Y_trans <- get(TRANSFORM_Y)(SampleFeature[[column_Y]])
       SampleFeature$Y_trans[is.infinite(SampleFeature$Y_trans)] <- NA
       Y_SAMPLE <- "Y_trans"
     }
@@ -893,7 +893,7 @@ Yorigin <- "Y"
 
     if(GET_LR_STATUS %in% TRUE){
       logr::put(" Associating biological samples to their respective linear ranges\n")
-      SampleFeature  <- getLRstatus(dats = SampleFeature, datCal = processingGroup,y =  column_Y_sample)
+      SampleFeature  <- getLRstatus(dats = SampleFeature, datCal = processingGroup,y =  column_Y)
         #data_Sample$Status_LR <-  data.table::between(lower = data_Sample$LRStartY, x = data_Sample[, c("Area.CorrDrift")], upper = data_Sample$LREndY, NAbounds = NA)
 
       SampleFeature[groupIndices %in% conflictBatches$groupIndices,
@@ -930,7 +930,7 @@ Yorigin <- "Y"
 
 
     if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)){
-      SampleQC$Y_trans <- get(TRANSFORM_Y)(SampleQC[[column_Y_sample]])
+      SampleQC$Y_trans <- get(TRANSFORM_Y)(SampleQC[[column_Y]])
       SampleQC$Y_trans[is.infinite(SampleQC$Y_trans)] <- NA
       Y_SAMPLE <- "Y_trans"
     }
@@ -938,16 +938,16 @@ Yorigin <- "Y"
 
       rsd_before <- SampleQC |>
         dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
-        dplyr::summarize(.groups = "keep", rsd = sd(get(column_Y_sample), na.rm = T)/mean(get(column_Y_sample), na.rm = T) * 100) |>
+        dplyr::summarize(.groups = "keep", rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Ye), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
 
-      SampleQC  <- getLRstatus(dats = SampleQC, datCal = processingGroup,y =  column_Y_sample)
+      SampleQC  <- getLRstatus(dats = SampleQC, datCal = processingGroup,y =  column_Y)
 
       rsd_after <- SampleQC |>
         dplyr::filter(Status_LR %in% TRUE) |>
         dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
-        dplyr::summarise(.groups = "keep",rsd = sd(get(column_Y_sample), na.rm = T)/mean(get(column_Y_sample), na.rm = T) * 100) |>
+        dplyr::summarise(.groups = "keep",rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
 
