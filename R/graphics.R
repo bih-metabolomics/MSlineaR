@@ -296,10 +296,12 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
 
   if(printR2 %in% TRUE & any(!is.na(data_Signals$R2))) {
 
-    text_label <- data_Signals[IsLinear %in% TRUE, .(ID, Batch, R2)]
+    text_label <- data_Signals[IsLinear %in% TRUE, .(ID, Batch, R2, y = get(dependent))]
     text_label <- text_label |> dplyr::group_by(ID, Batch) |>
-      dplyr::mutate(R2 = ifelse(any(!is.na(R2)), R2[!is.na(R2)] , NA))
-    text_label <- unique(text_label)
+      dplyr::mutate(R2 = ifelse(any(!is.na(R2)), R2[!is.na(R2)] , NA),
+                    max_y = max(y, na.rm = T)) |>
+      dplyr::select(-y) |>
+      unique()
 
 
 
@@ -307,7 +309,7 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
     plotlinearData <- plotlinearData +
       ggplot2::geom_text(data = text_label,
                          #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
-                         ggplot2::aes(x = 0, y = Inf, label = paste(Series,": R2 = ", round(R2,4))),
+                         ggplot2::aes(x = 0, y = max_y + 5, label = paste(Series,": R2 = ", round(R2,4))),
                          size = 3,
                          hjust = -0.1,
                          vjust = 2,
@@ -324,7 +326,7 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
   if(!is.null(inputData_BioSamples ) | !is.null(inputData_QC )){
 
   plotlinearData <-  plotlinearData +
-    ggplot2::geom_text(ggplot2::aes(x = -3.5, y = Inf, label = "QC & Samples"), size = 3,vjust = 2, na.rm = TRUE)+
+    ggplot2::annotate(geom = "text", x = -3.5, y = Inf, label = "QC & Samples", size = 3,vjust = 2, na.rm = TRUE) +
     #ggplot2::scale_color_manual(name = "In linear Range:",
     #                   values = c("FALSE" = "red", "TRUE" = "purple")) +
     ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3), breaks=rev(legend_order))
@@ -375,7 +377,7 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
 
     }
 
-  return(plotlinearData)
+  return(suppressWarnings(print(plotlinearData)))
   }
 
 
