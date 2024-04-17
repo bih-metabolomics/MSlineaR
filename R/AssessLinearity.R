@@ -1106,7 +1106,7 @@ Yorigin <- "Y"
     }
 
     if(any(c("BiologicalSamples", "all") %in% which_output)){
-      write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_signalBased.csv")))
+     # write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_signalBased.csv")))
       write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "result.csv")))
 
       # writexl::write_xlsx(x = list(Signals = output3, summary = output4),
@@ -1201,7 +1201,7 @@ Yorigin <- "Y"
   processList <- list(
     "All_DilutionCurves_Signals" = output1,
     "All_DilutionCurves_Features" = output2,
-    "All_Samples_Signals" = output3,
+    #"All_Samples_Signals" = output3,
     "result" = output4,
     "dataModel_FOD" = dataFODModel,
     "dataModel_SOD" = dataSODModel#,

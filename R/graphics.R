@@ -416,7 +416,7 @@ plot_Barplot_Summary <- function(inputData_Series,
 
   data_Signals_summary <- inputData_Series |>
     dplyr::group_by(DilutionPoint, Batch = get(Col_Batch)) |>
-    dplyr::summarize(Missing = sum(is.na(get(y))),
+    dplyr::reframe(Missing = sum(is.na(get(y))),
               Blank = sum(signalBlankRatio, na.rm = TRUE),
               OutlierFOD = sum(OutlierFOD, na.rm = T),
               Trim = sum(trim %in% TRUE, na.rm = T),
@@ -425,11 +425,13 @@ plot_Barplot_Summary <- function(inputData_Series,
               LR_TRUE = sum(IsLinear %in% TRUE, na.rm = T),
               LR_FALSE = sum(IsLinear %in% FALSE, na.rm = T)
               ) |>
+    dplyr::group_by(DilutionPoint, Batch = get(Col_Batch)) |>
+    dplyr::mutate(min_Feature = data.table::uniqueN(inputData_Series[[ID]]) - sum(Missing, Blank, OutlierFOD, Trim, OutlierSOD, Slope, LR_TRUE, LR_FALSE)) |>
     tidyr::pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:2))
 
 
 
-  data_Signals_summary$Type <- factor(data_Signals_summary$Type, levels = rev(c("LR_TRUE", "LR_FALSE", "Slope", "OutlierSOD", "Trim", "OutlierFOD", "Blank", "Missing")))
+  data_Signals_summary$Type <- factor(data_Signals_summary$Type, levels = rev(c("LR_TRUE", "LR_FALSE", "Slope", "OutlierSOD", "Trim", "OutlierFOD", "Blank", "Missing", "min_Feature")))
   data_Signals_summary <- data_Signals_summary |> dplyr::filter(count > 0)
 
 
@@ -446,7 +448,7 @@ plot_Barplot_Summary <- function(inputData_Series,
     ggplot2::scale_x_continuous(breaks = data_Signals_summary$DilutionPoint) +
     #ggplot2::scale_fill_discrete(name = "", ) +
     ggplot2::scale_y_continuous(labels = scales::percent) +
-    ggplot2::scale_fill_manual(name = "", values = c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
+    ggplot2::scale_fill_manual(name = "", values = c('#822D3F','#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
     ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
