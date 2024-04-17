@@ -19,7 +19,7 @@ countMinimumValue <- function(DAT, MIN_FEATURE = parent.frame()$MIN_FEATURE, ste
   dat <- unique(dat[, N := sum(!is.na(get(y))),groupIndices][ , enoughPeaks := ifelse( N >= MIN_FEATURE, TRUE, FALSE)#,
                                                      #Comment = ifelse( N >= MIN_FEATURE, "EnoughPeaks", "notEnoughPeaks")
                                                      ][
-                                                       ,list(groupIndices,Feature_ID, Batch,  N, enoughPeaks)])
+                                                       ,list(groupIndices,Feature_ID, Batch,Injection_order, N, enoughPeaks)])
 
   DAT$color[DAT$groupIndices %in% dat$groupIndices[dat$enoughPeaks %in% FALSE]] <- "grey"
   DAT$Comment[DAT$groupIndices %in% dat$groupIndices[dat$enoughPeaks %in% FALSE]] <- unlist(apply(cbind(DAT$Comment[DAT$groupIndices %in% dat$groupIndices[dat$enoughPeaks %in% FALSE]], "notEnoughPeaks"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
