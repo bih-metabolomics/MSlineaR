@@ -983,7 +983,7 @@ Yorigin <- "Y"
 
 
   #output:
-  data.table::setnames(processingFeature, c("Feature_ID","Sample.Type", "Batch", "Y", "Injection_order"), c(COLNAMES[["Feature_ID"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["Injection_order"]] ))
+  data.table::setnames(processingFeature, c("Feature_ID","Sample_ID","Class","Sample.Type", "Batch", "Y", "Injection_order"), c(COLNAMES[["Feature_ID"]],COLNAMES[["Sample_ID"]],COLNAMES[["Class"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["Injection_order"]] ))
   data.table::setnames(processingGroup, c("Feature_ID", "Batch"), c(COLNAMES[["Feature_ID"]], COLNAMES[["Batch"]]))
 
 
@@ -1003,9 +1003,10 @@ Yorigin <- "Y"
   #
 
   #4) full table biological Samples - Signal based
-  output3 <- dplyr::full_join(data.table::copy(SampleFeature), dataOrigin, by = colnames(dataOrigin))
+  table_Feature_all <- dplyr::full_join(data.table::copy(SampleFeature),data.table::copy(processingFeature), by = colnames(SampleFeature))
+  output3 <- dplyr::full_join(data.table::copy(table_Feature_all), dataOrigin, by = colnames(dataOrigin))
 
-  output4 <- dplyr::full_join(data.table::copy(SampleFeature)[,c(colnames(dataOrigin), "Status_LR"), with = F], dataOrigin, by = colnames(dataOrigin))
+  output4 <- dplyr::full_join(data.table::copy(table_Feature_all)[,c(colnames(dataOrigin), "Status_LR"), with = F], dataOrigin, by = colnames(dataOrigin))
   #output3.1 <- SampleFeature
 
   # #5) filtered table biological Samples - Signal based (high quality)
