@@ -983,8 +983,8 @@ Yorigin <- "Y"
 
 
   #output:
-  data.table::setnames(processingFeature, c("Feature_ID","Sample.Type", "Batch", "Y"), c(COLNAMES[["Feature_ID"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["Y"]] ))
-  data.table::setnames(processingGroup, c("Feature_ID", "Batch"), c(COLNAMES[["Feature_ID"]], COLNAMES[["Batch"]]))
+  data.table::setnames(processingFeature, c("Feature_ID","Sample.Type", "Batch", "Y", "Injection_order"), c(COLNAMES[["Feature_ID"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["Injection_order"]] ))
+  data.table::setnames(processingGroup, c("Feature_ID", "Batch","Injection_order"), c(COLNAMES[["Feature_ID"]], COLNAMES[["Batch"]],COLNAMES[["Injection_order"]]))
 
 
   #1)full table dilution/concentration curves - Signal based
@@ -1066,8 +1066,8 @@ Yorigin <- "Y"
 
 
 
-  data.table::setnames(skip_absent = T, processingGroup, c("Feature_ID","Sample_ID", "Batch", "Y", "X"),
-                       c(COLNAMES[["Feature_ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
+  data.table::setnames(skip_absent = T, processingGroup, c("Feature_ID","Sample_ID", "Batch", "Y", "X", "Injection_order"),
+                       c(COLNAMES[["Feature_ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]], COLNAMES[["Injection_order"]] ))
 
   # <!-- processList$SummaryAll <- getAllList(processList) -->
   #
