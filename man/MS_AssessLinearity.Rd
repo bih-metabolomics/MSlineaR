@@ -5,22 +5,21 @@
 \title{Cleaning up a mass spectrometry data set according to the linear response of serial diluted/concentrated signals.}
 \usage{
 MS_AssessLinearity(
-  analysis_type = c("targeted", "untargeted", NULL)[3],
-  input_data = NULL,
-  column_sample_type = c("Sample.Type", "Type")[1],
-  sample_type_QC = c("pooled QC", "Reference QC", NULL)[3],
-  sample_type_sample = "Sample",
-  sample_type_serial = "Calibration Standard",
-  sample_type_blank = c("Blank", NULL)[1],
+  analysisType = c("targeted", "untargeted", NULL)[1],
+  inputData_feature = NULL,
+  inputData_sample = NULL,
+  column_sampleType = c("Sample.Type", "Type")[1],
+  sampleType_QC = c("QCpool", "Reference QC", NULL)[1],
+  sampleType_sample = "Sample",
+  sampleType_serial = "Dilution",
+  sampleType_blank = c("Blank", NULL)[1],
   signal_blank_ratio = 5,
-  column_sample_ID = "Sample.Identification",
-  column_compound_ID = "Compound",
+  column_sampleID = "Sample.Identification",
+  column_featureID = "Compound",
   column_batch = "Batch",
   column_X = c("Concentration", "Dilution")[2],
   column_Y = c("Area", "Height", "Intensity")[1],
-  column_Y_sample = c("Area", "Height", "Intensity")[1],
-  column_class_sample = c("group", NULL)[2],
-  dilution_factor = NULL,
+  column_sampleClass = c("Group", NULL)[1],
   transform = c(TRUE, FALSE)[1],
   transform_x = "log",
   inverse_x = "exp",
@@ -39,7 +38,6 @@ MS_AssessLinearity(
   LR_sd_res_factor = 3,
   R2_min = 0.9,
   Batch_harmonization = c(TRUE, FALSE)[1],
-  calculate_concentration = c(TRUE, FALSE)[1],
   get_linearity_status_samples = c(TRUE, FALSE)[1],
   nCORE = 1,
   get_output = c(TRUE, FALSE)[1],
@@ -49,22 +47,32 @@ MS_AssessLinearity(
 )
 }
 \arguments{
-\item{analysis_type}{String; was the analysis "targeted" or "untargeted"?}
+\item{analysisType}{String; was the analysis "targeted" or "untargeted"?}
 
-\item{input_data}{Long format data frame or data table combining the information
+\item{inputData_feature}{Long format data frame or data table combining the information
+of biological samples, serial diluted/concentrated samples and optional repeated measured
+QC samples for all batches.
+@param inputData_sample Long format data frame or data table combining the information
 of biological samples, serial diluted/concentrated samples and optional repeated measured
 QC samples for all batches.}
 
-\item{column_sample_type}{String; Column name which distinguish between
+\item{column_sampleType}{String; Column name which distinguish between
 samples, QC and serial samples.}
 
-\item{sample_type_QC}{String; Identification of QC in \code{column_sample_type}.}
+\item{sampleType_QC}{String; Identification of QC in \code{column_sampleType}.}
 
-\item{sample_type_sample}{String;Identification of biological samples in \code{column_sample_type}.}
+\item{sampleType_sample}{String;Identification of biological samples in \code{column_sampleType}.}
 
-\item{sample_type_serial}{String;Identification of serial data in \code{column_sample_type}.}
+\item{sampleType_serial}{String;Identification of serial data in \code{column_sampleType}.}
+
+\item{sampleType_blank}{String;Identification of blank data in \code{column_sampleType}.}
 
 \item{signal_blank_ratio}{Numeric,}
+
+\item{column_sampleID}{String; Column name, which uniquely identifies the measured Signals.}
+
+\item{column_batch}{String; Column name to identify the different batches.
+Only necessary if there are more than 1 Batch.}
 
 \item{column_X}{String; Column name of the independent variable,
 e.g. Concentration, Dilution,... . Highest number should be the highest concentration or lowest dilution.
@@ -73,10 +81,7 @@ For untargeted data use a vector with consecutive numbers, e.g. c(1, 2, 3 , ...)
 \item{column_Y}{String; Column name of the dependent variable,
 e.g. Intensity, Area,..}
 
-\item{column_class_sample}{String, Column name used for statistical classes}
-
-\item{dilution_factor}{Numeric, distance between the dilution/concentration steps,
-e.g. dilution_factor = 2 means, that the concentration of dilution 1 is half the concentration of dilution 2}
+\item{column_sampleClass}{String, Column name used for statistical classes}
 
 \item{transform}{Boolean; Should the data be transformed? Default is \code{TRUE}.}
 
@@ -116,7 +121,7 @@ marked as linear to consider this signal as linear. Default to 6, according to E
 
 \item{LR_sd_res_factor}{Integer; points of serial diluted/concentrated series,
 which are less than \code{LR_sd_res_factor} times residual standard deviation are considered as linear.
-Default to 2.}
+Default to 3.}
 
 \item{R2_min}{Numeric, ranges from 0 to 1; Minimum coefficient of determination,
 which needs to be reached to consider the signal as linear. Default to 0.9}
@@ -125,9 +130,6 @@ which needs to be reached to consider the signal as linear. Default to 0.9}
 only serial diluted curves will be considered if they have a linear Range in
 all Batches, otherwise they will be excluded. If set to \code{FALSE} all curves with
 a linear range will be taken but flagged that in one or more batches linearity is missing}
-
-\item{calculate_concentration}{Boolean; For targeted analysis. Should the
-concentration of samples in regard to the linear regression equation be calculated? Default is \code{TRUE}.}
 
 \item{get_linearity_status_samples}{Boolean; If \code{TRUE} (default) the samples
 will be differentiated into linear and non linear according to their serial diluted/concentrated signal.}
@@ -147,10 +149,8 @@ which should be generated.Default all files will be generated and stored:
 \item{output_dir}{Only necessary if \code{get_output} is \code{TRUE}.
 custom path, where the output files should be stored.}
 
-\item{column_ID}{String; Column name, which uniquely identifies the measured Signals.}
-
-\item{column_Batch}{String; Column name to identify the different batches.
-Only necessary if there are more than 1 Batch.}
+\item{calculate_concentration}{Boolean; For targeted analysis. Should the
+concentration of samples in regard to the linear regression equation be calculated? Default is \code{TRUE}.}
 }
 \description{
 \code{AssessLinearity()} cleans up a data set of serial concentrated or diluted Compounds to only signals which
