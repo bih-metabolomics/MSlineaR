@@ -104,6 +104,7 @@ MS_AssessLinearity <- function(
     signal_blank_ratio = 5,
     column_sampleID = "Sample.Identification",
     column_featureID = "Compound",
+    column_injectionOrder = "Sequence.Position",
     column_batch = "Batch",
     column_X = c("Concentration", "Dilution")[2],
     column_Y = c("Area","Height", "Intensity")[1],
