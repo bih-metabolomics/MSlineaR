@@ -1137,7 +1137,7 @@ Yorigin <- "Y"
                                           inputData_Series = output1,
                                           COLNAMES = COLNAMES,
                                           X = Xraw, Y = Yraw,
-                                          output_dir = IMG_OUTPUT_DIR)
+                                          output_dir = IMG_OUTPUT_DIR,outputfileName = paste0(Sys.Date(),"_", PREFIX,"_Summary_Calibration_Barplot"))
   logr::put("summary_barplot was created")
 
   #8) scatter plot
@@ -1146,7 +1146,7 @@ Yorigin <- "Y"
                               inputData_BioSamples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                               inputData_QC = SampleQC,
                               COLNAMES = COLNAMES, Xcol = Xraw, Ycol = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
-                              Series = Series, output_dir = IMG_OUTPUT_DIR
+                              Series = Series, output_dir = IMG_OUTPUT_DIR,outputfileName = paste0(Sys.Date(),"_", PREFIX,"_CalibrationPlot")
   )
 
   logr::put("Scatterplot was created")
