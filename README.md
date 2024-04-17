@@ -115,7 +115,7 @@ The Sample Table contains all meta data for the individual samples. The table ne
 -   Additional columns will be ignored for calculations, but will be present in the final output.
 
 | Sample.Identification | Sample.Type | Sequence.Position | Dilution | Batch | Group  |
-|:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
+|:---------------------:|:-----------:|:-----------------:|:--------:|:-----:|:------:|
 |        blank1         |    blank    |         1         |    NA    |   1   |   NA   |
 |         cal1          |  dilution   |         5         |    1     |   1   |   NA   |
 |          QC1          |  pooledQC   |         6         |    3     |   1   |   NA   |
