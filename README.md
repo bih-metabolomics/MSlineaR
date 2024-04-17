@@ -241,9 +241,9 @@ MSlineaR creates 5 pdf files.
 
 -   The file "*date_output_name*\_Summary_Calibration_Barplot.pdf" shows an overview about the status of the compounds and at which step they were chucked out. The figure can be used to decide if one dilution step did not worked really well and at which dilution most of the compounds show a good linearity.
 
-    ![](https://github.com/bih-metabolomics/MSlineaR/tree/main/data/Results_tutorial/2024-04-18_2024-04-18_Test_targeted_tutorial_Summary_Calibration_Barplot.pdf){width="25" height="17"}
+    ![Dilution_Barplot](data/Results_tutorial/2024-04-18_2024-04-18_Test_targeted_tutorial_Summary_Calibration_Barplot.pdf){width="25" height="17"}
 
--   
+-   ![Dilution_Barplot](data/Results_tutorial/2024-04-18_2024-04-18_Test_targeted_tutorial_Summary_Calibration_Barplot.pdf){width="25cm" height="17cm"}
 
 ## Complete Input Arguments for function `AssessLinearity` :
 
