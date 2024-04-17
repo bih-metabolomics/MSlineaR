@@ -546,11 +546,11 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
     pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 4.5 * data.table::uniqueN(data_Signals_sample_summary$Batch ))}
 
 
-  plot( plot_Summary_samples)
+  suppressWarnings(plot( plot_Summary_samples))
 
   if(printPDF %in% TRUE){ dev.off()}
 
-  return( plot_Summary_samples)
+  return(  suppressWarnings(plot( plot_Summary_samples)))
 
 
 
