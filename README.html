@@ -510,7 +510,7 @@ library(dplyr)
 feature_tlb_wide &lt;- MSlineaR::Feature_tlb_wide
 
 feature_tbl_long &lt;- feature_tlb_wide |&gt; 
-pivot_longer(cols = c(&quot;Compound_01&quot; : &quot;Compound_34&quot;),, names_to = &quot;Sample.Identification&quot;, values_to = &quot;Area&quot;)</code></pre>
+pivot_longer(cols = c(&quot;Compound_01&quot; : &quot;Compound_34&quot;),, names_to = &quot;Compound&quot;, values_to = &quot;Area&quot;)</code></pre>
 </div>
 <div id="sample-table" class="section level3">
 <h3><strong>2) Sample Table</strong></h3>
@@ -641,6 +641,9 @@ unique sample identifier per Batch (default =
 <li><p><em>column_featureID</em>: Column name in
 <em>inputData_feature</em> indicating a unique feature identifier
 (default = “CompoundID”)</p></li>
+<li><p>column_injectionOrder: Column name in <em>inputData_sample</em>
+indicating the sequence order of the samples (default =
+“Sequence.Position”)</p></li>
 <li><p><em>column_batch:</em> Column name in <em>inputData_feature</em>
 and <em>inputData_sample</em> indicating a unique Batch identifier
 (default = “Batch”)</p></li>
@@ -684,8 +687,7 @@ repeats)</li>
 <li>3434 biological sample signals ( 34 metabolites a 101 patients)</li>
 </ul>
 <p>The 101 biological samples were randomly assigned to either
-statistical group “groupA” (n = 45) or “groupB” (n = 56) and for three
-compounds the area were increased by 20%.</p>
+statistical group “groupA” (n = 45) or “groupB” (n = 56) .</p>
 <pre class="r"><code>library(MSlineaR)
 
 # load example data
@@ -704,9 +706,10 @@ targetedMSCal &lt;- AssessLinearity(
     sampleType_blank = &quot;Blank&quot;,
   column_sampleID = &quot;Sample.Identification&quot;,
   column_featureID = &quot;Compound&quot;,
+  column_injectionOrder = &quot;Sequence.Position&quot;,
   column_batch = &quot;Batch&quot;,
   column_X = &quot;Dilution&quot;,
-  column_Y = &quot;area&quot;,
+  column_Y = &quot;Area&quot;,
   column_sampleClass = &quot;Group&quot;,
   signal_blank_ratio = 5,
   min_feature = 5,  
@@ -718,6 +721,38 @@ targetedMSCal &lt;- AssessLinearity(
 </div>
 <div id="results" class="section level2">
 <h2>Results</h2>
+<p>MSlineaR creates multiple output files.</p>
+<p>1.) CSV Files</p>
+<p>Three csv files are present.</p>
+<ul>
+<li><p>In the file “<em>date_output_name</em>_result.csv” all
+informations from the input files are present in long format plus the
+column “Status_LR” , which indicates if the samples are below limit of
+linearity (BLOL), within the linear range (TRUE), upper the linear range
+(ULOL) or the compound did not show a linear range (FALSE or
+NA).</p></li>
+<li><p>In the file “<em>date_output_name</em>_Concentration
+Curves_featureBased.csv” are the information of the serial data
+available for the separate steps on a signal basis.</p></li>
+<li><p>In the file “<em>date_output_name</em>_Concentration
+Curves_signalBased.csv” are the information of the serial data available
+for the separate steps on a compound basis.</p></li>
+</ul>
+<p>2.) .Rdata File</p>
+<p>One R-image file is present containing all tables, which enables the
+user to store all data in one file.</p>
+<p>3.) log file</p>
+<p>During each run of MSlineaR a log file is created storing the used
+system parameters and time range which was needed for each function.</p>
+<p>4.) images</p>
+<p>MSlineaR creates 5 pdf files.</p>
+<ul>
+<li><p>The file
+“<em>date_output_name</em>_Summary_Calibration_Barplot.pdf” shows an
+overview about the status of the compounds and at which step they were
+chucked out.</p>
+<p><embed src="data:application/pdf;base64,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" style="width:25cm;height:17cm"></embed></p></li>
+</ul>
 </div>
 <div id="complete-input-arguments-for-function-assesslinearity" class="section level2">
 <h2>Complete Input Arguments for function <code>AssessLinearity</code>
@@ -872,7 +907,9 @@ linear (default = 6, according to EMA guidelines 2012)</p></li>
 <li><p><em>n_core</em>: How many cores should be used for parallel
 processing (default = 1)</p></li>
 </ul>
-<p>Output</p>
+<ol start="8" style="list-style-type: decimal">
+<li>Output</li>
+</ol>
 <ul>
 <li><p>get_output: Should the output be exported? (default =
 TRUE)</p></li>

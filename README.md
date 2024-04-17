@@ -179,7 +179,7 @@ The example data set is an targeted data set with 34 metabolites measured in two
 -   884 Reference QC signals (34 metabolites a two batches a 13 repeats)
 -   3434 biological sample signals ( 34 metabolites a 101 patients)
 
-The 101 biological samples were randomly assigned to either statistical group "groupA" (n = 45) or "groupB" (n = 56) and for three compounds the area were increased by 20%.
+The 101 biological samples were randomly assigned to either statistical group "groupA" (n = 45) or "groupB" (n = 56) .
 
 ``` r
 library(MSlineaR)
@@ -214,6 +214,36 @@ targetedMSCal <- AssessLinearity(
 ```
 
 ## Results
+
+MSlineaR creates multiple output files.
+
+1.) CSV Files
+
+Three csv files are present.
+
+-   In the file "*date_output_name*\_result.csv" all informations from the input files are present in long format plus the column "Status_LR" , which indicates if the samples are below limit of linearity (BLOL), within the linear range (TRUE), upper the linear range (ULOL) or the compound did not show a linear range (FALSE or NA).
+
+-   In the file "*date_output_name*\_Concentration Curves_featureBased.csv" are the information of the serial data available for the separate steps on a signal basis.
+
+-   In the file "*date_output_name*\_Concentration Curves_signalBased.csv" are the information of the serial data available for the separate steps on a compound basis.
+
+2.) .Rdata File
+
+One R-image file is present containing all tables, which enables the user to store all data in one file.
+
+3.) log file
+
+During each run of MSlineaR a log file is created storing the used system parameters and time range which was needed for each function.
+
+4.) images
+
+MSlineaR creates 5 pdf files.
+
+-   The file "*date_output_name*\_Summary_Calibration_Barplot.pdf" shows an overview about the status of the compounds and at which step they were chucked out. The figure can be used to decide if one dilution step did not worked really well and at which dilution most of the compounds show a good linearity.
+
+    ![](images/2024-04-18_2024-04-18_Test_targeted_tutorial_Summary_Calibration_Barplot-03.pdf){width="25cm" height="17cm"}
+
+-   
 
 ## Complete Input Arguments for function `AssessLinearity` :
 
