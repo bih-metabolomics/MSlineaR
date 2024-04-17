@@ -938,7 +938,7 @@ Yorigin <- "Y"
 
       rsd_before <- SampleQC |>
         dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
-        dplyr::summarize(.groups = "keep", rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Ye), na.rm = T) * 100) |>
+        dplyr::summarize(.groups = "keep", rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
 
