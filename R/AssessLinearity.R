@@ -1136,7 +1136,7 @@ Yorigin <- "Y"
   summary_barplot <- plot_Barplot_Summary(printPDF = printPlot,
                                           inputData_Series = output1,
                                           COLNAMES = COLNAMES,
-                                          X = Xraw, Y = Yraw,
+                                          X = Xraw, Y = "Y_LR",
                                           output_dir = IMG_OUTPUT_DIR,outputfileName = paste0(Sys.Date(),"_", PREFIX,"_Summary_Calibration_Barplot"))
   logr::put("summary_barplot was created")
 
