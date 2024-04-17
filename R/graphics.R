@@ -360,11 +360,11 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
     for(i in 1:n) {
 
       if(data.table::uniqueN(data_Signal$Batch) > 1){
-        print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
-                                                          scales = "free", ncol = nCol,nrow = nrRow, page = i ))
+        suppressWarnings(print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
+                                                          scales = "free", ncol = nCol,nrow = nrRow, page = i )))
       } else {
-        print(plotlinearData + ggforce::facet_grid_paginate(ID ~.,
-                                                            scales = "free", ncol = nCol,nrow = nrRow, page = i ))
+        suppressWarnings( print(plotlinearData + ggforce::facet_grid_paginate(ID ~.,
+                                                            scales = "free", ncol = nCol,nrow = nrRow, page = i )))
 
       }
       print(paste0(i, " of ", n))
