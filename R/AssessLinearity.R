@@ -831,39 +831,39 @@ Yorigin <- "Y"
   processingFeature  <- getLRstatus(dats =  processingFeature, datCal = processingGroup, y =  "Y")
   processingFeature <- processingFeature[!is.na(IDintern)]
 
-  if(TYPE %in% "targeted"){
-    logr::put("Back calculation of concentration for the concentration series signals")
-    Y <- ifelse(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y), "Y_trans", "Y")
-    processingFeature$xfactor <- round(processingFeature$X/processingFeature[[COLNAMES[["X"]]]],3)
-    processingGroup <- dplyr::full_join(processingGroup, unique(processingFeature[,c("groupIndices", "xfactor")]), by = "groupIndices")
-    processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y)
-
-    table.backcalc.all <- processingFeature[processingFeature$Feature_ID %in% processingGroup$Feature_ID[processingGroup$enoughPeak_allBatches %in% TRUE]]
-    table.backcalc <- table.backcalc.all[,1:9]
-    table.backcalc$ConcentrationLR <- table.backcalc.all$ConcentrationLR
-    table.backcalc$Status_LR <- table.backcalc.all$Status_LR
-    table.backcalc$precision <- abs(table.backcalc$ConcentrationLR*100/table.backcalc[[COLNAMES[["X"]]]] -100)
-
-    t1 <- table.backcalc |> dplyr::group_by(Feature_ID, Batch) |>
-      dplyr::summarize( lr_signals = sum(!is.na(Y)),
-                        lr_signals_true = sum(Status_LR %in% TRUE),
-                        'prc_all_<=20' = sum(precision <= 20)
-      )
-    t2 <- table.backcalc |> dplyr::group_by(Feature_ID, Batch) |>
-      dplyr::filter(Status_LR %in% TRUE) |>
-      dplyr::summarize( 'prc_true_<=20' = sum(precision <= 20))
-    t <- dplyr::full_join(t1, t2, by = c("Feature_ID", "Batch") )
-    t$prc_true_percent <- round(t$'prc_true_<=20'*100/t$lr_signals_true,2)
-
-
-
-    logr::put(paste("Concentration Back calculation", ":"))
-    logr::put(t, n = nrow(t))
-
-
-
-
-  }
+  # if(TYPE %in% "targeted"){
+  #   logr::put("Back calculation of concentration for the concentration series signals")
+  #   Y <- ifelse(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y), "Y_trans", "Y")
+  #   processingFeature$xfactor <- round(processingFeature$X/processingFeature[[COLNAMES[["X"]]]],3)
+  #   processingGroup <- dplyr::full_join(processingGroup, unique(processingFeature[,c("groupIndices", "xfactor")]), by = "groupIndices")
+  #   processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y)
+  #
+  #   table.backcalc.all <- processingFeature[processingFeature$Feature_ID %in% processingGroup$Feature_ID[processingGroup$enoughPeak_allBatches %in% TRUE]]
+  #   table.backcalc <- table.backcalc.all[,1:9]
+  #   table.backcalc$ConcentrationLR <- table.backcalc.all$ConcentrationLR
+  #   table.backcalc$Status_LR <- table.backcalc.all$Status_LR
+  #   table.backcalc$precision <- abs(table.backcalc$ConcentrationLR*100/table.backcalc[[COLNAMES[["X"]]]] -100)
+  #
+  #   t1 <- table.backcalc |> dplyr::group_by(Feature_ID, Batch) |>
+  #     dplyr::summarize( lr_signals = sum(!is.na(Y)),
+  #                       lr_signals_true = sum(Status_LR %in% TRUE),
+  #                       'prc_all_<=20' = sum(precision <= 20)
+  #     )
+  #   t2 <- table.backcalc |> dplyr::group_by(Feature_ID, Batch) |>
+  #     dplyr::filter(Status_LR %in% TRUE) |>
+  #     dplyr::summarize( 'prc_true_<=20' = sum(precision <= 20))
+  #   t <- dplyr::full_join(t1, t2, by = c("Feature_ID", "Batch") )
+  #   t$prc_true_percent <- round(t$'prc_true_<=20'*100/t$lr_signals_true,2)
+  #
+  #
+  #
+  #   logr::put(paste("Concentration Back calculation", ":"))
+  #   logr::put(t, n = nrow(t))
+  #
+  #
+  #
+  #
+  # }
 
 
 
@@ -886,10 +886,10 @@ Yorigin <- "Y"
       Y_SAMPLE <- "Y_trans"
     }
 
-    if(TYPE %in% "targeted" & CAL_CONC %in% TRUE){
-      logr::put(paste("Calculate Concentration for biological Samples"))
-    SampleFeature <- getConc(dats = SampleFeature, datCal = processingGroup, y = Y_SAMPLE,INVERSE_Y =  INVERSE_Y)
-    }
+    # if(TYPE %in% "targeted" & CAL_CONC %in% TRUE){
+    #   logr::put(paste("Calculate Concentration for biological Samples"))
+    # SampleFeature <- getConc(dats = SampleFeature, datCal = processingGroup, y = Y_SAMPLE,INVERSE_Y =  INVERSE_Y)
+    # }
 
     if(GET_LR_STATUS %in% TRUE){
       logr::put(" Associating biological samples to their respective linear ranges\n")
