@@ -405,7 +405,7 @@ plot_Barplot_Summary <- function(inputData_Series,
 
   assertthat::not_empty(inputData_Series)
   # LR_object,statusLinear = c(TRUE, FALSE),
-  ID <- COLNAMES[["ID"]]
+  ID <- COLNAMES[["Feature_ID"]]
   Col_Batch = COLNAMES[["Batch"]]
   x <- X
   y <- Y
@@ -490,7 +490,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
   assertthat::not_empty(inputData_Samples)
   # LR_object,statusLinear = c(TRUE, FALSE),
-  ID <- COLNAMES[["ID"]]
+  ID <- COLNAMES[["Feature_ID"]]
   Col_Batch <- COLNAMES[["Batch"]]
   x <- X
   y <- Y

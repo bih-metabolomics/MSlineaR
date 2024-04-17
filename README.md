@@ -56,21 +56,29 @@ devtools::install_github("bih-metabolomics/MSlineaR")
 
 MSlineaR needs two tables as input, one with information about the features and one for the sample meta data.
 
-**1) Feature Table**
+### **1) Feature Table**
 
 The Feature table should be present in long format with following columns:
 
--   Identification of the samples
+-   mandatory: Identification of the samples -\> the column name must be identical in both tables
 
--   Identification of the compounds
+-   mandatory: Identification of the compounds
 
--   Instrument response( y) , e.g. Area, Intensity etc
+-   mandatory: Instrument response( y) , e.g. Area, Intensity etc
 
-| Sample.Identification | Compound  |  Area  |
-|:---------------------:|:---------:|:------:|
-|          s25          | compound1 | 157898 |
-|          s14          | compound1 | 13578  |
-|          s67          | compound1 | 136789 |
+-   mandatory: Identification of the Batch -\> the column name must be identical in both tables
+
+| Sample.Identification | Compound  |  Area  | Batch |
+|:---------------------:|:---------:|:------:|:-----:|
+|          s25          | compound1 | 157898 |  B1   |
+|          s25          | compound2 | 13578  |  B1   |
+|          s25          | compound3 | 136789 |  B1   |
+|         cal1          | compound1 | 23654  |  B1   |
+|         cal1          | compound2 |  7856  |  B1   |
+|         cal1          | compound3 | 96347  |  B1   |
+|         cal1          | compound1 | 23659  |  B2   |
+|         cal1          | compound2 |  8856  |  B2   |
+|         cal1          | compound3 |  9634  |  B2   |
 
 : example for feature table
 
@@ -88,62 +96,80 @@ feature_tbl_long <- feature_tlb_wide |>
 pivot_longer(cols = c("Compound_01" : "Compound_34"),, names_to = "Sample.Identification", values_to = "Area")
 ```
 
-**2) Sample Table**
+### **2) Sample Table**
 
 The Sample Table contains all meta data for the individual samples. The table needs to be present in long format and should contain following columns:
 
--   Identification of the samples, the column name must be identical in both tables
+-   mandatory: Identification of the samples -\> the column name must be identical in both tables
 
--   type of the samples, e.g. Calibrants, samples, pooled QC etc
+-   mandatory: type of the samples, e.g. Calibrants, samples, pooled QC etc
 
--   order of injection
+-   mandatory: order of injection
 
--   Dilution step normalized to the highest dilution. That means the highest diluted sample get a dilution factor of 1, if the dilution factor is 3 than the second highest diluted sample get 3, the next one 9 , the next one 27,...
+-   mandatory: Dilution step normalized to the highest dilution. That means the highest diluted sample get a dilution factor of 1, if the dilution factor is 3 than the second highest diluted sample get 3, the next one 9 , the next one 27,...
 
-| Sample.Identification | Sample.Type | Compound  | Sequence.Position | Dilution |
-|:---------------------:|:-----------:|:---------:|:-----------------:|:--------:|
-|        blank1         |    blank    | compound1 |         1         |    NA    |
-|         cal1          |  dilution   | compound1 |         5         |    1     |
-|         cal2          |  dilution   | compound1 |         6         |    3     |
-|          s25          |   sample    | compound1 |        12         |    NA    |
+-   mandatory: Identification of the Batch -\> the column name must be identical in both tables
 
-Optional the input tables could include:
+-   optional statistical group for the biological samples
 
--   in both tables a column to distinguish between different Batches if there are more than one batch, the column name must be identical in both tables
+-   Additional columns will be ignored for calculations, but will be present in the final output.
 
--   in the sample table a column to distinguish between different statistical classes e.g. healthy and treatment
+| Sample.Identification | Sample.Type | Sequence.Position | Dilution | Batch | Group  |
+|:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
+|        blank1         |    blank    |         1         |    NA    |   1   |   NA   |
+|         cal1          |  dilution   |         5         |    1     |   1   |   NA   |
+|          QC1          |  pooledQC   |         6         |    3     |   1   |   NA   |
+|          s25          |   sample    |        12         |    NA    |   1   | groupA |
+|          s14          |   sample    |        13         |    NA    |   1   | groupB |
+|         cal1          |  dilution   |         5         |    1     |   2   |   NA   |
 
-Additional columns will be ignored for calculations, but will be present in the final output.
+: example how the sample table should look like
 
-## Mandatory Input Arguments
+## Input Arguments for function `AssessLinearity`
 
--   *analysis_type:* You can choose between "targeted" or "untargeted"
+-   *analysisType:* You can choose between "targeted" or "untargeted"
 
--   *input_data*: data table or data frame with at least five columns, see above
+-   *inputData_feature*: Data table or data frame with at least three columns, see above
 
-    -   *column_sample_type*: Column in *input_data* which indicates the sample types of the data set, as:
+-   *inputData_sample*: Data table or data frame with at least four columns, see above
 
-        -   *sample_type_serial:* type name in *column_sample_type* of the serial diluted or concentrated samples
+-   *column_sampleType*: Column name in *inputData_sample* which indicates the sample types of the data set (default = "Sample.Type). Following sample types needs to provided:
 
-        -   *sample_type_blank*: type name in *column_sample_type* of the blank sample, which will be used to determine the minimum lower limit of quantification
+    -   *sampleType_serial*: Sample type of the serial diluted or concentrated samples (default = "Dilution")
 
-    -   *column_sample_ID:* column in *input_data* indicating the sample ID
+    -   *sampleType_sample*: Sample type of the measured (biological) samples (default = "Sample", disabled = NULL)
 
-    -   *column_X:* column in *input_data* indicating the dilution or concentration of the serial diluted samples
+    -   *sampleType_blank*: Sample type of the blank sample, which will be used for the signal to noise calculation (default = "Blank", disabled = NULL). This parameter could include a vector with more sample types, e.g. c("ProcessBlank", "SolventBlank"). Each of the sample with these sample types will be used for signal to noise determination.
 
-    -   *column_Y:* column in *input_dat*a indicating the Instrument response, e.g. Area, Intensity etc
+    -   *sampleType_QC*: Sample types of the QC samples (default = "QCpool", disabled = NULL). This parameter could include a vector with more sample types.
 
--   *dilution_factor*: distance between the dilution/concentration steps, e.g. dilution_factor = 2 means, that the concentration of dilution 1 is half the concentration of dilution 2
+-   *column_sampleID*: Column name in *inputData_feature* and *inputData_sample* indicating a unique sample identifier per Batch (default = "Sample.Identifiaction").
 
--   *signal_blank_ratio*: Default set to 5, according to EMA guidelines 2012, the signal should be at least 5 times the the signal of a blank sample. Disable by setting the parameter to NULL.
+-   *column_featureID*: Column name in *inputData_feature* indicating a unique feature identifier (default = "CompoundID")
 
--   *min_feature:* Default set to 6, according to EMA guidelines 2012. Minimal number of consecutive signals present per dilution/concentration curve, to consider this curve as linear.
+-   column_injectionOrder: Column name in *inputData_sample* indicating the sequence order of the samples (default = "Sequence.Position")
+
+-   *column_batch:* Column name in *inputData_feature* and *inputData_sample* indicating a unique Batch identifier (default = "Batch")
+
+-   *column_X*: Column name in *inputData_sample* indicating the single dilution of the serial diluted samples (default = "Dilution")
+
+-   *column_Y*: column in *inputDat*a_feature indicating the Instrument response, e.g. Area, Intensity (default = "Area")
+
+-   *column_sampleClass*: optional Column name in *inputData_sample* indicating the statistical class for the measured samples (default = "Group", disabled = NULL).
+
+-   *signal_blank_ratio*: The ratio which will be used for signal to blank assessment. (default = 5, disabled = NULL). According to EMA guidelines 2012, the signal should be at least 5 times the the signal of a blank sample.
+
+-   *min_feature:* Minimal number of consecutive signals present per dilution/concentration curve, to consider this curve as linear (default = 6, according to EMA guidelines 2012)
+
+-   *R2_min:* Minimum coefficient of determination, which needs to be reached to consider the signal as linear (default = 0.9).
 
 -   *output_name*: name of the output file
 
--   *output_dir:* directory where the output files should be saved
+-   *output_dir*: directory where the output files should be saved
 
-### With these arguments you can run the example data set:
+-   *n_core*: How many cores should be used for parallel processing (default = 1)
+
+### With these arguments MSlineaR can run the example data set:
 
 The example data set is an targeted data set with 34 metabolites measured in two batches :
 
@@ -153,101 +179,134 @@ The example data set is an targeted data set with 34 metabolites measured in two
 -   884 Reference QC signals (34 metabolites a two batches a 13 repeats)
 -   3434 biological sample signals ( 34 metabolites a 101 patients)
 
-The 101 biological samples were randomly assigned to either statistical group "control" (n = 65) or "patient" (n = 36)
+The 101 biological samples were randomly assigned to either statistical group "groupA" (n = 45) or "groupB" (n = 56) and for three compounds the area were increased by 20%.
 
 ``` r
 library(MSlineaR)
 
 # load example data
-data_tbl <- MSlineaR::targeted_MS
+data_tbl_feature <- MSlineaR::Feature_tbl_long
+data_tbl_sample  <- MSlineaR::Sample_tbl
 
 
 targetedMSCal <- AssessLinearity(
-  analysis_type ="targeted",
-  input_data = data_tbl,
-  column_sample_type = "Sample.Type" ,
-  sample_type_QC = c("Pooled QC","Reference QC"),
-  sample_type_sample = "Sample",
-  sample_type_serial = "Calibration Standard",
-  sample_type_blank = "Blank",
-  column_sample_ID = "Sample.Identification",
-
-  column_compound_ID = "Compound",
+  analysisType ="targeted",
+  inputData_feature = data_tbl_feature,
+  inputData_sample = data_tbl_sample,
+  column_sampleType = "Sample.Type",
+    sampleType_QC = c("Pooled QC","Reference QC"),
+    sampleType_sample = "Sample",
+    sampleType_serial = "Calibration Standard",
+    sampleType_blank = "Blank",
+  column_sampleID = "Sample.Identification",
+  column_featureID = "Compound",
+  column_injectionOrder = "Sequence.Position",
   column_batch = "Batch",
-  column_X = "Concentration",
-  dilution_factor = 3,
-  signal_blank_ratio = 5,
+  column_X = "Dilution",
   column_Y = "Area",
-  column_Y_sample = "Area",
-  column_class_sample = "Group",
-  min_feature = 5,
+  column_sampleClass = "Group",
+  signal_blank_ratio = 5,
+  min_feature = 5,  
   output_name = "Test_targeted",
   output_dir = " ",
   nCORE = 4
-
 )
 ```
 
 ## Results
 
-## Optional Input Arguments:
+## Complete Input Arguments for function `AssessLinearity` :
 
--   *sample_type_QC :*
+The function provides the possibility to disable each step separately and to change the settings for each step.
 
--   *column_Batch = "Batch"*
+1)  Input data
 
--   *column_Y_sample = "Area"*
+-   *inputData_feature*: Data table or data frame with at least three columns, see above
 
--   *column_class_sample = NULL*
+-   *inputData_sample*: Data table or data frame with at least four columns, see above
 
--   *#linear_range*
+-   *column_sampleType*: Column name in *inputData_sample* which indicates the sample types of the data set (default = "Sample.Type). Following sample types needs to provided:
 
--   *nCORE = 4*
+    -   *sampleType_serial*: Sample type of the serial diluted or concentrated samples (default = "Dilution")
 
--   *get_output = TRUE*
+    -   *sampleType_sample*: Sample type of the measured (biological) samples (default = "Sample", disabled = NULL)
 
--   *#transform_data*
+    -   *sampleType_blank*: Sample type of the blank sample, which will be used for the signal to noise calculation (default = "Blank", disabled = NULL). This parameter could include a vector with more sample types, e.g. c("ProcessBlank", "SolventBlank"). Each of the sample with these sample types will be used for signal to noise determination.
 
--   *transform = c(TRUE, FALSE)[1]*
+    -   *sampleType_QC*: Sample types of the QC samples (default = "QCpool", disabled = NULL). This parameter could include a vector with more sample types.
 
-    -   *transform_x = "log"*
+-   *column_sampleID*: Column name in *inputData_feature* and *inputData_sample* indicating a unique sample identifier per Batch (default = "Sample.Identifiaction").
 
-    -   *inverse_x = "exp"*
+-   *column_featureID*: Column name in *inputData_feature* indicating a unique feature identifier (default = "CompoundID")
 
-    -   *transform_y = "log"*
+-   *column_batch:* Column name in *inputData_feature* and *inputData_sample* indicating a unique Batch identifier (default = "Batch")
 
-    -   *inverse_y = "exp"*
+-   *column_X*: Column name in *inputData_sample* indicating the single dilution of the serial diluted samples (default = "Dilution")
 
--   *#first_outlier_detection*
+-   *column_Y*: column in *inputDat*a_feature indicating the Instrument response, e.g. Area, Intensity (default = "Area")
 
--   *first_outlier_detection = c(TRUE, FALSE)[1]*
+-   *column_sampleClass*: optional Column name in *inputData_sample* indicating the statistical class for the measured samples (default = "Group", disabled = NULL)
 
-    -   *FOD_model = c("logistic", "linear", "quadratic")*
+2)  transforming the data
 
-    -   *FOD_sdres_min = 1*
+-   *transform*: Should the data be transformed? Default = TRUE
 
-    -   *FOD_stdres_max = 2*
+    -   *transform_x*: Which transformation method should be used ? (default= "log")
 
--   *trimming = c(TRUE, FALSE)[1]*
+    -   *inverse_x*: Which method reverse the used transformation method? (default= "exp")
 
--   *#second_outlier_detection*
+    -   *transform_y*: Which transformation method should be used? (default= "log")
 
--   *second_outlier_detection = c(TRUE, FALSE)[1]*
+*inverse_y*: Which method reverse the used transformation method? (default= "exp")
 
-    -   *SOD_model = c("logistic", "linear", "quadratic")*
+3)  Signal to noise
 
-    -   *SOD_sdres_min = 1*
+The signal to noise assessment will be performed on the non transformed data if the parameters *signal_blank_ratio* and *sampleType_blank* area not NULL.
 
-    -   *SOD_stdres_max = 2*
+-   *signal_blank_ratio*: The ratio which will be used for signal to blank assessment. (default = 5, disabled = NULL). According to EMA guidelines 2012, the signal should be at least 5 times the the signal of a blank sample.
 
-    -   *R2_min = 0.9*
+4.  First outlier detection
 
--   *#linear_range*
+-   first_outlier_detection: Should the outlier detection be performed? (default = TRUE, disabled = FALSE)
 
--   *LR_sd_res_factor = 2*
+    -   FOD_model: Which model should be used for the outlier detection? Currently supported are linear regression ("linear"), quadratic regression ("quadratic") and logistic regression ("logistic"). Default is a vector with all three models (default = c("logistic", "linear", "quadratic").
 
--   *Batch_harmonization = c(TRUE, FALSE)[1]*
+    -   FOD_sdres_min: Minimum residual standard deviation of a statistical model. If the residual standard deviation is below this value, there will be no outlier detection performed for this signal. (default = 1).
 
--   *calculate_concentration = c(TRUE, FALSE)[1]*
+    -   FOD_stdres_max : Maximum value for standardized residuals of a statistically model. If a standardized residual is above this value, this point will be considered as outlier and removed for further procedere. (default = 2).
 
--   *get_linearity_status_samples = c(TRUE, FALSE)[1]*
+5.  Curve trimming
+
+-   trimming: Should the data be trimmed? (default = TRUE)
+
+6.  Second outlier detection
+
+-   second_outlier_detection: Should the outlier detection be performed? (default = TRUE, disabled = FALSE)
+
+    -   SOD_model: Which model should be used for the outlier detection? Currently supported are linear regression ("linear"), quadratic regression ("quadratic") and logistic regression ("logistic"). Default is a vector with all three models (default = c("logistic", "linear", "quadratic").
+
+    -   SOD_sdres_min: Minimum residual standard deviation of a statistical model. If the residual standard deviation is below this value, there will be no outlier detection performed for this signal. (default = 1).
+
+    -   SOD_stdres_max : Maximum value for standardized residuals of a statistically model. If a standardized residual is above this value, this point will be considered as outlier and removed for further procedere. (default = 2).
+
+7.  Determining linear range
+
+-   LR_sd_res_factor : Multiplication factor for the standard deviation of standardized residuals from the linear model. All standardized residuals which are within the range of standardized residuals +/- sd standardized residuals \* LR_sd_res_factor are considered as linear. (default = 3).
+
+-   R2_min : Minimum coefficient of determination, which needs to be reached to consider the signal as linear (default = 0.9).
+
+8.  other parameters
+
+-   *min_feature:* Minimal number of consecutive signals present per dilution/concentration curve, to consider this curve as linear (default = 6, according to EMA guidelines 2012)
+
+-   *n_core*: How many cores should be used for parallel processing (default = 1)
+
+8.  Output
+
+-   get_output: Should the output be exported? (default = TRUE)
+
+-   which_output: Should all type of Output be exported? The user can decide between "all", "R_object", "DilutionCurves", "BiologicalSamples" and "Plots". (default = "all")
+
+-   *output_name*: Prefix name of the output file
+
+-   *output_dir*: Directory where the output files should be saved

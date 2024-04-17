@@ -56,9 +56,9 @@
 #'
 checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = parent.frame()$TYPE, QC = parent.frame()$QC,
                       BLANK = parent.frame()$BLANK,
-                      SAMPLE = parent.frame()$SAMPLE,Y_SAMPLE = parent.frame()$Y_SAMPLE,
+                      SAMPLE = parent.frame()$SAMPLE,#Y_SAMPLE = parent.frame()$Y_SAMPLE,
                       CALIBRANTS = parent.frame()$CALIBRANTS, COLNAMES = parent.frame()$COLNAMES,
-                      DILUTION_FACTOR = parent.frame()$DILUTION_FACTOR,
+
                       NOISE = parent.frame()$NOISE,
                       TRANSFORM = parent.frame()$TRANSFORM,TRANSFORM_X = parent.frame()$TRANSFORM_X, INVERSE_X = parent.frame()$INVERSE_X,
                       TRANSFORM_Y = parent.frame()$TRANSFORM_Y,INVERSE_Y = parent.frame()$INVERSE_Y,
@@ -66,8 +66,8 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
                       TRIMM = parent.frame()$TRIMM,
                       SOD = parent.frame()$SOD,SOD_MODEL = parent.frame()$SOD_MODEL, SOD_SDRES_MIN = parent.frame()$SOD_SDRES_MIN, SOD_STDRES_MAX = parent.frame()$SOD_STDRES_MAX,
                       LR_SD_RES_FACTOR = parent.frame()$LR_SD_RES_FACTOR, R2_MIN = parent.frame()$R2_MIN,
-                      BATCH_HARMONIZATION = parent.frame()$BATCH_HARMONIZATION,
-                      CAL_CONC = parent.frame()$CAL_CONC,GET_LR_STATUS = parent.frame()$GET_LR_STATUS,
+                      #BATCH_HARMONIZATION = parent.frame()$BATCH_HARMONIZATION,
+                      #CAL_CONC = parent.frame()$CAL_CONC,GET_LR_STATUS = parent.frame()$GET_LR_STATUS,
                       nCORE = parent.frame()$nCORE,
                       GET_OUTPUT = parent.frame()$GET_OUTPUT, IMG_OUTPUT_DIR = parent.frame()$IMG_OUTPUT_DIR){
 
@@ -75,15 +75,15 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
 
 
   if(dim(dat)[1] < MIN_FEATURE) rlang::abort("'input_dat' has less rows than argument 'min_feature' required")
-  if(dim(dat)[2] < 4) rlang::abort("'input_dat' needs minimum 4 columns defining the ID, the x and y values and the sample type of the data")
+  if(dim(dat)[2] < 7) rlang::abort("'input_dat' needs minimum 7 columns defining the sample identification, the feature identification, the x and y values, the sample type of the data, the batch nr, the injection order and the dilution step.")
 
-  if (!"Batch" %in% names(COLNAMES)) {
-    COLNAMES["Batch"] <- "Batch"
-    dat[, Batch := "1"]
-  } else if("Batch" %in% names(COLNAMES) & is.na(COLNAMES[["Batch"]])){
-    COLNAMES["Batch"] <- "Batch"
-    dat[, Batch := "1"]
-  }
+  # if (!"Batch" %in% names(COLNAMES)) {
+  #   COLNAMES["Batch"] <- "Batch"
+  #   dat[, Batch := "1"]
+  # } else if("Batch" %in% names(COLNAMES) & is.na(COLNAMES[["Batch"]])){
+  #   COLNAMES["Batch"] <- "Batch"
+  #   dat[, Batch := "1"]
+  # }
 
 
   if (!"Class" %in% names(COLNAMES)) {
@@ -94,29 +94,33 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
     dat[, Class := "1"]
   }
 
-  if(!all(COLNAMES %in% colnames(dat)))rlang::abort("missing columns")
+  if(!all(COLNAMES %in% colnames(dat)))rlang::abort("the provided names do not fit the colnames of the input data")
 
 
-  data.table::set(dat, j = COLNAMES[["ID"]], value = as.character(dat[[COLNAMES[["ID"]]]]))
+  data.table::set(dat, j = COLNAMES[["Sample_ID"]], value = as.character(dat[[COLNAMES[["Sample_ID"]]]]))
+  data.table::set(dat, j = COLNAMES[["Feature_ID"]], value = as.character(dat[[COLNAMES[["Feature_ID"]]]]))
   data.table::set(dat, j = COLNAMES[["Batch"]], value = as.character(dat[[COLNAMES[["Batch"]]]]))
+  data.table::set(dat, j = COLNAMES[["Injection_order"]], value = as.numeric(dat[[COLNAMES[["Injection_order"]]]]))
   data.table::set(dat, j = COLNAMES[["Class"]], value = as.character(dat[[COLNAMES[["Class"]]]]))
   data.table::set(dat, j = COLNAMES[["X"]], value = as.numeric(dat[[COLNAMES[["X"]]]]))
   data.table::set(dat, j = COLNAMES[["Y"]], value = as.numeric(dat[[COLNAMES[["Y"]]]]))
   data.table::set(dat, j = COLNAMES[["Sample_type"]], value = as.character(dat[[COLNAMES[["Sample_type"]]]]))
 
 
-  data.table::setorderv(dat, c(COLNAMES[["ID"]], COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]],COLNAMES[["Class"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]))
-  dat[ , IDintern := paste0("s", 1:.N)]
-  dat[ , groupIndices := .GRP ,by = c(COLNAMES[["ID"]], COLNAMES[["Batch"]])]
-  dat <- dat[ , c( "IDintern", "groupIndices", COLNAMES[["ID"]],  COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]],COLNAMES[["Class"]], COLNAMES[["Batch"]], COLNAMES[["X"]], COLNAMES[["Y"]]), with = F]
+  data.table::setorderv(dat, c(COLNAMES[["Injection_order"]], COLNAMES[["Batch"]], COLNAMES[["Feature_ID"]], COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]],COLNAMES[["Class"]], COLNAMES[["X"]], COLNAMES[["Y"]]))
+  dat[ , IDintern := paste(dat[[COLNAMES[["Sample_ID"]]]], dat[[COLNAMES[["Feature_ID"]]]], dat[[COLNAMES[["Batch"]]]], dat[[COLNAMES[["Injection_order"]]]],sep = "_")]
+  dat[ , groupIndices := .GRP ,by = c(COLNAMES[["Feature_ID"]], COLNAMES[["Batch"]])]
+  dat <- dat[ , c( "IDintern", "groupIndices", COLNAMES[["Feature_ID"]],  COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]],COLNAMES[["Class"]], COLNAMES[["Batch"]],COLNAMES[["Injection_order"]], COLNAMES[["X"]], COLNAMES[["Y"]]), with = F]
 
   # tests for Input parameter
 
   if(!(is.double(dat[[COLNAMES[["X"]]]]) & all(dat[[COLNAMES[["X"]]]] >= 0, na.rm = T))) rlang::abort("all values of 'column_X' and 'column_Y' need to be from type double and positive.")
   if(!(is.double(dat[[COLNAMES[["X"]]]]) & all(dat[[COLNAMES[["Y"]]]] >= 0, na.rm = T))) rlang::abort("all values of 'column_X' and 'column_Y' need to be from type double and positive.")
-  if(!is.character(dat[[COLNAMES[["ID"]]]])) rlang::abort("'column_ID' needs to be from type character ")
+  if(!is.character(dat[[COLNAMES[["Feature_ID"]]]])) rlang::abort("'column_featureID' needs to be from type character")
+  if(!is.character(dat[[COLNAMES[["Sample_ID"]]]])) rlang::abort("'column_sampleID' needs to be from type character")
+  if(!is.numeric(dat[[COLNAMES[["Injection_order"]]]])) rlang::abort("'column_injectionOrder' needs to be from type numeric")
   if(!is.character(dat[[COLNAMES[["Batch"]]]])) rlang::abort("'column_Batch' needs to be from type character ")
-  if(!is.character(dat[[COLNAMES[["Class"]]]])) rlang::abort("'column_Class' needs to be from type character ")
+  if(!is.character(dat[[COLNAMES[["Class"]]]])) rlang::abort("'column_sampleClass' needs to be from type character ")
 
   if(!is.logical(FOD)| is.na(FOD)) rlang::abort("Argument 'first_outlier_detection' needs to be from type logical")
   if(FOD %in% TRUE) if(!all(FOD_MODEL %in% c('linear', 'logistic', 'quadratic')))rlang::abort("For the Argument 'FOD_model' only one or a combination of 'linear', 'logistic' or 'quadratic' are allowed.")
@@ -131,16 +135,16 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
   if(SOD %in% TRUE) if(!(is.wholenumber(SOD_SDRES_MIN) & SOD_SDRES_MIN >= 0  & is.wholenumber(SOD_STDRES_MAX) & SOD_STDRES_MAX >= 0)) rlang::abort ("Argument 'SOD_sdres_min' and 'SOD_stdres_max' need to be from type Integer and positive")
 
   if(!is.logical(GET_OUTPUT) | is.na(GET_OUTPUT)) rlang::abort("Argument 'get_output' needs to be from type logical")
-  if(!is.logical(CAL_CONC) | is.na(CAL_CONC)) rlang::abort("Argument 'calculate_concentration' needs to be from type logical")
+  #if(!is.logical(CAL_CONC) | is.na(CAL_CONC)) rlang::abort("Argument 'calculate_concentration' needs to be from type logical")
   if(!is.logical(GET_LR_STATUS) | is.na(GET_LR_STATUS)) rlang::abort("Argument 'get_linearity_status_samples' needs to be from type logical")
   if(!nCORE > 0) rlang::abort("Argument 'nCore' needs to be positive")
   if(!MIN_FEATURE >= 3) rlang::abort("Argument 'min_feature' needs to be greater or equal than 3")
   if(!is.numeric(LR_SD_RES_FACTOR)) rlang::abort("Argument 'LR_sd_res_factor' needs to be from type integer and positive")
   if(!is.wholenumber(LR_SD_RES_FACTOR) | LR_SD_RES_FACTOR < 0) rlang::abort("Argument 'LR_sd_res_factor' needs to be from type integer and positive")
 
-  if(!any(dat[[COLNAMES[["Sample_type"]]]] %in% CALIBRANTS)) rlang::abort("Argument 'sample_type_serial' was not found in column 'column_sample_type'")
+  if(!any(dat[[COLNAMES[["Sample_type"]]]] %in% CALIBRANTS)) rlang::abort("Argument 'sampleType_serial' was not found in column 'column_sampleType'")
   if(!data.table::between(x = R2_MIN, lower = 0, upper = 1)) rlang::abort("Argument 'R2_min' needs to be from type double and in the range between 0 and 1")
-  if(!TYPE %in% c("untargeted", "targeted")) rlang::abort("Argument 'analysis_type' need to be either 'untargeted' or 'targeted'")
+  if(!TYPE %in% c("untargeted", "targeted")) rlang::abort("Argument 'analysisType' need to be either 'untargeted' or 'targeted'")
   #if(TYPE %in% "untargeted")if(!(!is.null(DILUTION_FACTOR) | DILUTION_FACTOR != " " | !is.na(DILUTION_FACTOR))) rlang::abort("Argument 'dilution_factor ' must be provided for untargeted analysis")
 
   if(!is.logical(TRANSFORM) | is.na(TRANSFORM)) rlang::abort("Argument 'transform' needs to be from type logical")
@@ -159,13 +163,13 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
 
 
   if(!is.null(SAMPLE)) if(!any(dat[[COLNAMES[["Sample_type"]]]] %in% SAMPLE))rlang::abort("Argument 'sample_type_sample' was not found in column 'column_sample_type'")
-  if(!is.null(SAMPLE)) if(!any(colnames(dat) %in% Y_SAMPLE))rlang::abort("Column 'column_Y_sample' was not found in input data.")
+  #if(!is.null(SAMPLE)) if(!any(colnames(dat) %in% Y_SAMPLE))rlang::abort("Column 'column_Y_sample' was not found in input data.")
 
-  if(!is.null(QC)) if(!all( QC %in% dat[[COLNAMES[["Sample_type"]]]])) rlang::abort("Argument 'sample_type_QC' was not found in column 'column_sample_type'")
+  if(!is.null(QC)) if(!all( QC %in% dat[[COLNAMES[["Sample_type"]]]])) rlang::abort("Argument 'sampleType_QC' was not found in column 'column_sampleType'")
   #if(!is.numeric(DILUTION_FACTOR)) rlang::abort("Argument 'dilution_factor' needs to be from type numeric.")
   if(!is.logical(BATCH_HARMONIZATION) | is.na(BATCH_HARMONIZATION)) rlang::abort("Argument 'Batch_harmonization' needs to be from type logical")
   if(!is.null(NOISE)) if(!is.numeric(NOISE) | NOISE < 1) rlang::abort("Argument 'signal_blank_ration' needs to be from type integer and greater than 0.")
-  if(!is.null(NOISE)) if(!BLANK %in% dat[[COLNAMES[["Sample_type"]]]]) rlang::abort("Argument 'sample_type_blank' was not found in column 'column_sample_type'")
+  if(!is.null(NOISE)) if(!BLANK %in% dat[[COLNAMES[["Sample_type"]]]]) rlang::abort("Argument 'sampleType_blank' was not found in column 'column_sample_type'")
 
 
 
@@ -193,24 +197,25 @@ prepareData <- function(dat,
                         COLNAMES = parent.frame()$COLNAMES,
                         TYPE = parent.frame()$TYPE){
 
-  if(dim(dat)[2] != 9) rlang::abort("data need to have 9 columns, please use funtion 'checkData' before to check all necessary input arguments")
+  if(dim(dat)[2] != 10) rlang::abort("data need to have 10 columns, please use funtion 'checkData' before to check all necessary input arguments")
 
 
 
   data.table::setDT(dat)
   processed <- data.table::copy(dat)
   # rename
-  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "ID","Sample_ID", "Sample.Type","Class", "Batch",COLNAMES[["X"]], "Y"))
-  data.table::setorderv(processed, c("ID", "Batch", COLNAMES[["X"]]))
+  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "Feature_ID","Sample_ID", "Sample.Type","Class", "Batch", "Injection_order",COLNAMES[["X"]], "Y"))
+  data.table::setorderv(processed, c("Injection_order","Feature_ID", "Batch", COLNAMES[["X"]]))
 
   processed[ , ":="(Comment = NA, pch = data.table::fcase(!is.na(Y), 19), color = data.table::fcase(is.na(Y), "grey", default = "black"))]
   processed[ , ":="(#YNorm = Y / max(Y, na.rm = T) * 100,
     #Y_trans = log(Y),
     #X_trans = log(X),
     DilutionPoint = 1 : (.N),
-    X = cumprod(c(1,get(COLNAMES[["X"]])[-1]/get(COLNAMES[["X"]])[- (.N)])) * 3),
+    X = get(COLNAMES[["X"]]) * 3),
+    #X = cumprod(c(1,get(COLNAMES[["X"]])[-1]/get(COLNAMES[["X"]])[- (.N)])) * 3),
     #groupIndices = .GRP),
-    by = c("ID", "Batch")]
+    by = c("Feature_ID", "Batch")]
 
   #processed$X = processed[[COLNAMES[["X"]]]] * 100
   #processed$DilutionPoint <- processed$DilutionPoint + 1
@@ -225,7 +230,7 @@ prepareData <- function(dat,
     processed$Y_trans[is.infinite(processed$Y_trans)] <- NA
   }
 
-  #processed <- processed[ , c("groupIndices", "IDintern","ID", "Batch", "X", "Y", "Comment", "YLog", "XLog", "DilutionPoint", "pch", "color"), with = F]
+  #processed <- processed[ , c("groupIndices", "IDintern","Feature_ID", "Batch", "X", "Y", "Comment", "YLog", "XLog", "DilutionPoint", "pch", "color"), with = F]
 
   return(processed)
 }

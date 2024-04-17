@@ -420,38 +420,83 @@ devtools::install_github(&quot;bih-metabolomics/MSlineaR&quot;)</code></pre>
 <h2>Input Data Tables</h2>
 <p>MSlineaR needs two tables as input, one with information about the
 features and one for the sample meta data.</p>
-<p><strong>1) Feature Table</strong></p>
+<div id="feature-table" class="section level3">
+<h3><strong>1) Feature Table</strong></h3>
 <p>The Feature table should be present in long format with following
 columns:</p>
 <ul>
-<li><p>Identification of the samples</p></li>
-<li><p>Identification of the compounds</p></li>
-<li><p>Instrument response( y) , e.g. Area, Intensity etc</p></li>
+<li><p>mandatory: Identification of the samples -&gt; the column name
+must be identical in both tables</p></li>
+<li><p>mandatory: Identification of the compounds</p></li>
+<li><p>mandatory: Instrument response( y) , e.g. Area, Intensity
+etc</p></li>
+<li><p>mandatory: Identification of the Batch -&gt; the column name must
+be identical in both tables</p></li>
 </ul>
 <table>
 <caption>example for feature table</caption>
 <thead>
 <tr class="header">
-<th>Sample.Identification</th>
-<th>Compound</th>
-<th>Area</th>
+<th align="center">Sample.Identification</th>
+<th align="center">Compound</th>
+<th align="center">Area</th>
+<th align="center">Batch</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>s25</td>
-<td>compound1</td>
-<td>157898</td>
+<td align="center">s25</td>
+<td align="center">compound1</td>
+<td align="center">157898</td>
+<td align="center">B1</td>
 </tr>
 <tr class="even">
-<td>s14</td>
-<td>compound1</td>
-<td>13578</td>
+<td align="center">s25</td>
+<td align="center">compound2</td>
+<td align="center">13578</td>
+<td align="center">B1</td>
 </tr>
 <tr class="odd">
-<td>s67</td>
-<td>compound1</td>
-<td>136789</td>
+<td align="center">s25</td>
+<td align="center">compound3</td>
+<td align="center">136789</td>
+<td align="center">B1</td>
+</tr>
+<tr class="even">
+<td align="center">cal1</td>
+<td align="center">compound1</td>
+<td align="center">23654</td>
+<td align="center">B1</td>
+</tr>
+<tr class="odd">
+<td align="center">cal1</td>
+<td align="center">compound2</td>
+<td align="center">7856</td>
+<td align="center">B1</td>
+</tr>
+<tr class="even">
+<td align="center">cal1</td>
+<td align="center">compound3</td>
+<td align="center">96347</td>
+<td align="center">B1</td>
+</tr>
+<tr class="odd">
+<td align="center">cal1</td>
+<td align="center">compound1</td>
+<td align="center">23659</td>
+<td align="center">B2</td>
+</tr>
+<tr class="even">
+<td align="center">cal1</td>
+<td align="center">compound2</td>
+<td align="center">8856</td>
+<td align="center">B2</td>
+</tr>
+<tr class="odd">
+<td align="center">cal1</td>
+<td align="center">compound3</td>
+<td align="center">9634</td>
+<td align="center">B2</td>
 </tr>
 </tbody>
 </table>
@@ -466,121 +511,166 @@ feature_tlb_wide &lt;- MSlineaR::Feature_tlb_wide
 
 feature_tbl_long &lt;- feature_tlb_wide |&gt; 
 pivot_longer(cols = c(&quot;Compound_01&quot; : &quot;Compound_34&quot;),, names_to = &quot;Sample.Identification&quot;, values_to = &quot;Area&quot;)</code></pre>
-<p><strong>2) Sample Table</strong></p>
+</div>
+<div id="sample-table" class="section level3">
+<h3><strong>2) Sample Table</strong></h3>
 <p>The Sample Table contains all meta data for the individual samples.
 The table needs to be present in long format and should contain
 following columns:</p>
 <ul>
-<li><p>Identification of the samples, the column name must be identical
-in both tables</p></li>
-<li><p>type of the samples, e.g. Calibrants, samples, pooled QC
-etc</p></li>
-<li><p>order of injection</p></li>
-<li><p>Dilution step normalized to the highest dilution. That means the
-highest diluted sample get a dilution factor of 1, if the dilution
-factor is 3 than the second highest diluted sample get 3, the next one 9
-, the next one 27,…</p></li>
+<li><p>mandatory: Identification of the samples -&gt; the column name
+must be identical in both tables</p></li>
+<li><p>mandatory: type of the samples, e.g. Calibrants, samples, pooled
+QC etc</p></li>
+<li><p>mandatory: order of injection</p></li>
+<li><p>mandatory: Dilution step normalized to the highest dilution. That
+means the highest diluted sample get a dilution factor of 1, if the
+dilution factor is 3 than the second highest diluted sample get 3, the
+next one 9 , the next one 27,…</p></li>
+<li><p>mandatory: Identification of the Batch -&gt; the column name must
+be identical in both tables</p></li>
+<li><p>optional statistical group for the biological samples</p></li>
+<li><p>Additional columns will be ignored for calculations, but will be
+present in the final output.</p></li>
 </ul>
-<table>
+<table style="width:100%;">
+<caption>example how the sample table should look like</caption>
 <colgroup>
-<col width="30%" />
-<col width="17%" />
-<col width="14%" />
-<col width="25%" />
-<col width="13%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
 </colgroup>
 <thead>
 <tr class="header">
 <th align="center">Sample.Identification</th>
 <th align="center">Sample.Type</th>
-<th align="center">Compound</th>
 <th align="center">Sequence.Position</th>
 <th align="center">Dilution</th>
+<th align="center">Batch</th>
+<th align="center">Group</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="center">blank1</td>
 <td align="center">blank</td>
-<td align="center">compound1</td>
+<td align="center">1</td>
+<td align="center">NA</td>
 <td align="center">1</td>
 <td align="center">NA</td>
 </tr>
 <tr class="even">
 <td align="center">cal1</td>
 <td align="center">dilution</td>
-<td align="center">compound1</td>
 <td align="center">5</td>
 <td align="center">1</td>
+<td align="center">1</td>
+<td align="center">NA</td>
 </tr>
 <tr class="odd">
-<td align="center">cal2</td>
-<td align="center">dilution</td>
-<td align="center">compound1</td>
+<td align="center">QC1</td>
+<td align="center">pooledQC</td>
 <td align="center">6</td>
 <td align="center">3</td>
+<td align="center">1</td>
+<td align="center">NA</td>
 </tr>
 <tr class="even">
 <td align="center">s25</td>
 <td align="center">sample</td>
-<td align="center">compound1</td>
 <td align="center">12</td>
+<td align="center">NA</td>
+<td align="center">1</td>
+<td align="center">groupA</td>
+</tr>
+<tr class="odd">
+<td align="center">s14</td>
+<td align="center">sample</td>
+<td align="center">13</td>
+<td align="center">NA</td>
+<td align="center">1</td>
+<td align="center">groupB</td>
+</tr>
+<tr class="even">
+<td align="center">cal1</td>
+<td align="center">dilution</td>
+<td align="center">5</td>
+<td align="center">1</td>
+<td align="center">2</td>
 <td align="center">NA</td>
 </tr>
 </tbody>
 </table>
-<p>Optional the input tables could include:</p>
-<ul>
-<li><p>in both tables a column to distinguish between different Batches
-if there are more than one batch, the column name must be identical in
-both tables</p></li>
-<li><p>in the sample table a column to distinguish between different
-statistical classes e.g. healthy and treatment</p></li>
-</ul>
-<p>Additional columns will be ignored for calculations, but will be
-present in the final output.</p>
 </div>
-<div id="mandatory-input-arguments" class="section level2">
-<h2>Mandatory Input Arguments</h2>
+</div>
+<div id="input-arguments-for-function-assesslinearity" class="section level2">
+<h2>Input Arguments for function <code>AssessLinearity</code></h2>
 <ul>
-<li><p><em>analysis_type:</em> You can choose between “targeted” or
+<li><p><em>analysisType:</em> You can choose between “targeted” or
 “untargeted”</p></li>
-<li><p><em>input_data</em>: data table or data frame with at least five
-columns, see above</p>
+<li><p><em>inputData_feature</em>: Data table or data frame with at
+least three columns, see above</p></li>
+<li><p><em>inputData_sample</em>: Data table or data frame with at least
+four columns, see above</p></li>
+<li><p><em>column_sampleType</em>: Column name in
+<em>inputData_sample</em> which indicates the sample types of the data
+set (default = “Sample.Type). Following sample types needs to
+provided:</p>
 <ul>
-<li><p><em>column_sample_type</em>: Column in <em>input_data</em> which
-indicates the sample types of the data set, as:</p>
-<ul>
-<li><p><em>sample_type_serial:</em> type name in
-<em>column_sample_type</em> of the serial diluted or concentrated
-samples</p></li>
-<li><p><em>sample_type_blank</em>: type name in
-<em>column_sample_type</em> of the blank sample, which will be used to
-determine the minimum lower limit of quantification</p></li>
+<li><p><em>sampleType_serial</em>: Sample type of the serial diluted or
+concentrated samples (default = “Dilution”)</p></li>
+<li><p><em>sampleType_sample</em>: Sample type of the measured
+(biological) samples (default = “Sample”, disabled = NULL)</p></li>
+<li><p><em>sampleType_blank</em>: Sample type of the blank sample, which
+will be used for the signal to noise calculation (default = “Blank”,
+disabled = NULL). This parameter could include a vector with more sample
+types, e.g. c(“ProcessBlank”, “SolventBlank”). Each of the sample with
+these sample types will be used for signal to noise
+determination.</p></li>
+<li><p><em>sampleType_QC</em>: Sample types of the QC samples (default =
+“QCpool”, disabled = NULL). This parameter could include a vector with
+more sample types.</p></li>
 </ul></li>
-<li><p><em>column_sample_ID:</em> column in <em>input_data</em>
-indicating the sample ID</p></li>
-<li><p><em>column_X:</em> column in <em>input_data</em> indicating the
-dilution or concentration of the serial diluted samples</p></li>
-<li><p><em>column_Y:</em> column in <em>input_dat</em>a indicating the
-Instrument response, e.g. Area, Intensity etc</p></li>
-</ul></li>
-<li><p><em>dilution_factor</em>: distance between the
-dilution/concentration steps, e.g. dilution_factor = 2 means, that the
-concentration of dilution 1 is half the concentration of dilution
-2</p></li>
-<li><p><em>signal_blank_ratio</em>: Default set to 5, according to EMA
-guidelines 2012, the signal should be at least 5 times the the signal of
-a blank sample. Disable by setting the parameter to NULL.</p></li>
-<li><p><em>min_feature:</em> Default set to 6, according to EMA
-guidelines 2012. Minimal number of consecutive signals present per
-dilution/concentration curve, to consider this curve as linear.</p></li>
+<li><p><em>column_sampleID</em>: Column name in
+<em>inputData_feature</em> and <em>inputData_sample</em> indicating a
+unique sample identifier per Batch (default =
+“Sample.Identifiaction”).</p></li>
+<li><p><em>column_featureID</em>: Column name in
+<em>inputData_feature</em> indicating a unique feature identifier
+(default = “CompoundID”)</p></li>
+<li><p><em>column_batch:</em> Column name in <em>inputData_feature</em>
+and <em>inputData_sample</em> indicating a unique Batch identifier
+(default = “Batch”)</p></li>
+<li><p><em>column_X</em>: Column name in <em>inputData_sample</em>
+indicating the single dilution of the serial diluted samples (default =
+“Dilution”)</p></li>
+<li><p><em>column_Y</em>: column in <em>inputDat</em>a_feature
+indicating the Instrument response, e.g. Area, Intensity (default =
+“Area”)</p></li>
+<li><p><em>column_sampleClass</em>: optional Column name in
+<em>inputData_sample</em> indicating the statistical class for the
+measured samples (default = “Group”, disabled = NULL).</p></li>
+<li><p><em>signal_blank_ratio</em>: The ratio which will be used for
+signal to blank assessment. (default = 5, disabled = NULL). According to
+EMA guidelines 2012, the signal should be at least 5 times the the
+signal of a blank sample.</p></li>
+<li><p><em>min_feature:</em> Minimal number of consecutive signals
+present per dilution/concentration curve, to consider this curve as
+linear (default = 6, according to EMA guidelines 2012)</p></li>
+<li><p><em>R2_min:</em> Minimum coefficient of determination, which
+needs to be reached to consider the signal as linear (default =
+0.9).</p></li>
 <li><p><em>output_name</em>: name of the output file</p></li>
-<li><p><em>output_dir:</em> directory where the output files should be
+<li><p><em>output_dir</em>: directory where the output files should be
 saved</p></li>
+<li><p><em>n_core</em>: How many cores should be used for parallel
+processing (default = 1)</p></li>
 </ul>
-<div id="with-these-arguments-you-can-run-the-example-data-set" class="section level3">
-<h3>With these arguments you can run the example data set:</h3>
+<div id="with-these-arguments-mslinear-can-run-the-example-data-set" class="section level3">
+<h3>With these arguments MSlineaR can run the example data set:</h3>
 <p>The example data set is an targeted data set with 34 metabolites
 measured in two batches :</p>
 <ul>
@@ -594,84 +684,204 @@ repeats)</li>
 <li>3434 biological sample signals ( 34 metabolites a 101 patients)</li>
 </ul>
 <p>The 101 biological samples were randomly assigned to either
-statistical group “control” (n = 65) or “patient” (n = 36)</p>
+statistical group “groupA” (n = 45) or “groupB” (n = 56) and for three
+compounds the area were increased by 20%.</p>
 <pre class="r"><code>library(MSlineaR)
 
 # load example data
-data_tbl &lt;- MSlineaR::targeted_MS
+data_tbl_feature &lt;- MSlineaR::Feature_tbl_long
+data_tbl_sample  &lt;- MSlineaR::Sample_tbl
 
 
 targetedMSCal &lt;- AssessLinearity(
-  analysis_type =&quot;targeted&quot;,
-  input_data = data_tbl,
-  column_sample_type = &quot;Sample.Type&quot; ,
-  sample_type_QC = c(&quot;Pooled QC&quot;,&quot;Reference QC&quot;),
-  sample_type_sample = &quot;Sample&quot;,
-  sample_type_serial = &quot;Calibration Standard&quot;,
-  sample_type_blank = &quot;Blank&quot;,
-  column_sample_ID = &quot;Sample.Identification&quot;,
-
-  column_compound_ID = &quot;Compound&quot;,
+  analysisType =&quot;targeted&quot;,
+  inputData_feature = data_tbl_feature,
+  inputData_sample = data_tbl_sample,
+  column_sampleType = &quot;Sample.Type&quot;,
+    sampleType_QC = c(&quot;Pooled QC&quot;,&quot;Reference QC&quot;),
+    sampleType_sample = &quot;Sample&quot;,
+    sampleType_serial = &quot;Calibration Standard&quot;,
+    sampleType_blank = &quot;Blank&quot;,
+  column_sampleID = &quot;Sample.Identification&quot;,
+  column_featureID = &quot;Compound&quot;,
   column_batch = &quot;Batch&quot;,
-  column_X = &quot;Concentration&quot;,
-  dilution_factor = 3,
+  column_X = &quot;Dilution&quot;,
+  column_Y = &quot;area&quot;,
+  column_sampleClass = &quot;Group&quot;,
   signal_blank_ratio = 5,
-  column_Y = &quot;Area&quot;,
-  column_Y_sample = &quot;Area&quot;,
-  column_class_sample = &quot;Group&quot;,
-  min_feature = 5,
+  min_feature = 5,  
   output_name = &quot;Test_targeted&quot;,
   output_dir = &quot; &quot;,
   nCORE = 4
-
 )</code></pre>
 </div>
 </div>
 <div id="results" class="section level2">
 <h2>Results</h2>
 </div>
-<div id="optional-input-arguments" class="section level2">
-<h2>Optional Input Arguments:</h2>
+<div id="complete-input-arguments-for-function-assesslinearity" class="section level2">
+<h2>Complete Input Arguments for function <code>AssessLinearity</code>
+:</h2>
+<p>The function provides the possibility to disable each step separately
+and to change the settings for each step.</p>
+<ol style="list-style-type: decimal">
+<li>Input data</li>
+</ol>
 <ul>
-<li><p><em>sample_type_QC :</em></p></li>
-<li><p><em>column_Batch = “Batch”</em></p></li>
-<li><p><em>column_Y_sample = “Area”</em></p></li>
-<li><p><em>column_class_sample = NULL</em></p></li>
-<li><p><em>#linear_range</em></p></li>
-<li><p><em>nCORE = 4</em></p></li>
-<li><p><em>get_output = TRUE</em></p></li>
-<li><p><em>#transform_data</em></p></li>
-<li><p><em>transform = c(TRUE, FALSE)[1]</em></p>
+<li><p><em>inputData_feature</em>: Data table or data frame with at
+least three columns, see above</p></li>
+<li><p><em>inputData_sample</em>: Data table or data frame with at least
+four columns, see above</p></li>
+<li><p><em>column_sampleType</em>: Column name in
+<em>inputData_sample</em> which indicates the sample types of the data
+set (default = “Sample.Type). Following sample types needs to
+provided:</p>
 <ul>
-<li><p><em>transform_x = “log”</em></p></li>
-<li><p><em>inverse_x = “exp”</em></p></li>
-<li><p><em>transform_y = “log”</em></p></li>
-<li><p><em>inverse_y = “exp”</em></p></li>
+<li><p><em>sampleType_serial</em>: Sample type of the serial diluted or
+concentrated samples (default = “Dilution”)</p></li>
+<li><p><em>sampleType_sample</em>: Sample type of the measured
+(biological) samples (default = “Sample”, disabled = NULL)</p></li>
+<li><p><em>sampleType_blank</em>: Sample type of the blank sample, which
+will be used for the signal to noise calculation (default = “Blank”,
+disabled = NULL). This parameter could include a vector with more sample
+types, e.g. c(“ProcessBlank”, “SolventBlank”). Each of the sample with
+these sample types will be used for signal to noise
+determination.</p></li>
+<li><p><em>sampleType_QC</em>: Sample types of the QC samples (default =
+“QCpool”, disabled = NULL). This parameter could include a vector with
+more sample types.</p></li>
 </ul></li>
-<li><p><em>#first_outlier_detection</em></p></li>
-<li><p><em>first_outlier_detection = c(TRUE, FALSE)[1]</em></p>
+<li><p><em>column_sampleID</em>: Column name in
+<em>inputData_feature</em> and <em>inputData_sample</em> indicating a
+unique sample identifier per Batch (default =
+“Sample.Identifiaction”).</p></li>
+<li><p><em>column_featureID</em>: Column name in
+<em>inputData_feature</em> indicating a unique feature identifier
+(default = “CompoundID”)</p></li>
+<li><p><em>column_batch:</em> Column name in <em>inputData_feature</em>
+and <em>inputData_sample</em> indicating a unique Batch identifier
+(default = “Batch”)</p></li>
+<li><p><em>column_X</em>: Column name in <em>inputData_sample</em>
+indicating the single dilution of the serial diluted samples (default =
+“Dilution”)</p></li>
+<li><p><em>column_Y</em>: column in <em>inputDat</em>a_feature
+indicating the Instrument response, e.g. Area, Intensity (default =
+“Area”)</p></li>
+<li><p><em>column_sampleClass</em>: optional Column name in
+<em>inputData_sample</em> indicating the statistical class for the
+measured samples (default = “Group”, disabled = NULL)</p></li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>transforming the data</li>
+</ol>
 <ul>
-<li><p><em>FOD_model = c(“logistic”, “linear”,
-“quadratic”)</em></p></li>
-<li><p><em>FOD_sdres_min = 1</em></p></li>
-<li><p><em>FOD_stdres_max = 2</em></p></li>
-</ul></li>
-<li><p><em>trimming = c(TRUE, FALSE)[1]</em></p></li>
-<li><p><em>#second_outlier_detection</em></p></li>
-<li><p><em>second_outlier_detection = c(TRUE, FALSE)[1]</em></p>
+<li><p><em>transform</em>: Should the data be transformed? Default =
+TRUE</p>
 <ul>
-<li><p><em>SOD_model = c(“logistic”, “linear”,
-“quadratic”)</em></p></li>
-<li><p><em>SOD_sdres_min = 1</em></p></li>
-<li><p><em>SOD_stdres_max = 2</em></p></li>
-<li><p><em>R2_min = 0.9</em></p></li>
+<li><p><em>transform_x</em>: Which transformation method should be used
+? (default= “log”)</p></li>
+<li><p><em>inverse_x</em>: Which method reverse the used transformation
+method? (default= “exp”)</p></li>
+<li><p><em>transform_y</em>: Which transformation method should be used?
+(default= “log”)</p></li>
 </ul></li>
-<li><p><em>#linear_range</em></p></li>
-<li><p><em>LR_sd_res_factor = 2</em></p></li>
-<li><p><em>Batch_harmonization = c(TRUE, FALSE)[1]</em></p></li>
-<li><p><em>calculate_concentration = c(TRUE, FALSE)[1]</em></p></li>
-<li><p><em>get_linearity_status_samples = c(TRUE,
-FALSE)[1]</em></p></li>
+</ul>
+<p><em>inverse_y</em>: Which method reverse the used transformation
+method? (default= “exp”)</p>
+<ol start="3" style="list-style-type: decimal">
+<li>Signal to noise</li>
+</ol>
+<p>The signal to noise assessment will be performed on the non
+transformed data if the parameters <em>signal_blank_ratio</em> and
+<em>sampleType_blank</em> area not NULL.</p>
+<ul>
+<li><em>signal_blank_ratio</em>: The ratio which will be used for signal
+to blank assessment. (default = 5, disabled = NULL). According to EMA
+guidelines 2012, the signal should be at least 5 times the the signal of
+a blank sample.</li>
+</ul>
+<ol start="4" style="list-style-type: decimal">
+<li>First outlier detection</li>
+</ol>
+<ul>
+<li><p>first_outlier_detection: Should the outlier detection be
+performed? (default = TRUE, disabled = FALSE)</p>
+<ul>
+<li><p>FOD_model: Which model should be used for the outlier detection?
+Currently supported are linear regression (“linear”), quadratic
+regression (“quadratic”) and logistic regression (“logistic”). Default
+is a vector with all three models (default = c(“logistic”, “linear”,
+“quadratic”).</p></li>
+<li><p>FOD_sdres_min: Minimum residual standard deviation of a
+statistical model. If the residual standard deviation is below this
+value, there will be no outlier detection performed for this signal.
+(default = 1).</p></li>
+<li><p>FOD_stdres_max : Maximum value for standardized residuals of a
+statistically model. If a standardized residual is above this value,
+this point will be considered as outlier and removed for further
+procedere. (default = 2).</p></li>
+</ul></li>
+</ul>
+<ol start="5" style="list-style-type: decimal">
+<li>Curve trimming</li>
+</ol>
+<ul>
+<li>trimming: Should the data be trimmed? (default = TRUE)</li>
+</ul>
+<ol start="6" style="list-style-type: decimal">
+<li>Second outlier detection</li>
+</ol>
+<ul>
+<li><p>second_outlier_detection: Should the outlier detection be
+performed? (default = TRUE, disabled = FALSE)</p>
+<ul>
+<li><p>SOD_model: Which model should be used for the outlier detection?
+Currently supported are linear regression (“linear”), quadratic
+regression (“quadratic”) and logistic regression (“logistic”). Default
+is a vector with all three models (default = c(“logistic”, “linear”,
+“quadratic”).</p></li>
+<li><p>SOD_sdres_min: Minimum residual standard deviation of a
+statistical model. If the residual standard deviation is below this
+value, there will be no outlier detection performed for this signal.
+(default = 1).</p></li>
+<li><p>SOD_stdres_max : Maximum value for standardized residuals of a
+statistically model. If a standardized residual is above this value,
+this point will be considered as outlier and removed for further
+procedere. (default = 2).</p></li>
+</ul></li>
+</ul>
+<ol start="7" style="list-style-type: decimal">
+<li>Determining linear range</li>
+</ol>
+<ul>
+<li><p>LR_sd_res_factor : Multiplication factor for the standard
+deviation of standardized residuals from the linear model. All
+standardized residuals which are within the range of standardized
+residuals +/- sd standardized residuals * LR_sd_res_factor are
+considered as linear. (default = 3).</p></li>
+<li><p>R2_min : Minimum coefficient of determination, which needs to be
+reached to consider the signal as linear (default = 0.9).</p></li>
+</ul>
+<ol start="8" style="list-style-type: decimal">
+<li>other parameters</li>
+</ol>
+<ul>
+<li><p><em>min_feature:</em> Minimal number of consecutive signals
+present per dilution/concentration curve, to consider this curve as
+linear (default = 6, according to EMA guidelines 2012)</p></li>
+<li><p><em>n_core</em>: How many cores should be used for parallel
+processing (default = 1)</p></li>
+</ul>
+<p>Output</p>
+<ul>
+<li><p>get_output: Should the output be exported? (default =
+TRUE)</p></li>
+<li><p>which_output: Should all type of Output be exported? The user can
+decide between “all”, “R_object”, “DilutionCurves”, “BiologicalSamples”
+and “Plots”. (default = “all”)</p></li>
+<li><p><em>output_name</em>: Prefix name of the output file</p></li>
+<li><p><em>output_dir</em>: Directory where the output files should be
+saved</p></li>
 </ul>
 </div>
 </div>

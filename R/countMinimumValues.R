@@ -19,7 +19,7 @@ countMinimumValue <- function(DAT, MIN_FEATURE = parent.frame()$MIN_FEATURE, ste
   dat <- unique(dat[, N := sum(!is.na(get(y))),groupIndices][ , enoughPeaks := ifelse( N >= MIN_FEATURE, TRUE, FALSE)#,
                                                      #Comment = ifelse( N >= MIN_FEATURE, "EnoughPeaks", "notEnoughPeaks")
                                                      ][
-                                                       ,list(groupIndices,ID, Batch,  N, enoughPeaks)])
+                                                       ,list(groupIndices,Feature_ID, Batch,  N, enoughPeaks)])
 
   DAT$color[DAT$groupIndices %in% dat$groupIndices[dat$enoughPeaks %in% FALSE]] <- "grey"
   DAT$Comment[DAT$groupIndices %in% dat$groupIndices[dat$enoughPeaks %in% FALSE]] <- unlist(apply(cbind(DAT$Comment[DAT$groupIndices %in% dat$groupIndices[dat$enoughPeaks %in% FALSE]], "notEnoughPeaks"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
@@ -47,11 +47,11 @@ checkLength <- function(step, processingGroup, processingFeature, Compounds,
 
   peaksNew <- paste0("enoughPeaks_", step)
 
-  nCompoundsOld <- data.table::uniqueN(processingGroup[get(peaksOld) %in% TRUE], by = c("ID"))
+  nCompoundsOld <- data.table::uniqueN(processingGroup[get(peaksOld) %in% TRUE], by = c("Feature_ID"))
   nReplicatesOld <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("Batch"))
   nSeriesOld <- data.table::uniqueN(processingGroup[get(peaksOld) %in% TRUE], by = c("groupIndices"))
 
-  nCompoundsNew <- data.table::uniqueN(processingGroup[get(peaksNew) %in% TRUE], by = c("ID"))
+  nCompoundsNew <- data.table::uniqueN(processingGroup[get(peaksNew) %in% TRUE], by = c("Feature_ID"))
   nReplicatesNew <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("Batch"))
   nSeriesNew <- data.table::uniqueN(processingGroup[get(peaksNew) %in% TRUE], by = c("groupIndices"))
 

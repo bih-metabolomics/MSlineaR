@@ -4,25 +4,27 @@
 #' show a linear response. The function use two outlier detection steps and a partially
 #' linear regression to identify the exact linear response range for each Compound.
 #'
-#' @param input_data Long format data frame or data table combining the information
+#' @param inputData_feature Long format data frame or data table combining the information
 #' of biological samples, serial diluted/concentrated samples and optional repeated measured
 #' QC samples for all batches.
-#' @param column_sample_type String; Column name which distinguish between
+#'  @param inputData_sample Long format data frame or data table combining the information
+#' of biological samples, serial diluted/concentrated samples and optional repeated measured
+#' QC samples for all batches.
+#' @param column_sampleType String; Column name which distinguish between
 #' samples, QC and serial samples.
-#' @param sample_type_QC String; Identification of QC in `column_sample_type`.
-#' @param sample_type_sample String;Identification of biological samples in `column_sample_type`.
-#' @param sample_type_serial String;Identification of serial data in `column_sample_type`.
-#' @param column_ID String; Column name, which uniquely identifies the measured Signals.
-#' @param column_Batch String; Column name to identify the different batches.
+#' @param sampleType_QC String; Identification of QC in `column_sampleType`.
+#' @param sampleType_sample String;Identification of biological samples in `column_sampleType`.
+#' @param sampleType_serial String;Identification of serial data in `column_sampleType`.
+#' @param sampleType_blank String;Identification of blank data in `column_sampleType`.
+#' @param column_sampleID String; Column name, which uniquely identifies the measured Signals.
+#' @param column_batch String; Column name to identify the different batches.
 #' Only necessary if there are more than 1 Batch.
 #' @param column_X String; Column name of the independent variable,
 #'  e.g. Concentration, Dilution,... . Highest number should be the highest concentration or lowest dilution.
 #'  For untargeted data use a vector with consecutive numbers, e.g. c(1, 2, 3 , ...) with 1 beeing the highest dilution
-#' @param dilution_factor Numeric, distance between the dilution/concentration steps,
-#'  e.g. dilution_factor = 2 means, that the concentration of dilution 1 is half the concentration of dilution 2
 #' @param column_Y String; Column name of the dependent variable,
 #'  e.g. Intensity, Area,..
-#' @param column_class_sample String, Column name used for statistical classes
+#' @param column_sampleClass String, Column name used for statistical classes
 #' @param transform Boolean; Should the data be transformed? Default is `TRUE`.
 #' @param transform_x,transform_y If `transform` is `TRUE`.
 #' String; Which transformation should be used for the independent variable (concentration/dilution) or/and
@@ -57,7 +59,7 @@
 #' marked as linear to consider this signal as linear. Default to 6, according to EMA guidelines2022.
 #' @param LR_sd_res_factor Integer; points of serial diluted/concentrated series,
 #' which are less than `LR_sd_res_factor` times residual standard deviation are considered as linear.
-#' Default to 2.
+#' Default to 3.
 #' @param calculate_concentration Boolean; For targeted analysis. Should the
 #' concentration of samples in regard to the linear regression equation be calculated? Default is `TRUE`.
 #' @param get_linearity_status_samples Boolean; If `TRUE` (default) the samples
@@ -72,7 +74,7 @@
 #' @param output_dir Only necessary if `get_output` is `TRUE`.
 #' custom path, where the output files should be stored.
 #' @param nCORE Integer; Number of cores used for parallelization. Default to 1.
-#' @param analysis_type String; was the analysis "targeted" or "untargeted"?
+#' @param analysisType String; was the analysis "targeted" or "untargeted"?
 #' @param Batch_harmonization Boolean; If `TRUE` (default),
 #' only serial diluted curves will be considered if they have a linear Range in
 #' all Batches, otherwise they will be excluded. If set to `FALSE` all curves with
@@ -89,24 +91,25 @@
 #' @examples
 #'
 MS_AssessLinearity <- function(
-    analysis_type = c("targeted", "untargeted", NULL)[3],
+    analysisType = c("targeted", "untargeted", NULL)[1],
 
     #input_data
-    input_data = NULL,
-    column_sample_type = c("Sample.Type", "Type")[1],
-    sample_type_QC = c("pooled QC", "Reference QC", NULL)[3],
-    sample_type_sample = "Sample",
-    sample_type_serial = "Calibration Standard",
-    sample_type_blank = c("Blank", NULL)[1],
+    inputData_feature = NULL,
+    inputData_sample = NULL,
+    column_sampleType = c("Sample.Type", "Type")[1],
+    sampleType_QC = c("QCpool", "Reference QC", NULL)[1],
+    sampleType_sample = "Sample",
+    sampleType_serial = "Dilution",
+    sampleType_blank = c("Blank", NULL)[1],
     signal_blank_ratio = 5,
-    column_sample_ID = "Sample.Identification",
-    column_compound_ID = "Compound",
+    column_sampleID = "Sample.Identification",
+    column_featureID = "Compound",
     column_batch = "Batch",
     column_X = c("Concentration", "Dilution")[2],
     column_Y = c("Area","Height", "Intensity")[1],
-    column_Y_sample = c("Area","Height", "Intensity")[1],
-    column_class_sample = c("group", NULL)[2],
-    dilution_factor = NULL,
+    #column_Y_sample = c("Area","Height", "Intensity")[1],
+    column_sampleClass = c("Group", NULL)[1],
+    #dilution_factor = NULL,
 
     #transform_data
     transform = c(TRUE, FALSE)[1],
@@ -137,7 +140,7 @@ MS_AssessLinearity <- function(
     Batch_harmonization = c(TRUE, FALSE)[1],
 
     #biological signals
-    calculate_concentration = c(TRUE, FALSE)[1],
+    #calculate_concentration = c(TRUE, FALSE)[1],
     get_linearity_status_samples = c(TRUE, FALSE)[1],
 
     #filtering
@@ -155,23 +158,25 @@ MS_AssessLinearity <- function(
 
 
   # define arguments
-  TYPE = analysis_type
-  DAT = input_data
-  QC =  sample_type_QC
-  BLANK = sample_type_blank
-  SAMPLE = sample_type_sample
-  SAMPLE_ID = column_sample_ID
-  CALIBRANTS = sample_type_serial
-  COLNAMES = c(ID = column_compound_ID,
-               Sample_ID = column_sample_ID,
+  TYPE = analysisType
+  DAT_F = inputData_feature
+  DAT_S = inputData_sample
+  QC =  sampleType_QC
+  BLANK = sampleType_blank
+  SAMPLE = sampleType_sample
+  SAMPLE_ID = column_sampleID
+  FEATURE_ID = column_featureID
+  CALIBRANTS = sampleType_serial
+  COLNAMES = c(Feature_ID = column_featureID,
+               Sample_ID = column_sampleID,
+               Injection_order = column_injectionOrder,
                Batch = column_batch,
-               Sample_type = column_sample_type,
+               Sample_type = column_sampleType,
                X = column_X,
                Y = column_Y,
-               Class = column_class_sample)
-  DILUTION_FACTOR = dilution_factor
+               Class = column_sampleClass)
   NOISE = signal_blank_ratio
-  Y_SAMPLE = column_Y_sample
+  #Y_SAMPLE = column_Y_sample
   TRANSFORM = transform
   TRANSFORM_X = transform_x
   INVERSE_X = inverse_x
@@ -192,7 +197,7 @@ MS_AssessLinearity <- function(
   LR_SD_RES_FACTOR = LR_sd_res_factor
   R2_MIN = R2_min
   BATCH_HARMONIZATION = Batch_harmonization
-  CAL_CONC = calculate_concentration
+  #CAL_CONC = calculate_concentration
   GET_LR_STATUS = get_linearity_status_samples
   nCORE = nCORE
   GET_OUTPUT = get_output
@@ -231,7 +236,20 @@ MS_AssessLinearity <- function(
 
 
 
-  dataOrigin <- data.table::copy(DAT)
+  dataOrigin_F <- data.table::copy(DAT_F)
+  dataOrigin_S <- data.table::copy(DAT_S)
+
+  #combine input tables
+  testthat::expect_setequal(unique(dataOrigin_F[[SAMPLE_ID]]), unique(dataOrigin_S[[SAMPLE_ID]]))
+  testthat::expect_setequal(unique(dataOrigin_F[[COLNAMES[["Batch"]]]]), unique(dataOrigin_S[[COLNAMES[["Batch"]]]]))
+
+dataOrigin <- dplyr::full_join(dataOrigin_F, dataOrigin_S, by = c(COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]]))
+
+
+
+
+
+
   dataOrigin <- checkData(dat = dataOrigin) # function in prep.R
 
 
@@ -348,7 +366,7 @@ Yorigin <- "Y"
 
 
   # save key numbers
-  nCompounds <- data.table::uniqueN(processingGroup, by = c("ID"))
+  nCompounds <- data.table::uniqueN(processingGroup, by = c("Feature_ID"))
   nReplicates <- data.table::uniqueN(processingFeature, by = c("Batch"))
   nDilutions <- data.table::uniqueN(processingFeature, by = c("DilutionPoint")  )
   nSeries <- data.table::uniqueN(processingGroup, by = c("groupIndices"))
@@ -363,7 +381,7 @@ Yorigin <- "Y"
 
   # check length of points
 
-  nCompoundsNew <- data.table::uniqueN(processingGroup[enoughPeaks_1 %in% TRUE], by = c("ID"))
+  nCompoundsNew <- data.table::uniqueN(processingGroup[enoughPeaks_1 %in% TRUE], by = c("Feature_ID"))
   nReplicatesNew <- data.table::uniqueN(processingFeature[color %in% "black"], by = c("Batch"))
   nSeriesNew <- data.table::uniqueN(processingGroup[enoughPeaks_1 %in% TRUE], by = c("groupIndices"))
 
@@ -371,7 +389,7 @@ Yorigin <- "Y"
                  "Remaining Data set with ", nCompoundsNew, " ", Compounds," and ", nReplicatesNew, " Batch(es) -> ", nSeriesNew, " ", Series,"."))
 
   stopifnot(exprs = {
-    "all Compounds were removed" = nCompounds - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("ID")) > 0
+    "all Compounds were removed" = nCompounds - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("Feature_ID")) > 0
     "all Dilution/Concentration-Series were removed" = nSeries - data.table::uniqueN(processingGroup[enoughPeaks_1 %in% FALSE], by = c("groupIndices")) > 0
   })
 
@@ -427,7 +445,7 @@ Yorigin <- "Y"
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
-    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "Feature_ID", "Batch"))
 
     # check length of points
     checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
@@ -488,7 +506,7 @@ Yorigin <- "Y"
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
-    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "Feature_ID", "Batch"))
 
     # check length of points
     checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
@@ -546,7 +564,7 @@ Yorigin <- "Y"
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern], by = colnames(processingFeature))
-    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "Feature_ID", "Batch"))
 
     logr::put(paste0("In total ", TrimFeatures," ",  Signals," in ", TrimGroups, " ",Series," were trimmed."))
 
@@ -623,7 +641,7 @@ Yorigin <- "Y"
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
-    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "Feature_ID", "Batch"))
 
     # check length of points
     checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
@@ -683,7 +701,7 @@ Yorigin <- "Y"
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern], by = colnames(processingFeature))
-    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "Feature_ID", "Batch"))
 
     logr::put(paste0("In total ", TrimPosFeatures," ",  Signals," in ", TrimPosGroups, " ",Series," were removed."))
 
@@ -766,7 +784,7 @@ Yorigin <- "Y"
 
   countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
   processingFeature <- countList[[1]]
-  processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "ID", "Batch"))
+  processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "Feature_ID", "Batch"))
 
 
 
@@ -789,7 +807,7 @@ Yorigin <- "Y"
     data.table::setDT(processingFeature)
     data.table::setDT(processingGroup)
 
-    processingGroup <-   processingGroup[, enoughPeak_allBatches := all(get(paste0("enoughPeaks_", step)) %in% TRUE), by = ID]
+    processingGroup <-   processingGroup[, enoughPeak_allBatches := all(get(paste0("enoughPeaks_", step)) %in% TRUE), by = Feature_ID]
     conflictBatches <- processingGroup[enoughPeak_allBatches %in% FALSE]
     processingFeature$Y_allBatches <- processingFeature$Y_LR
 
@@ -801,8 +819,8 @@ Yorigin <- "Y"
     processingFeature[groupIndices %in% conflictBatches$groupIndices,
                       Comment := paste(processingFeature[groupIndices %in% conflictBatches$groupIndices, Comment],"_notEnoughPeaksInAllBatches")]
 
-    logr::put(paste0(data.table::uniqueN(conflictBatches$ID), " ", Compounds, " were excluded, because they do not show repeatable ", Series, "."))
-    logr::put(paste0("Final Data set with ", data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, ID]), " ", Compounds,
+    logr::put(paste0(data.table::uniqueN(conflictBatches$Feature_ID), " ", Compounds, " were excluded, because they do not show repeatable ", Series, "."))
+    logr::put(paste0("Final Data set with ", data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, Feature_ID]), " ", Compounds,
             " and ", data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, Batch]), " Batch(es) -> ",
             data.table::uniqueN(processingGroup[enoughPeak_allBatches %in% TRUE, groupIndices]), " ", Series,"."))
 
@@ -819,21 +837,21 @@ Yorigin <- "Y"
     processingGroup <- dplyr::full_join(processingGroup, unique(processingFeature[,c("groupIndices", "xfactor")]), by = "groupIndices")
     processingFeature <- getConc(dats = processingFeature, datCal = processingGroup,y = Y,INVERSE_Y =  INVERSE_Y)
 
-    table.backcalc.all <- processingFeature[processingFeature$ID %in% processingGroup$ID[processingGroup$enoughPeak_allBatches %in% TRUE]]
+    table.backcalc.all <- processingFeature[processingFeature$Feature_ID %in% processingGroup$Feature_ID[processingGroup$enoughPeak_allBatches %in% TRUE]]
     table.backcalc <- table.backcalc.all[,1:9]
     table.backcalc$ConcentrationLR <- table.backcalc.all$ConcentrationLR
     table.backcalc$Status_LR <- table.backcalc.all$Status_LR
     table.backcalc$precision <- abs(table.backcalc$ConcentrationLR*100/table.backcalc[[COLNAMES[["X"]]]] -100)
 
-    t1 <- table.backcalc |> dplyr::group_by(ID, Batch) |>
+    t1 <- table.backcalc |> dplyr::group_by(Feature_ID, Batch) |>
       dplyr::summarize( lr_signals = sum(!is.na(Y)),
                         lr_signals_true = sum(Status_LR %in% TRUE),
                         'prc_all_<=20' = sum(precision <= 20)
       )
-    t2 <- table.backcalc |> dplyr::group_by(ID, Batch) |>
+    t2 <- table.backcalc |> dplyr::group_by(Feature_ID, Batch) |>
       dplyr::filter(Status_LR %in% TRUE) |>
       dplyr::summarize( 'prc_true_<=20' = sum(precision <= 20))
-    t <- dplyr::full_join(t1, t2, by = c("ID", "Batch") )
+    t <- dplyr::full_join(t1, t2, by = c("Feature_ID", "Batch") )
     t$prc_true_percent <- round(t$'prc_true_<=20'*100/t$lr_signals_true,2)
 
 
@@ -918,7 +936,7 @@ Yorigin <- "Y"
 
 
       rsd_before <- SampleQC |>
-        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
+        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
         dplyr::summarize(.groups = "keep", rsd = sd(get(column_Y_sample), na.rm = T)/mean(get(column_Y_sample), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
@@ -927,7 +945,7 @@ Yorigin <- "Y"
 
       rsd_after <- SampleQC |>
         dplyr::filter(Status_LR %in% TRUE) |>
-        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
+        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
         dplyr::summarise(.groups = "keep",rsd = sd(get(column_Y_sample), na.rm = T)/mean(get(column_Y_sample), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
@@ -964,8 +982,8 @@ Yorigin <- "Y"
 
 
   #output:
-  data.table::setnames(processingFeature, c("ID","Sample.Type", "Batch", "Y"), c(COLNAMES[["ID"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["Y"]] ))
-  data.table::setnames(processingGroup, c("ID", "Batch"), c(COLNAMES[["ID"]], COLNAMES[["Batch"]]))
+  data.table::setnames(processingFeature, c("Feature_ID","Sample.Type", "Batch", "Y"), c(COLNAMES[["Feature_ID"]],COLNAMES[["Sample_type"]], COLNAMES[["Batch"]], COLNAMES[["Y"]] ))
+  data.table::setnames(processingGroup, c("Feature_ID", "Batch"), c(COLNAMES[["Feature_ID"]], COLNAMES[["Batch"]]))
 
 
   #1)full table dilution/concentration curves - Signal based
@@ -988,12 +1006,12 @@ Yorigin <- "Y"
   #output3.1 <- SampleFeature
 
   # #5) filtered table biological Samples - Signal based (high quality)
-  # output5 <- SampleFeature |> dplyr::filter(get(COLNAMES[["ID"]]) %in% unlist(unique(output3[COLNAMES[["ID"]]])))
+  # output5 <- SampleFeature |> dplyr::filter(get(COLNAMES[["Feature_ID"]]) %in% unlist(unique(output3[COLNAMES[["Feature_ID"]]])))
 
   #6) summary table
   # output4 <- data.table::copy(SampleFeature) |>
   #   #subset(get(COLNAMES[["Sample_type"]]) %in% QC) |>
-  #   dplyr::group_by(ID = get(COLNAMES[["ID"]]),
+  #   dplyr::group_by(Feature_ID = get(COLNAMES[["Feature_ID"]]),
   #                   Batch = get(COLNAMES[["Batch"]]),
   #                   Type = get(COLNAMES[["Sample_type"]]),
   #                   Class = get(COLNAMES[["Class"]]),
@@ -1024,13 +1042,13 @@ Yorigin <- "Y"
   #
   # output6.1 <- SampleFeature |>
   #   subset(get(COLNAMES[["Sample_type"]]) %in% SAMPLE ) |>
-  #   dplyr::group_by(ID = get(COLNAMES[["ID"]]), Batch = get(COLNAMES[["Batch"]])) |>
+  #   dplyr::group_by(Feature_ID = get(COLNAMES[["Feature_ID"]]), Batch = get(COLNAMES[["Batch"]])) |>
   #   dplyr::select(Sample_ID = all_of(SAMPLE_ID), Y = all_of(Y_SAMPLE)) |>
   #   tidyr::pivot_wider(names_from = Sample_ID,
   #                      values_from = Y
   #   ) |>
-  #   dplyr::full_join(output6 |> dplyr::select(ID, Batch, 'LR_TRUE[%]_Sample'), . , by = c("ID", "Batch")) |>
-  #   dplyr::select("ID", "Batch", "LR_TRUE[%]_Sample", everything())
+  #   dplyr::full_join(output6 |> dplyr::select(Feature_ID, Batch, 'LR_TRUE[%]_Sample'), . , by = c("Feature_ID", "Batch")) |>
+  #   dplyr::select("Feature_ID", "Batch", "LR_TRUE[%]_Sample", everything())
   #
   # htmloutput6.1 <-  DT::datatable(output6.1, filter = 'top',
   #                             extensions = 'Buttons', options = list(
@@ -1047,8 +1065,8 @@ Yorigin <- "Y"
 
 
 
-  data.table::setnames(skip_absent = T, processingGroup, c("ID","Sample_ID", "Batch", "Y", "X"),
-                       c(COLNAMES[["ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
+  data.table::setnames(skip_absent = T, processingGroup, c("Feature_ID","Sample_ID", "Batch", "Y", "X"),
+                       c(COLNAMES[["Feature_ID"]],COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]], COLNAMES[["Y"]], COLNAMES[["X"]] ))
 
   # <!-- processList$SummaryAll <- getAllList(processList) -->
   #
@@ -1138,7 +1156,7 @@ Yorigin <- "Y"
                                                      X = Xraw, Y = Yraw,
                                                      output_dir = IMG_OUTPUT_DIR,
                                                      group = "Batch",
-                                                     ordered = "Sample.Type",
+                                                     ordered = "Injection_order",
                                                      outputfileName = c("Summary_Barplot_All"))
 
   logr::put("summary_barplot_all was created")
