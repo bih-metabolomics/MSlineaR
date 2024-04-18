@@ -243,6 +243,8 @@ MSlineaR creates 5 pdf files.
 
     ![Dilution_Barplot](data/Results_tutorial/2024-04-18_2024-04-18_Test_targeted_tutorial_Summary_Calibration_Barplot.PNG)
 
+![](data/Results_tutorial/2024-04-18_2024-04-18_Test_targeted_tutorial_Summary_Barplot_all.PNG)
+
 ## Complete Input Arguments for function `AssessLinearity` :
 
 The function provides the possibility to disable each step separately and to change the settings for each step.
