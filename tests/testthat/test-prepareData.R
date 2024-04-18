@@ -1,8 +1,8 @@
 testthat::test_that("function checkData works", {
 
-  dats = data.table::data.table(data.frame(ID = rep(-1,10), X = 1:10, Y = 1:10), Sample_type = rep("Calibration Standard", 10), SAMPLE_ID = rep("A1", 10))
+  dats = data.table::data.table(data.frame(ID = rep(-1,10), X = 1:10, Y = 1:10, Batch = "B1"), Sample_type = rep("Calibration Standard", 10), SAMPLE_ID = rep("A1", 10), Injection_order = 1:10)
 
-  COLNAMES. = c(ID = "ID", Batch = NULL, X = "X", Y = "Y", Sample_type = "Sample_type", Sample_ID = "SAMPLE_ID")
+  COLNAMES. = c(Feature_ID = "ID", Batch = "Batch", X = "X", Y = "Y", Sample_type = "Sample_type", Sample_ID = "SAMPLE_ID", Injection_order = "Injection_order")
   nCORE. = 1
   MIN_FEATURE. = 6
   TYPE. = "targeted"
@@ -33,6 +33,7 @@ testthat::test_that("function checkData works", {
   CAL_CONC. = TRUE
   GET_LR_STATUS. = TRUE
   GET_OUTPUT. = TRUE
+  IMG_OUTPUT_DIR. = "img"
 
   testthat::expect_vector(checkData(dat = dats,
                                     MIN_FEATURE.,
@@ -40,10 +41,10 @@ testthat::test_that("function checkData works", {
                                     QC.,
                                     BLANK.,
                                     SAMPLE.,
-                                    Y_SAMPLE.,
+                                    #Y_SAMPLE.,
                                     CALIBRANTS.,
                                     COLNAMES.,
-                                    DILUTION_FACTOR.,
+                                    #DILUTION_FACTOR.,
                                     NOISE.,
                                     TRANSFORM.,
                                     TRANSFORM_X.,
@@ -62,10 +63,11 @@ testthat::test_that("function checkData works", {
                                     LR_SD_RES_FACTOR.,
                                     R2_MIN.,
                                     BATCH_HARMONIZATION.,
-                                    CAL_CONC.,
+                                    #CAL_CONC.,
                                     GET_LR_STATUS.,
                                     nCORE.,
-                                    GET_OUTPUT.
+                                    GET_OUTPUT.,
+                                    IMG_OUTPUT_DIR.
   )$ID, ptype = character(), size= 10)
   testthat::expect_vector(checkData(dat = dats,
                                     MIN_FEATURE.,
@@ -73,10 +75,10 @@ testthat::test_that("function checkData works", {
                                     QC.,
                                     BLANK.,
                                     SAMPLE.,
-                                    Y_SAMPLE.,
+                                    #Y_SAMPLE.,
                                     CALIBRANTS.,
                                     COLNAMES.,
-                                    DILUTION_FACTOR.,
+                                    #DILUTION_FACTOR.,
                                     NOISE.,
                                     TRANSFORM.,
                                     TRANSFORM_X.,
@@ -95,10 +97,11 @@ testthat::test_that("function checkData works", {
                                     LR_SD_RES_FACTOR.,
                                     R2_MIN.,
                                     BATCH_HARMONIZATION.,
-                                    CAL_CONC.,
+                                    #CAL_CONC.,
                                     GET_LR_STATUS.,
                                     nCORE.,
-                                    GET_OUTPUT.
+                                    GET_OUTPUT.,
+                                    IMG_OUTPUT_DIR.
   )$Batch, ptype = character(), size= 10)
   testthat::expect_vector(checkData(dat = dats,
                                     MIN_FEATURE.,
@@ -106,10 +109,10 @@ testthat::test_that("function checkData works", {
                                     QC.,
                                     BLANK.,
                                     SAMPLE.,
-                                    Y_SAMPLE.,
+                                    #Y_SAMPLE.,
                                     CALIBRANTS.,
                                     COLNAMES.,
-                                    DILUTION_FACTOR.,
+                                    #DILUTION_FACTOR.,
                                     NOISE.,
                                     TRANSFORM.,
                                     TRANSFORM_X.,
@@ -128,10 +131,11 @@ testthat::test_that("function checkData works", {
                                     LR_SD_RES_FACTOR.,
                                     R2_MIN.,
                                     BATCH_HARMONIZATION.,
-                                    CAL_CONC.,
+                                    #CAL_CONC.,
                                     GET_LR_STATUS.,
                                     nCORE.,
-                                    GET_OUTPUT.
+                                    GET_OUTPUT.,
+                                    IMG_OUTPUT_DIR.
   )$Class, ptype = character(), size= 10)
   testthat::expect_vector(checkData(dat = dats,
                                     MIN_FEATURE.,
@@ -139,10 +143,10 @@ testthat::test_that("function checkData works", {
                                     QC.,
                                     BLANK.,
                                     SAMPLE.,
-                                    Y_SAMPLE.,
+                                    #Y_SAMPLE.,
                                     CALIBRANTS.,
                                     COLNAMES.,
-                                    DILUTION_FACTOR.,
+                                    #DILUTION_FACTOR.,
                                     NOISE.,
                                     TRANSFORM.,
                                     TRANSFORM_X.,
@@ -161,10 +165,11 @@ testthat::test_that("function checkData works", {
                                     LR_SD_RES_FACTOR.,
                                     R2_MIN.,
                                     BATCH_HARMONIZATION.,
-                                    CAL_CONC.,
+                                    #CAL_CONC.,
                                     GET_LR_STATUS.,
                                     nCORE.,
-                                    GET_OUTPUT.
+                                    GET_OUTPUT.,
+                                    IMG_OUTPUT_DIR.
   )$X, ptype = double(), size= 10)
   testthat::expect_vector(checkData(dat = dats,
                                     MIN_FEATURE.,
@@ -172,10 +177,10 @@ testthat::test_that("function checkData works", {
                                     QC.,
                                     BLANK.,
                                     SAMPLE.,
-                                    Y_SAMPLE.,
+                                    #Y_SAMPLE.,
                                     CALIBRANTS.,
                                     COLNAMES.,
-                                    DILUTION_FACTOR.,
+                                    #DILUTION_FACTOR.,
                                     NOISE.,
                                     TRANSFORM.,
                                     TRANSFORM_X.,
@@ -194,10 +199,11 @@ testthat::test_that("function checkData works", {
                                     LR_SD_RES_FACTOR.,
                                     R2_MIN.,
                                     BATCH_HARMONIZATION.,
-                                    CAL_CONC.,
+                                    #CAL_CONC.,
                                     GET_LR_STATUS.,
                                     nCORE.,
-                                    GET_OUTPUT.
+                                    GET_OUTPUT.,
+                                    IMG_OUTPUT_DIR.
   )$Y, ptype = double(), size= 10)
 
 
@@ -210,10 +216,10 @@ testthat::test_that("function checkData works", {
                                    QC.,
                                    BLANK.,
                                    SAMPLE.,
-                                   Y_SAMPLE.,
+                                   #Y_SAMPLE.,
                                    CALIBRANTS.,
                                    COLNAMES.,
-                                   DILUTION_FACTOR.,
+                                   #DILUTION_FACTOR.,
                                    NOISE.,
                                    TRANSFORM.,
                                    TRANSFORM_X.,
@@ -232,10 +238,11 @@ testthat::test_that("function checkData works", {
                                    LR_SD_RES_FACTOR.,
                                    R2_MIN.,
                                    BATCH_HARMONIZATION.,
-                                   CAL_CONC.,
+                                   #CAL_CONC.,
                                    GET_LR_STATUS.,
                                    nCORE.,
-                                   GET_OUTPUT.
+                                   GET_OUTPUT.,
+                                   IMG_OUTPUT_DIR.
   ), regexp = "all values of 'column_X' and 'column_Y' need to be from type double and positive.")
 
   testthat::expect_error(checkData(dat =  dats|> dplyr::mutate(Y = Y*-1),
@@ -244,10 +251,10 @@ testthat::test_that("function checkData works", {
                                    QC.,
                                    BLANK.,
                                    SAMPLE.,
-                                   Y_SAMPLE.,
+                                   #Y_SAMPLE.,
                                    CALIBRANTS.,
                                    COLNAMES.,
-                                   DILUTION_FACTOR.,
+                                   #DILUTION_FACTOR.,
                                    NOISE.,
                                    TRANSFORM.,
                                    TRANSFORM_X.,
@@ -266,10 +273,11 @@ testthat::test_that("function checkData works", {
                                    LR_SD_RES_FACTOR.,
                                    R2_MIN.,
                                    BATCH_HARMONIZATION.,
-                                   CAL_CONC.,
+                                   #CAL_CONC.,
                                    GET_LR_STATUS.,
                                    nCORE.,
-                                   GET_OUTPUT.
+                                   GET_OUTPUT.,
+                                   IMG_OUTPUT_DIR.
   ),regexp = "all values of 'column_X' and 'column_Y' need to be from type double and positive.")
 
   testthat::expect_error(checkData(dat =  dats,
@@ -278,10 +286,10 @@ testthat::test_that("function checkData works", {
                                    QC.,
                                    BLANK.,
                                    SAMPLE.,
-                                   Y_SAMPLE.,
+                                   #Y_SAMPLE.,
                                    CALIBRANTS.,
                                    COLNAMES.,
-                                   DILUTION_FACTOR.,
+                                   #DILUTION_FACTOR.,
                                    NOISE.,
                                    TRANSFORM.,
                                    TRANSFORM_X.,
@@ -300,10 +308,11 @@ testthat::test_that("function checkData works", {
                                    LR_SD_RES_FACTOR.,
                                    R2_MIN.,
                                    BATCH_HARMONIZATION.,
-                                   CAL_CONC.,
+                                   #CAL_CONC.,
                                    GET_LR_STATUS.,
                                    nCORE.,
-                                   GET_OUTPUT.
+                                   GET_OUTPUT.,
+                                   IMG_OUTPUT_DIR.
   ), regexp = "Argument 'min_feature' needs to be greater or equal than 3")
 
   testthat::expect_error(checkData(dat =  dats,
@@ -312,10 +321,10 @@ testthat::test_that("function checkData works", {
                                    QC.,
                                    BLANK.,
                                    SAMPLE.,
-                                   Y_SAMPLE.,
+                                   #Y_SAMPLE.,
                                    CALIBRANTS.,
                                    COLNAMES.,
-                                   DILUTION_FACTOR.,
+                                   #DILUTION_FACTOR.,
                                    NOISE.,
                                    TRANSFORM.,
                                    TRANSFORM_X.,
@@ -334,11 +343,12 @@ testthat::test_that("function checkData works", {
                                    LR_SD_RES_FACTOR.,
                                    R2_MIN.,
                                    BATCH_HARMONIZATION.,
-                                   CAL_CONC.,
+                                   #CAL_CONC.,
                                    GET_LR_STATUS.,
                                    nCORE.,
-                                   GET_OUTPUT.
-  ), regexp = "Argument 'analysis_type' need to be either 'untargeted' or 'targeted'")
+                                   GET_OUTPUT.,
+                                   IMG_OUTPUT_DIR.
+  ), regexp = "Argument 'analysisType' need to be either 'untargeted' or 'targeted'")
 
   testthat::expect_error(checkData(dat =  dats,
                                    MIN_FEATURE.,
@@ -346,10 +356,10 @@ testthat::test_that("function checkData works", {
                                    QC = "test",
                                    BLANK.,
                                    SAMPLE.,
-                                   Y_SAMPLE.,
+                                   #Y_SAMPLE.,
                                    CALIBRANTS.,
                                    COLNAMES.,
-                                   DILUTION_FACTOR.,
+                                   #DILUTION_FACTOR.,
                                    NOISE.,
                                    TRANSFORM.,
                                    TRANSFORM_X.,
@@ -368,11 +378,12 @@ testthat::test_that("function checkData works", {
                                    LR_SD_RES_FACTOR.,
                                    R2_MIN.,
                                    BATCH_HARMONIZATION.,
-                                   CAL_CONC.,
+                                   #CAL_CONC.,
                                    GET_LR_STATUS.,
                                    nCORE.,
-                                   GET_OUTPUT.
-  ), regexp = "Argument 'sample_type_QC' was not found in column 'column_sample_type'")
+                                   GET_OUTPUT.,
+                                   IMG_OUTPUT_DIR.
+  ), regexp = "Argument 'sampleType_QC' was not found in column 'column_sampleType'")
 
 testthat::expect_error(checkData(dat =  dats,
                                  MIN_FEATURE.,
@@ -380,10 +391,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE = "test",
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -402,11 +413,12 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
-), regexp = "Argument 'sample_type_sample' was not found in column 'column_sample_type'")
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
+), regexp = "Argument 'sampleType_sample' was not found in column 'column_sampleType'")
 
 testthat::expect_error(checkData(dat =  dats,
                                  MIN_FEATURE.,
@@ -414,10 +426,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS = "test",
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -436,11 +448,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
                                  GET_OUTPUT.
-), regexp = "Argument 'sample_type_serial' was not found in column 'column_sample_type'")
+), regexp = "Argument 'sampleType_serial' was not found in column 'column_sampleType'")
 
 testthat::expect_error(checkData(dat =  dats,
                                  MIN_FEATURE.,
@@ -448,10 +460,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES = c(ID = "ID", Batch = NULL, X = " ", Y = "Y", Sample_type = "Sample_type", Sample_ID = "SAMPLE_ID"),
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -470,11 +482,13 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
-), regexp = "missing columns")
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
+), regexp = "the provided names do not fit the colnames of the input data")
+
 
 testthat::expect_error(checkData(dat =  dats,
                                  MIN_FEATURE.,
@@ -482,78 +496,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR = "a",
-                                 NOISE.,
-                                 TRANSFORM.,
-                                 TRANSFORM_X.,
-                                 INVERSE_X.,
-                                 TRANSFORM_Y.,
-                                 INVERSE_Y.,
-                                 FOD.,
-                                 FOD_MODEL.,
-                                 FOD_SDRES_MIN.,
-                                 FOD_STDRES_MAX.,
-                                 TRIMM.,
-                                 SOD.,
-                                 SOD_MODEL.,
-                                 SOD_SDRES_MIN.,
-                                 SOD_STDRES_MAX.,
-                                 LR_SD_RES_FACTOR.,
-                                 R2_MIN.,
-                                 BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
-                                 GET_LR_STATUS.,
-                                 nCORE.,
-                                 GET_OUTPUT.
-), regexp = "Argument 'dilution_factor' needs to be from type numeric.")
-
-testthat::expect_error(checkData(dat =  dats,
-                                 MIN_FEATURE.,
-                                 TYPE.,
-                                 QC.,
-                                 BLANK.,
-                                 SAMPLE = "Calibration Standard",
-                                 Y_SAMPLE = 2,
-                                 CALIBRANTS.,
-                                 COLNAMES.,
-                                 DILUTION_FACTOR.,
-                                 NOISE.,
-                                 TRANSFORM.,
-                                 TRANSFORM_X.,
-                                 INVERSE_X.,
-                                 TRANSFORM_Y.,
-                                 INVERSE_Y.,
-                                 FOD.,
-                                 FOD_MODEL.,
-                                 FOD_SDRES_MIN.,
-                                 FOD_STDRES_MAX.,
-                                 TRIMM.,
-                                 SOD.,
-                                 SOD_MODEL.,
-                                 SOD_SDRES_MIN.,
-                                 SOD_STDRES_MAX.,
-                                 LR_SD_RES_FACTOR.,
-                                 R2_MIN.,
-                                 BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
-                                 GET_LR_STATUS.,
-                                 nCORE.,
-                                 GET_OUTPUT.
-), regexp = "Column 'column_Y_sample' was not found in input data.")
-
-testthat::expect_error(checkData(dat =  dats,
-                                 MIN_FEATURE.,
-                                 TYPE.,
-                                 QC.,
-                                 BLANK.,
-                                 SAMPLE.,
-                                 Y_SAMPLE.,
-                                 CALIBRANTS.,
-                                 COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM = "test",
                                  TRANSFORM_X.,
@@ -572,10 +518,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'transform' needs to be from type logical")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -584,10 +531,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM = TRUE,
                                  TRANSFORM_X = "bla",
@@ -606,10 +553,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
                                  ))#, regexp = "Argument 'transform_X' and 'transform_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
 
 
@@ -619,10 +567,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM = TRUE,
                                  TRANSFORM_X = "log",
@@ -641,10 +589,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
                                  ), regexp = "Argument 'inverse_X' must be the reverse function of Argument 'transform_X'")
 
 
@@ -654,10 +603,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM = TRUE,
                                  TRANSFORM_X.,
@@ -676,10 +625,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -688,10 +638,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM = TRUE,
                                  TRANSFORM_X.,
@@ -710,10 +660,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'inverse_Y' must be provided if Argument 'transform_Y' is provided")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -722,10 +673,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -744,10 +695,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'first_outlier_detection' needs to be from type logical")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -756,10 +708,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -778,10 +730,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "For the Argument 'FOD_model' only one or a combination of 'linear', 'logistic' or 'quadratic' are allowed.")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -790,10 +743,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                # DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -812,10 +765,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                IMG_OUTPUT_DIR.
 ), regexp = "Argument 'FOD_sdres_min' and 'FOD_stdres_max' need to be from type Integer and positive")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -824,10 +778,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -846,10 +800,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'FOD_sdres_min' and 'FOD_stdres_max' need to be from type Integer and positive")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -858,10 +813,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -880,10 +835,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                # CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                IMG_OUTPUT_DIR.
 ), regexp = "Argument 'trimming' needs to be from type logical")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -892,10 +848,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -914,10 +870,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'second_outlier_detection' needs to be from type logical")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -926,10 +883,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -948,10 +905,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "For the Argument SOD_model only one or a combination of 'linear', 'logistic', 'quadratic' are allowed.")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -960,10 +918,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -982,10 +940,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'SOD_sdres_min' and 'SOD_stdres_max' need to be from type Integer and positive")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -994,10 +953,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -1016,10 +975,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                # CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                IMG_OUTPUT_DIR.
 ), regexp = "Argument 'SOD_sdres_min' and 'SOD_stdres_max' need to be from type Integer and positive")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -1028,10 +988,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -1050,10 +1010,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR = -5.6,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'LR_sd_res_factor' needs to be from type integer and positive")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -1062,10 +1023,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -1084,10 +1045,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN = 20,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'R2_min' needs to be from type double and in the range between 0 and 1")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -1096,10 +1058,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -1118,45 +1080,13 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION = NA,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'Batch_harmonization' needs to be from type logical")
 
-testthat::expect_error(checkData(dat =  dats,
-                                 MIN_FEATURE.,
-                                 TYPE.,
-                                 QC.,
-                                 BLANK.,
-                                 SAMPLE.,
-                                 Y_SAMPLE.,
-                                 CALIBRANTS.,
-                                 COLNAMES.,
-                                 DILUTION_FACTOR.,
-                                 NOISE.,
-                                 TRANSFORM.,
-                                 TRANSFORM_X.,
-                                 INVERSE_X.,
-                                 TRANSFORM_Y.,
-                                 INVERSE_Y.,
-                                 FOD.,
-                                 FOD_MODEL.,
-                                 FOD_SDRES_MIN.,
-                                 FOD_STDRES_MAX.,
-                                 TRIMM.,
-                                 SOD.,
-                                 SOD_MODEL.,
-                                 SOD_SDRES_MIN.,
-                                 SOD_STDRES_MAX.,
-                                 LR_SD_RES_FACTOR.,
-                                 R2_MIN.,
-                                 BATCH_HARMONIZATION.,
-                                 CAL_CONC = "test",
-                                 GET_LR_STATUS.,
-                                 nCORE.,
-                                 GET_OUTPUT.
-), regexp = "Argument 'calculate_concentration' needs to be from type logical")
 
 testthat::expect_error(checkData(dat =  dats,
                                  MIN_FEATURE.,
@@ -1164,10 +1094,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                # Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -1186,10 +1116,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS = "test",
                                  nCORE.,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                IMG_OUTPUT_DIR.
 ), regexp = "Argument 'get_linearity_status_samples' needs to be from type logical")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -1198,10 +1129,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -1220,10 +1151,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE = -3,
-                                 GET_OUTPUT.
+                                 GET_OUTPUT.,
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'nCore' needs to be positive")
 
 testthat::expect_error(checkData(dat =  dats,
@@ -1232,10 +1164,10 @@ testthat::expect_error(checkData(dat =  dats,
                                  QC.,
                                  BLANK.,
                                  SAMPLE.,
-                                 Y_SAMPLE.,
+                                 #Y_SAMPLE.,
                                  CALIBRANTS.,
                                  COLNAMES.,
-                                 DILUTION_FACTOR.,
+                                 #DILUTION_FACTOR.,
                                  NOISE.,
                                  TRANSFORM.,
                                  TRANSFORM_X.,
@@ -1254,10 +1186,11 @@ testthat::expect_error(checkData(dat =  dats,
                                  LR_SD_RES_FACTOR.,
                                  R2_MIN.,
                                  BATCH_HARMONIZATION.,
-                                 CAL_CONC.,
+                                 #CAL_CONC.,
                                  GET_LR_STATUS.,
                                  nCORE.,
-                                 GET_OUTPUT = "test"
+                                 GET_OUTPUT = "test",
+                                 IMG_OUTPUT_DIR.
 ), regexp = "Argument 'get_output' needs to be from type logical")
 
 
@@ -1271,15 +1204,15 @@ testthat::expect_error(checkData(dat =  dats,
 
 testthat::test_that("function prepareData works", {
 
-  dats = data.table::data.table(data.frame(ID = rep(-1,10), "Dilution" = 1:10, Y = 1:10), Sample_type = rep("Calibration Standard", 10), SAMPLE_ID = rep("A1", 10))
+  dats = data.table::data.table(data.frame(ID = rep(-1,10), X = 1:10, Y = 1:10, Batch = "B1"), Sample_type = rep("Calibration Standard", 10), SAMPLE_ID = rep("A1", 10), Injection_order = 1:10)
 
-  COLNAMES. = c(ID = "ID", Batch = NULL, X = "Dilution", Y = "Y", Sample_type = "Sample_type", Sample_ID = "SAMPLE_ID")
+  COLNAMES. = c(Feature_ID = "ID", Batch = "Batch", X = "X", Y = "Y", Sample_type = "Sample_type", Sample_ID = "SAMPLE_ID", Injection_order = "Injection_order")
   nCORE. = 1
   MIN_FEATURE. = 6
   TYPE. = "targeted"
   CALIBRANTS. = "Calibration Standard"
+  BLANK. = "Blank"
   QC. = NULL
-  BLANK. = NULL
   SAMPLE. = NULL
   Y_SAMPLE. = NULL
   DILUTION_FACTOR. = 2
@@ -1304,6 +1237,7 @@ testthat::test_that("function prepareData works", {
   CAL_CONC. = TRUE
   GET_LR_STATUS. = TRUE
   GET_OUTPUT. = TRUE
+  IMG_OUTPUT_DIR. = "img"
 
   data <- checkData(dat = dats,
             MIN_FEATURE.,
@@ -1311,10 +1245,10 @@ testthat::test_that("function prepareData works", {
             QC.,
             BLANK.,
             SAMPLE.,
-            Y_SAMPLE.,
+            #Y_SAMPLE.,
             CALIBRANTS.,
             COLNAMES.,
-            DILUTION_FACTOR.,
+            #DILUTION_FACTOR.,
             NOISE.,
             TRANSFORM.,
             TRANSFORM_X.,
@@ -1333,10 +1267,11 @@ testthat::test_that("function prepareData works", {
             LR_SD_RES_FACTOR.,
             R2_MIN.,
             BATCH_HARMONIZATION.,
-            CAL_CONC.,
+            #CAL_CONC.,
             GET_LR_STATUS.,
             nCORE.,
-            GET_OUTPUT.
+            GET_OUTPUT.,
+            IMG_OUTPUT_DIR.
   )
 
   testthat::expect_equal(
@@ -1357,14 +1292,14 @@ testthat::test_that("function prepareData works", {
 
   testthat::expect_equal(
     prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.)$X_trans[2],
-    get(TRANSFORM_X.)(data$Dilution[2]))
+    get(TRANSFORM_X.)(data$X[2]*3))
 
   testthat::expect_equal(
     prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.)$Y_trans[9],
     get(TRANSFORM_Y.)(data$Y[9]))
 
   testthat::expect_error(prepareData(dat = data[,-1], TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.)
-    , regexp = "data need to have 9 columns, please use funtion 'checkData' before to check all necessary input arguments")
+    , regexp = "data need to have 10 columns, please use funtion 'checkData' before to check all necessary input arguments")
 
 
 
