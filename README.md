@@ -241,18 +241,15 @@ MSlineaR creates 5 pdf files.
 
 -   The file "*date_output_name*\_Summary_Calibration_Barplot.pdf" shows an overview about the linearity of all compounds at each dilution step and at which step they were chucked out. The figure can be used to decide if one dilution step did not worked really well, e.g. due to a misinjection and at which dilution most of the compounds show a good linearity.
 
-    ![Dilution_Barplot](data/Results_tutorial/2024-04-18_2024-04-18_Test_targeted_tutorial_Summary_Calibration_Barplot.PNG){width="43cm"}
+    ![Dilution_Barplot](data/Results_tutorial/2024-04-18_Test_targeted_tutorial_Summary_Calibration_Barplot.PNG)
 
-```{=html}
-<!-- -->
-```
 -   The file "*date_output_name*\_Summary_CalibrationPlot.pdf" shows all dilution /concentration curves separately. If the data have more than 50 features, 50 features were randomly used for the plot. On the left side of each plot are the QCs and samples and on the right side is the dilution series. The dashed lines showing the limits of the linear range. Green points are considered to be within the linear range, black points are valid but outside of the linear range and grey points were chucked out. The samples are colored according to their biological class.
 
-    ![](data/Results_tutorial/2024-04-18_2024-04-18_Test_targeted_tutorial_CalibrationPlot.PNG)
+    ![](data/Results_tutorial/2024-04-18_Test_targeted_tutorial_CalibrationPlot.PNG)
 
 -   The file "*date_output_name*\_Summary_Barplot_all.pdf" displays the amount of linear compounds within each sample ordered according to the injection order. This plot can be used to see if there is an carry over or contamination within the blanks and if there is a systematic drift, which could indicate that there is a issue with the detection. In this example there is a clear contamination in CHP_Blank_06 in both batches oberservable and QC_pool_01 of batch 2 shows a lower amount of linear features compared to the other pooled QCs.
 
-![](data/Results_tutorial/2024-04-18_2024-04-18_Test_targeted_tutorial_Summary_Barplot_all.PNG){width="53.2cm"}
+![](data/Results_tutorial/2024-04-18_Test_targeted_tutorial_Summary_Barplot_all.PNG)
 
 -   File "*date_output_name*\_Summary_Barplot_Samples.pdf" and "*date_output_name*\_Summary_Barplot_QC.pdf" show the same but only for the biological samples and QC respective and are ordered and colored according to the statistical group or different types of QCs.
 
