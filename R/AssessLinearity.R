@@ -244,7 +244,7 @@ MS_AssessLinearity <- function(
   testthat::expect_setequal(unique(dataOrigin_F[[SAMPLE_ID]]), unique(dataOrigin_S[[SAMPLE_ID]]))
   testthat::expect_setequal(unique(dataOrigin_F[[COLNAMES[["Batch"]]]]), unique(dataOrigin_S[[COLNAMES[["Batch"]]]]))
 
-dataOrigin <- dplyr::full_join(dataOrigin_F, dataOrigin_S, by = c(COLNAMES[["Sample_ID"]], COLNAMES[["Batch"]]))
+dataOrigin <- dplyr::full_join(dataOrigin_F, dataOrigin_S, by = intersect(colnames(sample_tbl), colnames(feature_table)))
 
 
 
