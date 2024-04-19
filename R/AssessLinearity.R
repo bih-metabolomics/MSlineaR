@@ -1138,7 +1138,7 @@ Yorigin <- "Y"
                                           inputData_Series = output1,
                                           COLNAMES = COLNAMES,
                                           X = Xraw, Y = Yraw,
-                                          output_dir = IMG_OUTPUT_DIR,outputfileName = paste0(Sys.Date(),"_", PREFIX,"_Summary_Calibration_Barplot"))
+                                          output_dir = IMG_OUTPUT_DIR,outputfileName = paste0(PREFIX,"_Summary_Calibration_Barplot"))
   logr::put("summary_barplot was created")
 
   #8) scatter plot
@@ -1147,7 +1147,7 @@ Yorigin <- "Y"
                               inputData_BioSamples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                               inputData_QC = SampleQC,
                               COLNAMES = COLNAMES, Xcol = Xraw, Ycol = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
-                              Series = Series, output_dir = IMG_OUTPUT_DIR,outputfileName = paste0(Sys.Date(),"_", PREFIX,"_CalibrationPlot")
+                              Series = Series, output_dir = IMG_OUTPUT_DIR,outputfileName = paste0(PREFIX,"_CalibrationPlot")
   )
 
   logr::put("Scatterplot was created")
@@ -1161,7 +1161,7 @@ Yorigin <- "Y"
                                                      output_dir = IMG_OUTPUT_DIR,
                                                      group = "Batch",
                                                      ordered = column_injectionOrder,
-                                                     outputfileName = paste0(Sys.Date(),"_", PREFIX,"_Summary_Barplot_All"))
+                                                     outputfileName = paste0(PREFIX,"_Summary_Barplot_All"))
 
   logr::put("summary_barplot_all was created")
 
@@ -1175,7 +1175,7 @@ Yorigin <- "Y"
                                                         group = "Batch",
                                                         Plotfill = "Class",
                                                         ordered = "Class",
-                                                        outputfileName = paste0(Sys.Date(),"_", PREFIX,"_Summary_Barplot_Samples"))
+                                                        outputfileName = paste0(PREFIX,"_Summary_Barplot_Samples"))
 
   logr::put("summary_barplot_sample was created")
 
@@ -1190,7 +1190,7 @@ Yorigin <- "Y"
                                                     group = "Batch",
                                                     Plotfill = "Sample.Type",
                                                     ordered = "Sample.Type",
-                                                    outputfileName = paste0(Sys.Date(),"_", PREFIX,"_Summary_Barplot_QC"))
+                                                    outputfileName = paste0( PREFIX,"_Summary_Barplot_QC"))
 
   logr::put("summary_barplot_sample was created")
 
