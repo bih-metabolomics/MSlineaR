@@ -15,7 +15,7 @@ plot_Barplot_Summary_Sample(
   Y,
   output_dir,
   group = "Sample.Type",
-  fill = "Batch",
+  Plotfill = "Batch",
   ordered = "Sample_ID"
 )
 }

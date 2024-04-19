@@ -30,6 +30,8 @@ checkData(
   SOD_STDRES_MAX = parent.frame()$SOD_STDRES_MAX,
   LR_SD_RES_FACTOR = parent.frame()$LR_SD_RES_FACTOR,
   R2_MIN = parent.frame()$R2_MIN,
+  BATCH_HARMONIZATION = parent.frame()$BATCH_HARMONIZATION,
+  GET_LR_STATUS = parent.frame()$GET_LR_STATUS,
   nCORE = parent.frame()$nCORE,
   GET_OUTPUT = parent.frame()$GET_OUTPUT,
   IMG_OUTPUT_DIR = parent.frame()$IMG_OUTPUT_DIR
