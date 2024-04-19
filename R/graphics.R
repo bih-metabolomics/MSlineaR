@@ -448,7 +448,7 @@ plot_Barplot_Summary <- function(inputData_Series,
     ggplot2::scale_x_continuous(breaks = data_Signals_summary$DilutionPoint) +
     #ggplot2::scale_fill_discrete(name = "", ) +
     ggplot2::scale_y_continuous(labels = scales::percent) +
-    ggplot2::scale_fill_manual(name = "", values = c('#822D3F','#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
+    ggplot2::scale_fill_manual(name = "", values = c('#822D3F','#8c510a','#d8b365','#A79EE5','#f6e8c3','#F194C1','#c7eae5','#5ab4ac','#01665e')) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
     ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
@@ -536,7 +536,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   plot_Summary_samples <- plot_Summary_samples +
     #scale_x_continuous(breaks = data_Signals$DilutionPoint) +
     ggplot2:: scale_y_continuous(labels = scales::percent, name = "Signals within linear Range[%]", limits = c(0,NA)) +
-    ggplot2::scale_fill_manual(name = "", values = c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
+    ggplot2::scale_fill_manual(name = "", values = c('#822D3F','#8c510a','#d8b365','#A79EE5','#f6e8c3','#F194C1','#c7eae5','#5ab4ac','#01665e')) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
     ggplot2::theme(panel.grid.major.x =ggplot2::element_blank()) +
