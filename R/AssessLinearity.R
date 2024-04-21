@@ -251,7 +251,7 @@ dataOrigin <- dplyr::full_join(dataOrigin_F, dataOrigin_S, by = intersect(colnam
 
 
 
-  dataOrigin <- checkData(dat = dataOrigin) # function in prep.R
+  dataReduced <- checkData(dat = dataOrigin) # function in prep.R
 
 
   # progressbar
@@ -345,7 +345,7 @@ Yorigin <- "Y"
     Signals <- "Signals"
   }
 
-  processingFeatureCal <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% CALIBRANTS]
+  processingFeatureCal <- dataReduced[get(COLNAMES[["Sample_type"]]) %in% CALIBRANTS]
   processingFeature <- data.table::copy(processingFeatureCal)
 
 
@@ -411,7 +411,7 @@ Yorigin <- "Y"
     #             \tremove Features below signal to blank ratio
     #            --------------------------------------------------------\n")
 
-    blanks <-  dataOrigin[get(COLNAMES[["Sample_type"]]) %in% BLANK]
+    blanks <-  dataReduced[get(COLNAMES[["Sample_type"]]) %in% BLANK]
     Yblank <- COLNAMES[["Y"]]
 
 
@@ -878,7 +878,7 @@ Yorigin <- "Y"
   #               --------------------------------------------------------
   #               \tprepare biological samples
   #               --------------------------------------------------------\n")
-    SampleFeature <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% SAMPLE]
+    SampleFeature <- dataReduced[get(COLNAMES[["Sample_type"]]) %in% SAMPLE]
 
     if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)){
       SampleFeature$Y_trans <- get(TRANSFORM_Y)(SampleFeature[[column_Y]])
@@ -920,11 +920,11 @@ Yorigin <- "Y"
     #               --------------------------------------------------------\n")
 
 
-    SampleQC <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% QC]
+    SampleQC <- dataReduced[get(COLNAMES[["Sample_type"]]) %in% QC]
 
     if(!is.null(BLANK)){
 
-      SampleBlank <- dataOrigin[get(COLNAMES[["Sample_type"]]) %in% BLANK]
+      SampleBlank <- dataReduced[get(COLNAMES[["Sample_type"]]) %in% BLANK]
       SampleQC <- rbind(SampleQC, SampleBlank)
     }
 
