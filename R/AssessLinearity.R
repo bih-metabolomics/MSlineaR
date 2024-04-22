@@ -249,9 +249,9 @@ dataOrigin <- dplyr::full_join(dataOrigin_F, dataOrigin_S, by = intersect(colnam
 
 
 
+dataReduced <- data.table::copy(dataOrigin)
 
-
-  dataReduced <- checkData(dat = dataOrigin) # function in prep.R
+  dataReduced <- checkData(dat = dataReduced) # function in prep.R
 
 
   # progressbar
