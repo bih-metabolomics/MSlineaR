@@ -28,6 +28,7 @@ Imports:
     drc,
     purrr,
     dplyr,
+    plyr,
     DescTools,
     ggplot2,
     DT,
