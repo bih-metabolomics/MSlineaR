@@ -1009,7 +1009,7 @@ Yorigin <- "Y"
   table_Feature_all <- dplyr::full_join(data.table::copy(SampleFeature),data.table::copy(processingFeature), by = colnames(SampleFeature))
   output3 <- dplyr::full_join(data.table::copy(table_Feature_all), dataOrigin, by = intersect(colnames(dataOrigin), colnames(table_Feature_all)))
 
-  output4 <- output3[,c(colnames(dataOrigin), "Status_LR"), with = F]
+  output4 <- output3[,c(colnames(dataOrigin), "groupIndices","Status_LR", "LRFlag"), with = F]
   #output3.1 <- SampleFeature
 
   # #5) filtered table biological Samples - Signal based (high quality)
