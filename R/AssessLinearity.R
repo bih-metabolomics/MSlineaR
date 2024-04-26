@@ -1005,6 +1005,7 @@ Yorigin <- "Y"
   #4) full table biological Samples - Signal based
 
   if(!is.null(column_sampleClass))dataOrigin[[column_sampleClass]] <- as.character(dataOrigin[[column_sampleClass]])
+  dataOrigin[[column_batch]] <- as.character(dataOrigin[[column_batch]])
 
   table_Feature_all <- dplyr::full_join(data.table::copy(SampleFeature),data.table::copy(processingFeature), by = colnames(SampleFeature))
   output3 <- dplyr::full_join(data.table::copy(table_Feature_all), dataOrigin, by = intersect(colnames(dataOrigin), colnames(table_Feature_all)))
