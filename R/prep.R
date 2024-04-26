@@ -206,7 +206,7 @@ prepareData <- function(dat,
   processed <- data.table::copy(dat)
   # rename
   data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "Feature_ID","Sample_ID", "Sample.Type","Class", "Batch", "Injection_order",COLNAMES[["X"]], "Y"))
-  data.table::setorderv(processed, c("Injection_order","Feature_ID", "Batch", COLNAMES[["X"]]))
+  data.table::setorderv(processed, c("Dilution","Feature_ID", "Batch", COLNAMES[["X"]]))
 
   processed[ , ":="(Comment = NA, pch = data.table::fcase(!is.na(Y), 19), color = data.table::fcase(is.na(Y), "grey", default = "black"))]
   processed[ , ":="(#YNorm = Y / max(Y, na.rm = T) * 100,
