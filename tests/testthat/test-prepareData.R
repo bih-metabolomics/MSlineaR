@@ -1,8 +1,8 @@
 testthat::test_that("function checkData works", {
 
-  dats = data.table::data.table(data.frame(ID = rep(-1,10), X = 1:10, Y = 1:10, Batch = "B1"), Sample_type = rep("Calibration Standard", 10), SAMPLE_ID = rep("A1", 10), Injection_order = 1:10)
+  dats = data.table::data.table(data.frame(ID = rep(-1,10), X = 1:10, Y = 1:10, Batch = "B1"), Sample_type = rep("Calibration Standard", 10), SAMPLE_ID = rep("A1", 10), Injection_order = 1:10, Dilution = "Dilution")
 
-  COLNAMES. = c(Feature_ID = "ID", Batch = "Batch", X = "X", Y = "Y", Sample_type = "Sample_type", Sample_ID = "SAMPLE_ID", Injection_order = "Injection_order")
+  COLNAMES. = c(Feature_ID = "ID", Batch = "Batch", X = "X", Y = "Y", Sample_type = "Sample_type", Sample_ID = "SAMPLE_ID", Injection_order = "Injection_order", ColDilution = "Dilution")
   nCORE. = 1
   MIN_FEATURE. = 6
   TYPE. = "targeted"
@@ -1204,9 +1204,9 @@ testthat::expect_error(checkData(dat =  dats,
 
 testthat::test_that("function prepareData works", {
 
-  dats = data.table::data.table(data.frame(ID = rep(-1,10), X = 1:10, Y = 1:10, Batch = "B1"), Sample_type = rep("Calibration Standard", 10), SAMPLE_ID = rep("A1", 10), Injection_order = 1:10)
+  dats = data.table::data.table(data.frame(ID = rep(-1,10), X = 1:10, Y = 1:10, Batch = "B1"), Sample_type = rep("Calibration Standard", 10), SAMPLE_ID = rep("A1", 10), Injection_order = 1:10, Dilution = 1:10)
 
-  COLNAMES. = c(Feature_ID = "ID", Batch = "Batch", X = "X", Y = "Y", Sample_type = "Sample_type", Sample_ID = "SAMPLE_ID", Injection_order = "Injection_order")
+  COLNAMES. = c(Feature_ID = "ID", Batch = "Batch", X = "X", Y = "Y", Sample_type = "Sample_type", Sample_ID = "SAMPLE_ID", Injection_order = "Injection_order", ColDilution = "Dilution")
   nCORE. = 1
   MIN_FEATURE. = 6
   TYPE. = "targeted"
@@ -1280,7 +1280,7 @@ testthat::test_that("function prepareData works", {
 
   testthat::expect_equal(
     dim(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.))[2],
-    16)
+    17)
 
   testthat::expect_equal(
     unique(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.)$pch),
@@ -1299,7 +1299,7 @@ testthat::test_that("function prepareData works", {
     get(TRANSFORM_Y.)(data$Y[9]))
 
   testthat::expect_error(prepareData(dat = data[,-1], TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.)
-    , regexp = "data need to have 10 columns, please use funtion 'checkData' before to check all necessary input arguments")
+    , regexp = "data need to have 11 columns, please use funtion 'checkData' before to check all necessary input arguments")
 
 
 

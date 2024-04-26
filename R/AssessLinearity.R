@@ -104,6 +104,7 @@ MS_AssessLinearity <- function(
     signal_blank_ratio = 5,
     column_sampleID = "Sample.Identification",
     column_featureID = "Compound",
+    column_dilution = "Dilution",
     column_injectionOrder = "Sequence.Position",
     column_batch = "Batch",
     column_X = c("Concentration", "Dilution")[2],
@@ -175,6 +176,7 @@ MS_AssessLinearity <- function(
                Sample_type = column_sampleType,
                X = column_X,
                Y = column_Y,
+              ColDilution = column_dilution,
                Class = column_sampleClass)
   NOISE = signal_blank_ratio
   #Y_SAMPLE = column_Y_sample
