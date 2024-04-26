@@ -106,13 +106,12 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
   data.table::set(dat, j = COLNAMES[["X"]], value = as.numeric(dat[[COLNAMES[["X"]]]]))
   data.table::set(dat, j = COLNAMES[["Y"]], value = as.numeric(dat[[COLNAMES[["Y"]]]]))
   data.table::set(dat, j = COLNAMES[["Sample_type"]], value = as.character(dat[[COLNAMES[["Sample_type"]]]]))
-  #data.table::set(dat, j = COLNAMES[["ColDilution"]], value = as.numeric(dat[[COLNAMES[["ColDilution"]]]]))
 
 
-  data.table::setorderv(dat, c(COLNAMES[["Injection_order"]], COLNAMES[["Batch"]], COLNAMES[["Feature_ID"]], COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]],COLNAMES[["Class"]], COLNAMES[["X"]], COLNAMES[["Y"]],COLNAMES[["ColDilution"]]))
+  data.table::setorderv(dat, c(COLNAMES[["Injection_order"]], COLNAMES[["Batch"]], COLNAMES[["Feature_ID"]], COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]],COLNAMES[["Class"]], COLNAMES[["X"]], COLNAMES[["Y"]]))
   dat[ , IDintern := paste(dat[[COLNAMES[["Sample_ID"]]]], dat[[COLNAMES[["Feature_ID"]]]], dat[[COLNAMES[["Batch"]]]], dat[[COLNAMES[["Injection_order"]]]],sep = "_")]
   dat[ , groupIndices := .GRP ,by = c(COLNAMES[["Feature_ID"]], COLNAMES[["Batch"]])]
-  dat <- dat[ , c( "IDintern", "groupIndices", COLNAMES[["Feature_ID"]],  COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]],COLNAMES[["Class"]], COLNAMES[["Batch"]],COLNAMES[["Injection_order"]], COLNAMES[["X"]], COLNAMES[["Y"]],COLNAMES[["ColDilution"]]), with = F]
+  dat <- dat[ , c( "IDintern", "groupIndices", COLNAMES[["Feature_ID"]],  COLNAMES[["Sample_ID"]], COLNAMES[["Sample_type"]],COLNAMES[["Class"]], COLNAMES[["Batch"]],COLNAMES[["Injection_order"]], COLNAMES[["X"]], COLNAMES[["Y"]]), with = F]
 
   # tests for Input parameter
 
@@ -165,7 +164,6 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
 
 
   if(!is.null(SAMPLE)) if(!any(dat[[COLNAMES[["Sample_type"]]]] %in% SAMPLE))rlang::abort("Argument 'sampleType_sample' was not found in column 'column_sampleType'")
-  if(!any(colnames(dat) %in% COLNAMES[["ColDilution"]]))rlang::abort("Argument 'column_dilution' was not found in colnames of the data set")
   #if(!is.null(SAMPLE)) if(!any(colnames(dat) %in% Y_SAMPLE))rlang::abort("Column 'column_Y_sample' was not found in input data.")
 
   if(!is.null(QC)) if(!all( QC %in% dat[[COLNAMES[["Sample_type"]]]])) rlang::abort("Argument 'sampleType_QC' was not found in column 'column_sampleType'")
@@ -196,21 +194,21 @@ prepareData <- function(dat,
                         TRANSFORM = parent.frame()$TRANSFORM,
                         TRANSFORM_X = parent.frame()$TRANSFORM_X,
                         TRANSFORM_Y = parent.frame()$TRANSFORM_Y,
-                        DILUTION_FACTOR = parent.frame()$DILUTION_FACTOR,
+                        #DILUTION_FACTOR = parent.frame()$DILUTION_FACTOR,
                         COLNAMES = parent.frame()$COLNAMES,
                         TYPE = parent.frame()$TYPE){
 
-  if(dim(dat)[2] != 11) rlang::abort("data need to have 11 columns, please use funtion 'checkData' before to check all necessary input arguments")
+  if(dim(dat)[2] != 10) rlang::abort("data need to have 11 columns, please use funtion 'checkData' before to check all necessary input arguments")
 
 
 
   data.table::setDT(dat)
   processed <- data.table::copy(dat)
   # rename
-  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "Feature_ID","Sample_ID", "Sample.Type","Class", "Batch", "Injection_order",COLNAMES[["X"]], "Y", "Dilution"))
+  data.table::setnames(x = processed, old = colnames(processed), new = c( "IDintern","groupIndices", "Feature_ID","Sample_ID", "Sample.Type","Class", "Batch", "Injection_order",COLNAMES[["X"]], "Y"))
   data.table::set(processed, j = "Dilution", value = as.numeric(processed$Dilution))
 
-  data.table::setorderv(processed, c("Dilution","Feature_ID", "Batch", COLNAMES[["X"]]))
+  data.table::setorderv(processed, c(COLNAMES[["X"]],"Feature_ID", "Batch", COLNAMES[["X"]]))
 
   processed[ , ":="(Comment = NA, pch = data.table::fcase(!is.na(Y), 19), color = data.table::fcase(is.na(Y), "grey", default = "black"))]
   processed[ , ":="(#YNorm = Y / max(Y, na.rm = T) * 100,
