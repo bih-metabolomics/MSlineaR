@@ -1280,7 +1280,7 @@ testthat::test_that("function prepareData works", {
 
   testthat::expect_equal(
     dim(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y.,  COLNAMES., TYPE.))[2],
-    16)
+    17)
 
   testthat::expect_equal(
     unique(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., COLNAMES., TYPE.)$pch),
