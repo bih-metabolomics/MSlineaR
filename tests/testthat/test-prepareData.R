@@ -1215,7 +1215,7 @@ testthat::test_that("function prepareData works", {
   QC. = NULL
   SAMPLE. = NULL
   Y_SAMPLE. = NULL
-  DILUTION_FACTOR. = 2
+  #DILUTION_FACTOR. = 2
   NOISE. = NULL
   TRANSFORM. = TRUE
   TRANSFORM_X. = "log"
@@ -1275,30 +1275,30 @@ testthat::test_that("function prepareData works", {
   )
 
   testthat::expect_equal(
-    dim(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.))[1],
+    dim(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y.,  COLNAMES., TYPE.))[1],
     10)
 
   testthat::expect_equal(
-    dim(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.))[2],
+    dim(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y.,  COLNAMES., TYPE.))[2],
     16)
 
   testthat::expect_equal(
-    unique(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.)$pch),
+    unique(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., COLNAMES., TYPE.)$pch),
     19)
 
   testthat::expect_equal(
-    unique(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.)$color),
+    unique(prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y.,  COLNAMES., TYPE.)$color),
     "black")
 
   testthat::expect_equal(
-    prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.)$X_trans[2],
+    prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y.,  COLNAMES., TYPE.)$X_trans[2],
     get(TRANSFORM_X.)(data$X[2]*3))
 
   testthat::expect_equal(
-    prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.)$Y_trans[9],
+    prepareData(dat = data, TRANSFORM., TRANSFORM_X., TRANSFORM_Y.,  COLNAMES., TYPE.)$Y_trans[9],
     get(TRANSFORM_Y.)(data$Y[9]))
 
-  testthat::expect_error(prepareData(dat = data[,-1], TRANSFORM., TRANSFORM_X., TRANSFORM_Y., DILUTION_FACTOR., COLNAMES., TYPE.)
+  testthat::expect_error(prepareData(dat = data[,-1], TRANSFORM., TRANSFORM_X., TRANSFORM_Y.,  COLNAMES., TYPE.)
     , regexp = "data need to have 11 columns, please use funtion 'checkData' before to check all necessary input arguments")
 
 
