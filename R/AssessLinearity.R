@@ -1143,7 +1143,7 @@ Yorigin <- "Y"
                                           COLNAMES = COLNAMES,
                                           X = Xraw, Y = Yraw,
                                           output_dir = IMG_OUTPUT_DIR,outputfileName = paste0(PREFIX,"_Summary_Calibration_Barplot"))
-  logr::put("summary_barplot was created")
+  logr::put("summary_barplot_dilution was created")
 
   #8) scatter plot
   FDS_scatterplot <- plot_FDS(printPDF = printPlot,
@@ -1164,6 +1164,7 @@ Yorigin <- "Y"
                                                      X = Xraw, Y = Yraw,
                                                      output_dir = IMG_OUTPUT_DIR,
                                                      group = "Batch",
+                                                     group2 = NULL,
                                                      ordered = column_injectionOrder,
                                                      outputfileName = paste0(PREFIX,"_Summary_Barplot_All"))
 
@@ -1177,8 +1178,8 @@ Yorigin <- "Y"
                                                         X = Xraw, Y = Yraw,
                                                         output_dir = IMG_OUTPUT_DIR,
                                                         group = "Batch",
-                                                        Plotfill = "Class",
-                                                        ordered = "Class",
+                                                        group2 = "Class",
+                                                        ordered = column_injectionOrder,,
                                                         outputfileName = paste0(PREFIX,"_Summary_Barplot_Samples"))
 
   logr::put("summary_barplot_sample was created")
@@ -1192,8 +1193,8 @@ Yorigin <- "Y"
                                                     X = Xraw, Y = Yraw,
                                                     output_dir = IMG_OUTPUT_DIR,
                                                     group = "Batch",
-                                                    Plotfill = "Sample.Type",
-                                                    ordered = "Sample.Type",
+                                                    group2 = "Sample.Type",
+                                                    ordered = column_injectionOrder,
                                                     outputfileName = paste0( PREFIX,"_Summary_Barplot_QC"))
 
   logr::put("summary_barplot_sample was created")

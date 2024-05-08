@@ -490,7 +490,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
                                         outputfileName = c("Summary_Barplot_Samples"),
                                         COLNAMES, X, Y , output_dir,
                                         group = "Sample.Type",
-                                        Plotfill = "Batch",
+                                        group2 = NULL,
                                         ordered = "Sample_ID"){
 
 
@@ -505,45 +505,57 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
   data.table::setDT(inputData_Samples)
 
+  if(is.null(group2)){group2 <- group}
+
+
   data_Signals_sample_summary <- inputData_Samples |>
-    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), Sample.Type, Class = get( ClassGroup ), PlotOrder = get(ordered)) |>
+    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), Sample.Type, Class = get( ClassGroup ), PlotOrder = get(ordered), group_2 = get(group2)) |>
     dplyr::reframe(
       Missing = sum(is.na(y), na.rm = T),
       LR_TRUE = sum(Status_LR %in% TRUE, na.rm = T),
-      LR_FALSE = sum(Status_LR %in% FALSE, na.rm = T),
-      LR_TRUE_perc = LR_TRUE /(Missing + LR_TRUE + LR_FALSE)
+      LR_FALSE = sum(Status_LR %in% c(FALSE, NA), na.rm = T),
+      LR_ULOL = sum(Status_LR %in% "ULOL", na.rm = T),
+      LR_BLOL = sum(Status_LR %in% "BLOL", na.rm = T),
+      LR_TRUE_perc = LR_TRUE /(Missing + LR_TRUE + LR_FALSE + LR_ULOL + LR_BLOL),
+      LR_ULOL_perc = LR_ULOL /(Missing + LR_TRUE + LR_FALSE + LR_TRUE + LR_BLOL),
+      LR_BLOL_perc = LR_ULOL /(Missing + LR_TRUE + LR_FALSE + LR_TRUE + LR_ULOL)
     ) |>
-    tidyr::pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:5))
+    tidyr::pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:6))
 
 
-
-  data_Signals_sample_summary$Type <- factor(data_Signals_sample_summary$Type, levels = rev(c("LR_TRUE_perc","LR_TRUE", "LR_FALSE", "Missing")))
+  data_Signals_sample_summary$Type <- factor(data_Signals_sample_summary$Type, levels = rev(c("LR_TRUE_perc","LR_ULOL_perc","LR_BLOL_perc","LR_TRUE", "LR_FALSE","LR_ULOL" , "LR_BLOL", "Missing")))
   #data_Signals_sample_summary <- data_Signals_sample_summary |> dplyr::filter(count > 0)
   setorderv(data_Signals_sample_summary, "PlotOrder")
   data_Signals_sample_summary$Sample_ID <- factor(data_Signals_sample_summary$Sample_ID, levels = unique(data_Signals_sample_summary$Sample_ID))
 
 
   plot_Summary_samples <-
-    ggplot2::ggplot(data = data_Signals_sample_summary |> dplyr::filter(Type %in% "LR_TRUE_perc"),
-                    ggplot2::aes(x = Sample_ID, y = count, label = count, fill = get(Plotfill))) +
+    ggplot2::ggplot(data = data_Signals_sample_summary|> dplyr::filter(Type %in% c("LR_TRUE_perc","LR_ULOL_perc" , "LR_BLOL_perc")),
+                    ggplot2::aes(x = Sample_ID, y = count, label = count, fill = Type)) +
     ggplot2::geom_bar(stat="identity",
-                      position="dodge",
-                      #position="fill",
-                      width = 0.5 ) +
-    #geom_text(size = 3, position = position_fill(vjust = 0.5)) +
-    ggplot2::facet_wrap(. ~ get(group), scales = "free_x", ncol = 1 )
+                      position="stack",
+                      width = 0.5 )# +
+  #geom_text(size = 3, position = position_fill(vjust = 0.5)) +
+  if(group2 == group){ plot_Summary_samples <- plot_Summary_samples +
+    ggplot2::facet_wrap(. ~ get(group), scales = "free", ncol = 1)
+  } else{
+    plot_Summary_samples <- plot_Summary_samples +
+      ggplot2::facet_wrap(group_2 ~ get(group), scales = "free", ncol = 1)
+  }
+
+  ggplot2::facet_wrap(group_2 ~ get(group), scales = "free", ncol = 1 )
 
   plot_Summary_samples <- plot_Summary_samples +
     #scale_x_continuous(breaks = data_Signals$DilutionPoint) +
-    ggplot2:: scale_y_continuous(labels = scales::percent, name = "Signals within linear Range[%]", limits = c(0,NA)) +
-    ggplot2::scale_fill_manual(name = "", values = c('#822D3F','#8c510a','#d8b365','#A79EE5','#f6e8c3','#F194C1','#c7eae5','#5ab4ac','#01665e')) +
+    ggplot2:: scale_y_continuous(labels = scales::percent, name = "No of Signals [%]", limits = c(0,NA)) +
+    ggplot2::scale_fill_manual(name = "", values = c('#c7eae5','#5ab4ac','#01665e','#822D3F','#8c510a','#d8b365','#A79EE5','#f6e8c3','#F194C1')) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
     ggplot2::theme(panel.grid.major.x =ggplot2::element_blank()) +
     ggplot2:: theme(panel.background=ggplot2::element_blank()) +
     ggplot2:: theme(axis.text.x = ggplot2::element_text(angle=90)) +
     ggplot2:: theme(axis.line=ggplot2::element_line()) #+
-    #ggplot2::theme(legend.position = "none")
+  #ggplot2::theme(legend.position = "none")
 
   if(printPDF %in% TRUE){
 
@@ -559,7 +571,6 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
 
 }
-
 
 
 
