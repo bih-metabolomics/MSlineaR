@@ -76,16 +76,26 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   inputData_Series$Sample.Type <- inputData_Series[[Sample.Type]]
 
   if(!is.null(inputData_BioSamples)){
-    data.table::setDT(inputData_BioSamples)
+
     inputData_BioSamples$Sample.Type <- inputData_BioSamples[[Sample.Type]]
-    if(!is.null(TRANSFORM_Y)) inputData_BioSamples$Sample_area <- get(TRANSFORM_Y)(inputData_BioSamples[COLNAMES[["Y"]]])
-    data.table::setnames(inputData_BioSamples, old = "Sample_area",new = indipendent)
+    data.table::setDT(inputData_BioSamples)
+    if(!is.null(TRANSFORM_Y)) {
+      inputData_BioSamples$Sample_area <- get(TRANSFORM_Y)(inputData_BioSamples[[COLNAMES[["Y"]]]])
+    data.table::setnames(inputData_BioSamples, old = "Sample_area",new = dependent)
+    inputData_BioSamples <- unique.matrix(inputData_BioSamples, MARGIN=2)
+    }
+
   }
   if(!is.null(inputData_QC)){
-    data.table::setDT(inputData_QC)
     inputData_QC$Sample.Type <- inputData_QC[[Sample.Type]]
-    if(!is.null(TRANSFORM_Y)) inputData_QC$Sample_area <- get(TRANSFORM_Y)(inputData_QC[COLNAMES[["Y"]]])
-    data.table::setnames(inputData_QC, old = "Sample_area",new = indipendent)
+    data.table::setDT(inputData_QC)
+    if(!is.null(TRANSFORM_Y)) {
+      inputData_QC$Sample_area <- get(TRANSFORM_Y)(inputData_QC[[COLNAMES[["Y"]]]])
+      data.table::setnames(inputData_QC, old = "Sample_area",new = dependent)
+      inputData_QC <- unique.matrix(inputData_QC, MARGIN=2)
+      inputData_QC <-  unique.matrix(inputData_QC, MARGIN=2)
+
+    }
 
     }
   #data.table::setDT(inputData_Blank)
@@ -112,7 +122,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     }
 
   data.table::setorderv(data_Signal, ID)
-  setDT(data_Signal)
+  data.table::setDT(data_Signal)
 
   if(any(GroupIndices != "all" & GroupIndices != "")) data_Signal <- data_Signal[groupIndices %in% GroupIndices]
   if(any(Feature != "all" & Feature != "")) data_Signal <- data_Signal[get(ID) %in% Feature]

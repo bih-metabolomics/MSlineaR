@@ -286,18 +286,20 @@ dataReduced <- data.table::copy(dataOrigin)
 
 
       #check if pdfs are still open
-      imgfileName = c("Summary_Barplot_QC", "Summary_Barplot_Samples", "Summary_Barplot_All", "Calibrationplot")
+      imgfileName = c("Summary_Barplot_QC", "Summary_Barplot_Samples", "Summary_Barplot_All", "Calibrationplot", "Summary_Calibration_Barplot")
 
       if (any(c(file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[1],".pdf"))),
                file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[2],".pdf"))),
                file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[3],".pdf"))),
-               file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[4],".pdf")))))){
+               file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[4],".pdf"))),
+               file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[5],".pdf")))))){
 
 
         img.exist <- which(c(file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[1],".pdf"))),
                             file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[2],".pdf"))),
                             file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[3],".pdf"))),
-                            file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[4],".pdf")))))
+                            file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[4],".pdf"))),
+                            file.exists(file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[5],".pdf")))))
 
 
         check <- sapply(img.exist, function(i) {file.rename(from = file.path(IMG_OUTPUT_DIR,paste0(Sys.Date(),"_", imgfileName[i],".pdf")),

@@ -198,7 +198,7 @@ prepareData <- function(dat,
                         COLNAMES = parent.frame()$COLNAMES,
                         TYPE = parent.frame()$TYPE){
 
-  if(dim(dat)[2] != 10) rlang::abort("data need to have 11 columns, please use funtion 'checkData' before to check all necessary input arguments")
+  if(dim(dat)[2] != 10) rlang::abort("data need to have 10 columns, please use funtion 'checkData' before to check all necessary input arguments")
 
 
 
