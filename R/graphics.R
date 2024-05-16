@@ -78,12 +78,14 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   if(!is.null(inputData_BioSamples)){
     data.table::setDT(inputData_BioSamples)
     inputData_BioSamples$Sample.Type <- inputData_BioSamples[[Sample.Type]]
-    if(!is.null(TRANSFORM_Y)) inputData_BioSamples[indipendent] <- get(TRANSFORM_Y)(inputData_BioSamples[COLNAMES[["Y"]]])
+    if(!is.null(TRANSFORM_Y)) inputData_BioSamples$Sample_area <- get(TRANSFORM_Y)(inputData_BioSamples[COLNAMES[["Y"]]])
+    data.table::setnames(inputData_BioSamples, old = "Sample_area",new = indipendent)
   }
   if(!is.null(inputData_QC)){
     data.table::setDT(inputData_QC)
     inputData_QC$Sample.Type <- inputData_QC[[Sample.Type]]
-    if(!is.null(TRANSFORM_Y)) inputData_QC[indipendent] <- get(TRANSFORM_Y)(inputData_QC[COLNAMES[["Y"]]])
+    if(!is.null(TRANSFORM_Y)) inputData_QC$Sample_area <- get(TRANSFORM_Y)(inputData_QC[COLNAMES[["Y"]]])
+    data.table::setnames(inputData_QC, old = "Sample_area",new = indipendent)
 
     }
   #data.table::setDT(inputData_Blank)
