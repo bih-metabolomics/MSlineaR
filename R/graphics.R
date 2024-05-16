@@ -542,9 +542,9 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   } else if(group2 == group & data.table::uniqueN(inputData_Samples[[group]]) > 4 ){
     nrRow <- 4
   } else if (group2 == group) {
-    nrow = data.table::uniqueN(inputData_Samples[[group]])
+    nrRow = data.table::uniqueN(inputData_Samples[[group]])
   } else{
-    nrow = sum(data.table::uniqueN(inputData_Samples[[group]]), data.table::uniqueN(inputData_Samples[[group2]]))
+    nrRow = sum(data.table::uniqueN(inputData_Samples[[group]]), data.table::uniqueN(inputData_Samples[[group2]]))
   }
 
   data_Signals_sample_summary <- inputData_Samples |>
