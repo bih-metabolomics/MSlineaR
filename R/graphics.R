@@ -79,7 +79,11 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     data.table::setDT(inputData_BioSamples)
     inputData_BioSamples$Sample.Type <- inputData_BioSamples[[Sample.Type]]
   }
-  if(!is.null(inputData_QC))data.table::setDT(inputData_QC)
+  if(!is.null(inputData_QC)){
+    data.table::setDT(inputData_QC)
+    inputData_QC$Sample.Type <- inputData_QC[[Sample.Type]]
+
+    }
   #data.table::setDT(inputData_Blank)
 
 
@@ -202,12 +206,17 @@ legend_order <- c()
   }
 #ifelse(!is.na(Class),get(Class), "black")
 
-  if(!is.null(inputData_QC )){
-    plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
-                          ggplot2::aes( x = x, y = get(dependent),  shape = Sample.Type,
-                                        color = get(ClassCol)), size = 2, na.rm = TRUE) #+, shape = 5
-    legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
+if(!is.null(inputData_QC )){
+  legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
+
+  plotlinearData <-  plotlinearData +
+    ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
+                        ggplot2::aes( x = x, y = get(dependent),  shape = as.factor(Sample.Type),
+                                      color = get(ClassCol)), size = 2, na.rm = TRUE) +
+    ggplot2::scale_shape_manual(values = 1: (nlevels(as.factor(QCs$Sample.Type)) +1), breaks=rev(legend_order))
+
+    #+, shape = 5
+
   }
 
 
@@ -333,10 +342,10 @@ if("signalBlankRatio" %in% colnames(data_Signals)){
   if(!is.null(inputData_BioSamples ) | !is.null(inputData_QC )){
 
   plotlinearData <-  plotlinearData +
-    ggplot2::annotate(geom = "text", x = -3.5, y = Inf, label = "QC & Samples", size = 3,vjust = 2, na.rm = TRUE) +
+    ggplot2::annotate(geom = "text", x = -3.5, y = Inf, label = "QC & Samples", size = 3,vjust = 2, na.rm = TRUE) #+
     #ggplot2::scale_color_manual(name = "In linear Range:",
     #                   values = c("FALSE" = "red", "TRUE" = "purple")) +
-    ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3), breaks=rev(legend_order))
+    #ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3,4,7,8), breaks=rev(legend_order))
     }
 
   plotlinearData <-  plotlinearData +
