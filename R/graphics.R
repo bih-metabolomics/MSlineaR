@@ -93,7 +93,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-                     data_Signal <- dplyr::full_join(data_Signal, QCs, by = COLNAMES[["Sample_type"]])
+                     data_Signal <- dplyr::full_join(data_Signal, QCs, by = setNames("Sample.Type", Sample.Type))
 
     }
 
