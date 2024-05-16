@@ -73,7 +73,12 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   ClassCol <- COLNAMES[["Class"]]
 
   data.table::setDT(inputData_Series)
-  if(!is.null(inputData_BioSamples))data.table::setDT(inputData_BioSamples)
+  inputData_Series$Sample.Type <- inputData_Series[[Sample.Type]]
+
+  if(!is.null(inputData_BioSamples)){
+    data.table::setDT(inputData_BioSamples)
+    inputData_BioSamples$Sample.Type <- inputData_BioSamples[[Sample.Type]]
+  }
   if(!is.null(inputData_QC))data.table::setDT(inputData_QC)
   #data.table::setDT(inputData_Blank)
 
@@ -83,6 +88,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   data_Signal <- combineData(inputData_Series, inputData_BioSamples, inputData_QC)# inputData_Blank)#, inputData_QC_ref, inputData_Blank)
   data_Signal$ID = data_Signal[[ID]]
   data_Signal$Batch = data_Signal[[Col_Batch]]
+  data_Signal$Sample.Type = data_Signal[[Sample.Type]]
 
 
   if(!is.null(inputData_QC)){
@@ -93,11 +99,12 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-                     data_Signal <- dplyr::full_join(QCs, data_Signal, by = setNames(Sample.Type, "Sample.Type"))
+                     data_Signal <- dplyr::full_join(QCs, data_Signal, by = "Sample.Type")
 
     }
 
   data.table::setorderv(data_Signal, ID)
+  setDT(data_Signal)
 
   if(any(GroupIndices != "all" & GroupIndices != "")) data_Signal <- data_Signal[groupIndices %in% GroupIndices]
   if(any(Feature != "all" & Feature != "")) data_Signal <- data_Signal[get(ID) %in% Feature]
