@@ -537,6 +537,15 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
   if(is.null(group2)){group2 <- group}
 
+  if(group2 != group & sum(data.table::uniqueN(inputData_Samples[[group]]), data.table::uniqueN(inputData_Samples[[group2]])) > 4 ){
+    nrRow <- 4
+  } else if(group2 == group & data.table::uniqueN(inputData_Samples[[group]]) > 4 ){
+    nrRow <- 4
+  } else if (group2 == group) {
+    nrow = data.table::uniqueN(inputData_Samples[[group]])
+  } else{
+    nrow = sum(data.table::uniqueN(inputData_Samples[[group]]), data.table::uniqueN(inputData_Samples[[group2]]))
+  }
 
   data_Signals_sample_summary <- inputData_Samples |>
     dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), Sample.Type, Class = get( ClassGroup ), PlotOrder = get(ordered), group_2 = get(group2)) |>
@@ -567,13 +576,13 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
                       width = 0.5 )# +
   #geom_text(size = 3, position = position_fill(vjust = 0.5)) +
   if(group2 == group){ plot_Summary_samples <- plot_Summary_samples +
-    ggplot2::facet_wrap(. ~ get(group), scales = "free", ncol = 1)
+    ggforce::facet_grid_paginate(. ~ get(group), scales = "free", ncol = 1, nrow = nrRow, page = 1 )
   } else{
     plot_Summary_samples <- plot_Summary_samples +
-      ggplot2::facet_wrap(group_2 ~ get(group), scales = "free", ncol = 1)
+      ggforce::facet_grid_paginate(group_2 ~ get(group), scales = "free", ncol = 1,nrow = nrRow, page = 1 )
   }
 
-  ggplot2::facet_wrap(group_2 ~ get(group), scales = "free", ncol = 1 )
+
 
   plot_Summary_samples <- plot_Summary_samples +
     #scale_x_continuous(breaks = data_Signals$DilutionPoint) +
@@ -589,15 +598,34 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
   if(printPDF %in% TRUE){
 
-    pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 4.5 * data.table::uniqueN(data_Signals_sample_summary$Batch ))}
+    pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
 
 
-  suppressWarnings(plot( plot_Summary_samples))
+    n <- ggforce::n_pages(plot_Summary_samples)
 
-  if(printPDF %in% TRUE){ dev.off()}
+    for(i in 1:n) {
+
+      if(group2 == group){
+        suppressWarnings(print(plot_Summary_samples + ggforce::facet_grid_paginate(. ~ get(group) ,
+                                                                             scales = "free", ncol = 1,nrow = nrRow, page = i )))
+      } else {
+        suppressWarnings( print(plot_Summary_samples + ggforce::facet_grid_paginate(group_2 ~ get(group),
+                                                                              scales = "free", ncol = 1,nrow = nrRow, page = i )))
+
+      }
+      print(paste0(i, " of ", n))
+
+
+
+    }
+
+    dev.off()
+
+  }
+
+
 
   return(  suppressWarnings(plot( plot_Summary_samples)))
-
 
 
 }
