@@ -57,9 +57,9 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 #' @examples
 plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#inputData_Blank,
                      nrFeature = 50,
-                     signal_blank_ratio = parent.frame()$NOISE,
+                     signal_blank_ratio = 5,
                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
-                    outputfileName = c("Calibrationplot"), TRANSFORM_Y = parent.frame()$TRANSFORM_Y, inverse_y = parent.frame()$INVERSE_Y,
+                    outputfileName = c("Calibrationplot"), TRANSFORM_Y = "log", inverse_y = "exp",
                     COLNAMES, Xcol, Ycol, Series = "QC dilution Curves", output_dir ){
 
   assertthat::not_empty(inputData_Series)
@@ -78,10 +78,12 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   if(!is.null(inputData_BioSamples)){
     data.table::setDT(inputData_BioSamples)
     inputData_BioSamples$Sample.Type <- inputData_BioSamples[[Sample.Type]]
+    if(!is.null(TRANSFORM_Y)) inputData_BioSamples[indipendent] <- get(TRANSFORM_Y)(inputData_BioSamples[COLNAMES[["Y"]]])
   }
   if(!is.null(inputData_QC)){
     data.table::setDT(inputData_QC)
     inputData_QC$Sample.Type <- inputData_QC[[Sample.Type]]
+    if(!is.null(TRANSFORM_Y)) inputData_QC[indipendent] <- get(TRANSFORM_Y)(inputData_QC[COLNAMES[["Y"]]])
 
     }
   #data.table::setDT(inputData_Blank)

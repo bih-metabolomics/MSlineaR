@@ -1179,7 +1179,7 @@ Yorigin <- "Y"
                                                         output_dir = IMG_OUTPUT_DIR,
                                                         group = "Batch",
                                                         group2 = "Class",
-                                                        ordered = column_injectionOrder,,
+                                                        ordered = column_injectionOrder,
                                                         outputfileName = paste0(PREFIX,"_Summary_Barplot_Samples"))
 
   logr::put("summary_barplot_sample was created")
