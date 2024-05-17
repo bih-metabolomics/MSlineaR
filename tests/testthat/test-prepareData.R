@@ -1299,7 +1299,7 @@ testthat::test_that("function prepareData works", {
     get(TRANSFORM_Y.)(data$Y[9]))
 
   testthat::expect_error(prepareData(dat = data[,-1], TRANSFORM., TRANSFORM_X., TRANSFORM_Y.,  COLNAMES., TYPE.)
-    , regexp = "data need to have 11 columns, please use funtion 'checkData' before to check all necessary input arguments")
+    , regexp = "data need to have 10 columns, please use funtion 'checkData' before to check all necessary input arguments")
 
 
 

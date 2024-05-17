@@ -82,7 +82,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     if(!is.null(TRANSFORM_Y)) {
       inputData_BioSamples$Sample_area <- get(TRANSFORM_Y)(inputData_BioSamples[[COLNAMES[["Y"]]]])
     data.table::setnames(inputData_BioSamples, old = "Sample_area",new = dependent)
-    inputData_BioSamples <- unique.matrix(inputData_BioSamples, MARGIN=2)
+    inputData_BioSamples <- inputData_BioSamples |> dplyr::select(which(!duplicated(names(inputData_BioSamples))))
     }
 
   }
@@ -92,8 +92,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     if(!is.null(TRANSFORM_Y)) {
       inputData_QC$Sample_area <- get(TRANSFORM_Y)(inputData_QC[[COLNAMES[["Y"]]]])
       data.table::setnames(inputData_QC, old = "Sample_area",new = dependent)
-      inputData_QC <- unique.matrix(inputData_QC, MARGIN=2)
-      inputData_QC <-  unique.matrix(inputData_QC, MARGIN=2)
+      inputData_QC <- inputData_QC |> dplyr::select(which(!duplicated(names(inputData_QC))))
 
     }
 

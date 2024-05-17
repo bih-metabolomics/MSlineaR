@@ -895,11 +895,30 @@ Yorigin <- "Y"
 
     if(GET_LR_STATUS %in% TRUE){
       logr::put(" Associating biological samples to their respective linear ranges\n")
+
+
+      rsd_before <- SampleFeature |>
+        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
+        dplyr::summarize(.groups = "keep", rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
+        dplyr::group_by(Batch, Sample.Type) |>
+        dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
+
+
       SampleFeature  <- getLRstatus(dats = SampleFeature, datCal = processingGroup,y =  column_Y)
         #data_Sample$Status_LR <-  data.table::between(lower = data_Sample$LRStartY, x = data_Sample[, c("Area.CorrDrift")], upper = data_Sample$LREndY, NAbounds = NA)
 
       SampleFeature[groupIndices %in% conflictBatches$groupIndices,
                     ':=' (LRFlag = "notEnoughPeaksInAllBatches")]
+
+      rsd_after <- SampleFeature |>
+        dplyr::filter(Status_LR %in% TRUE) |>
+        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
+        dplyr::summarise(.groups = "keep",rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
+        dplyr::group_by(Batch, Sample.Type) |>
+        dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
+
+      logr::put(paste("Sample", ":"))
+      logr::put(dplyr::full_join(rsd_before, rsd_after, by = c("Batch","Sample.Type")))
 
 
     }
@@ -1153,7 +1172,7 @@ Yorigin <- "Y"
                               inputData_BioSamples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                               inputData_QC = SampleQC,
                               COLNAMES = COLNAMES, Xcol = Xraw, Ycol = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
-                              Series = Series, output_dir = IMG_OUTPUT_DIR,outputfileName = paste0(PREFIX,"_CalibrationPlot")
+                              Series = Series, output_dir = IMG_OUTPUT_DIR, outputfileName = paste0(PREFIX,"_CalibrationPlot")
   )
 
   logr::put("Scatterplot was created")
