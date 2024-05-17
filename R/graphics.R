@@ -532,7 +532,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   # LR_object,statusLinear = c(TRUE, FALSE),
   ID <- COLNAMES[["Feature_ID"]]
   Col_Batch <- COLNAMES[["Batch"]]
-  Sample.Type <- COLNAMES[["Sample_type"]]
+
   x <- X
   y <- Y
   SAMPLE_ID <- COLNAMES[["Sample_ID"]]
@@ -553,7 +553,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   }
 
   data_Signals_sample_summary <- inputData_Samples |>
-    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), get(Sample.Type), Class = get( ClassGroup ), PlotOrder = get(ordered), group_2 = get(group2)) |>
+    dplyr::group_by(Sample_ID = get(SAMPLE_ID), Batch = get(Col_Batch), get( COLNAMES[["Sample_type"]]), Class = get( ClassGroup ), PlotOrder = get(ordered), group_2 = get(group2)) |>
     dplyr::reframe(
       Missing = sum(is.na(y), na.rm = T),
       LR_TRUE = sum(Status_LR %in% TRUE, na.rm = T),

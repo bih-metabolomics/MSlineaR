@@ -898,9 +898,9 @@ Yorigin <- "Y"
 
 
       rsd_before <- SampleFeature |>
-        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
+        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]]), Class = get(COLNAMES[["Class"]])) |>
         dplyr::summarize(.groups = "keep", rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
-        dplyr::group_by(Batch, Sample.Type) |>
+        dplyr::group_by(Batch, Sample.Type, Class) |>
         dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
 
 
@@ -912,13 +912,13 @@ Yorigin <- "Y"
 
       rsd_after <- SampleFeature |>
         dplyr::filter(Status_LR %in% TRUE) |>
-        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
+        dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]]), Class = get(COLNAMES[["Class"]])) |>
         dplyr::summarise(.groups = "keep",rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
-        dplyr::group_by(Batch, Sample.Type) |>
+        dplyr::group_by(Batch, Sample.Type, Class) |>
         dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
 
       logr::put(paste("Sample", ":"))
-      logr::put(dplyr::full_join(rsd_before, rsd_after, by = c("Batch","Sample.Type")))
+      logr::put(dplyr::full_join(rsd_before, rsd_after, by = c("Batch","Sample.Type", "Class")))
 
 
     }
@@ -1214,7 +1214,7 @@ Yorigin <- "Y"
                                                     X = Xraw, Y = Yraw,
                                                     output_dir = IMG_OUTPUT_DIR,
                                                     group = "Batch",
-                                                    group2 = "Sample.Type",
+                                                    group2 = COLNAMES[["Sample_type"]],
                                                     ordered = column_injectionOrder,
                                                     outputfileName = paste0( PREFIX,"_Summary_Barplot_QC"))
 
