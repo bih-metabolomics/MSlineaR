@@ -58,12 +58,12 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#inputData_Blank,
                      nrFeature = 50,
                      signal_blank_ratio = 5,
-                    printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
-                    outputfileName = c("Calibrationplot"), TRANSFORM_Y = "log", inverse_y = "exp",
-                    COLNAMES, Xcol, Ycol, Series = "QC dilution Curves", output_dir ){
+                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
+                     outputfileName = c("Calibrationplot"), TRANSFORM_Y = "log", inverse_y = "exp",
+                     COLNAMES, Xcol, Ycol, Series = "QC dilution Curves", output_dir ){
 
   assertthat::not_empty(inputData_Series)
-# LR_object,statusLinear = c(TRUE, FALSE),
+  # LR_object,statusLinear = c(TRUE, FALSE),
 
   ID <-  COLNAMES[["Feature_ID"]]
   Col_Batch <-  COLNAMES[["Batch"]]
@@ -81,8 +81,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     data.table::setDT(inputData_BioSamples)
     if(!is.null(TRANSFORM_Y)) {
       inputData_BioSamples$Sample_area <- get(TRANSFORM_Y)(inputData_BioSamples[[COLNAMES[["Y"]]]])
-    data.table::setnames(inputData_BioSamples, old = "Sample_area",new = dependent)
-    inputData_BioSamples <- inputData_BioSamples |> dplyr::select(which(!duplicated(names(inputData_BioSamples))))
+      data.table::setnames(inputData_BioSamples, old = "Sample_area",new = dependent)
+      inputData_BioSamples <- inputData_BioSamples |> dplyr::select(which(!duplicated(names(inputData_BioSamples))))
     }
 
   }
@@ -96,7 +96,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     }
 
-    }
+  }
   #data.table::setDT(inputData_Blank)
 
 
@@ -116,9 +116,9 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-                     data_Signal <- dplyr::full_join(QCs, data_Signal, by = "Sample.Type")
+    data_Signal <- dplyr::full_join(QCs, data_Signal, by = "Sample.Type")
 
-    }
+  }
 
   data.table::setorderv(data_Signal, ID)
   data.table::setDT(data_Signal)
@@ -126,8 +126,13 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   if(any(GroupIndices != "all" & GroupIndices != "")) data_Signal <- data_Signal[groupIndices %in% GroupIndices]
   if(any(Feature != "all" & Feature != "")) data_Signal <- data_Signal[get(ID) %in% Feature]
   if(any(Feature %in% "all") & any(GroupIndices %in% "all") & data.table::uniqueN(data_Signal[[ID]]) > nrFeature){
-    randomIDs <- sample(unique(data_Signal[[ID]]), nrFeature, replace = F)
-    data_Signal <- data_Signal[ID %in% randomIDs]
+
+    if(unique(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]) > nrFeature/2) {
+      randomIDsTRUE <- sample(unique(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]), nrFeature/2, replace = F)
+      randomIDs2 <- sample(setdiff(unique(data_Signal[[ID]]), randomIDsTRUE), nrFeature/2, replace = F)
+      randomIds <- c(randomIDsTRUE, randomIDs2)
+      data_Signal <- data_Signal[ID %in% randomIDs]
+    }
   }
 
 
@@ -135,278 +140,278 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-  nrRow <- ifelse(data.table::uniqueN(data_Signal$Batch) <=2, 10, 5)
-  nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
-  #npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
+    nrRow <- ifelse(data.table::uniqueN(data_Signal$Batch) <=2, 10, 5)
+    nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
+    #npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
 
 
 
     data_Signals <- data_Signal |> dplyr::arrange(groupIndices)#[groupIndices %in% 1, ]#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
 
-  plotlinearData <-
-    ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(dependent)), shape = Sample.Type) +
-    ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type])),colour = "black")
+    plotlinearData <-
+      ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(dependent)), shape = Sample.Type) +
+      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type])),colour = "black")
 
-  if("signalBlankRatio" %in% colnames(data_Signals)){
-    plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) &
-                                          signalBlankRatio %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
-}
-  if("OutlierFOD" %in% colnames(data_Signals)){
-    plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "red")
-  }
+    if("signalBlankRatio" %in% colnames(data_Signals)){
+      plotlinearData <-  plotlinearData +
+        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) &
+                                            signalBlankRatio %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
+    }
+    if("OutlierFOD" %in% colnames(data_Signals)){
+      plotlinearData <-  plotlinearData +
+        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "red")
+    }
 
-  if("trim" %in% colnames(data_Signals)){
-    plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trim %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
-  }
+    if("trim" %in% colnames(data_Signals)){
+      plotlinearData <-  plotlinearData +
+        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trim %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
+    }
 
-  if("OutlierSOD" %in% colnames(data_Signals)){
-    plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierSOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "red")
-  }
+    if("OutlierSOD" %in% colnames(data_Signals)){
+      plotlinearData <-  plotlinearData +
+        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierSOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "red")
+    }
 
-  if("trimPos" %in% colnames(data_Signals)){
-    plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
-  }
+    if("trimPos" %in% colnames(data_Signals)){
+      plotlinearData <-  plotlinearData +
+        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
+    }
 
-  if("IsLinear" %in% colnames(data_Signals)){
+    if("IsLinear" %in% colnames(data_Signals)){
 
       Xinterstart = data_Signals[[indipendent]][data_Signals$LRStart ]
       Xinterend = data_Signals[[indipendent]][data_Signals$LREnd ]
 
 
-    if(!is.null(TRANSFORM_Y)){
-      Yinterstart = get(TRANSFORM_Y)(data_Signals$LRStartY)
-      Yinterend = get(TRANSFORM_Y)(data_Signals$LREndY)
-    } else{
-      Yinterstart =  data_Signals$LRStartY
-      Yinterend = data_Signals$LREndY
-    }
+      if(!is.null(TRANSFORM_Y)){
+        Yinterstart = get(TRANSFORM_Y)(data_Signals$LRStartY)
+        Yinterend = get(TRANSFORM_Y)(data_Signals$LREndY)
+      } else{
+        Yinterstart =  data_Signals$LRStartY
+        Yinterend = data_Signals$LREndY
+      }
 
 
-    plotlinearData <-  plotlinearData +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),
-                          ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "seagreen") +
-      ggplot2::geom_line(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),
-                         ggplot2::aes(x = get(indipendent), y = abline), col = "orange", na.rm = TRUE) +
-      ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
-      ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
-      ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
-      ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE)
-
-  }
-
-  plotlinearData <-  plotlinearData +
-    ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-    ggplot2::geom_vline(ggplot2::aes( xintercept = -1, color = "darkgrey"), linetype = "solid", col = "black", na.rm = TRUE)
-
-# if(!is.null(inputData_BioSamples) | !is.null(inputData_QC)| !is.null(inputData_QCref) | !is.null(inputData_Blank)){
-#   nrQC <- sum(!is.null(inputData_BioSamples),!is.null(inputData_QC),!is.null(inputData_QCref), !is.null(inputData_Blank))
-#
-# }
-
-legend_order <- c()
-
-  if(!is.null(inputData_BioSamples )){
-    plotlinearData <-  plotlinearData +
-      #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
-                          ggplot2::aes( x = -2, y = get(dependent),  shape = Sample.Type, colour = get(ClassCol)), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
-    legend_order <- c(unique(inputData_BioSamples$Sample.Type))
-  }
-#ifelse(!is.na(Class),get(Class), "black")
-
-if(!is.null(inputData_QC )){
-  legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
-
-  plotlinearData <-  plotlinearData +
-    ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
-                        ggplot2::aes( x = x, y = get(dependent),  shape = as.factor(Sample.Type),
-                                      color = get(ClassCol)), size = 2, na.rm = TRUE) +
-    ggplot2::scale_shape_manual(values = 1: (nlevels(as.factor(QCs$Sample.Type)) +1), breaks=rev(legend_order))
-
-    #+, shape = 5
-
-  }
-
-
-if(!is.null(TRANSFORM_Y)){
-  plotlinearData <- plotlinearData +
-    ggplot2:: scale_y_continuous(name = "Area", labels = function(l) {trans = scales::scientific(get(inverse_y)(l)); paste0(TRANSFORM_Y,"(", trans, ")")})#{paste0(TRANSFORM_Y,"(", scales::scientific(get(inverse_y)(l), ")"))})
-                                 #labels = scales::trans_format(get(inverse_y)),
-                                 #limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
-   if("signalBlankRatio" %in% colnames(data_Signals)){
-
-   plotlinearData <- plotlinearData +
-     ggplot2::geom_hline(ggplot2::aes(yintercept = get(TRANSFORM_Y)(medBlank*signal_blank_ratio)), color = "grey", linewidth = 0.5)
-  #   ggplot2::geom_hline(yintercept = get(TRANSFORM_Y)(unique(na.omit(data_Signals$medBlank))*signal_blank_ratio), color = "black") +
-  #   ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = get(TRANSFORM_Y)(data_Signals$medBlank*signal_blank_ratio)+0.2,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
-   }
-
-} else{
-
-  plotlinearData <- plotlinearData +
-    ggplot2:: scale_y_continuous(name = "Area", labels = scales::scientific_format())
-
-  if("signalBlankRatio" %in% colnames(data_Signals)){
-
-    plotlinearData <- plotlinearData +
-      ggplot2::geom_hline(ggplot2::aes(yintercept = medBlank*signal_blank_ratio), color = "grey", linewidth = 0.5)
-    #   ggplot2::geom_hline(yintercept = get(TRANSFORM_Y)(unique(na.omit(data_Signals$medBlank))*signal_blank_ratio), color = "black") +
-    #   ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = get(TRANSFORM_Y)(data_Signals$medBlank*signal_blank_ratio)+0.2,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
-  }
-
-  # if("signalBlankRatio" %in% colnames(data_Signals)){
-  #
-  #   plotlinearData <- plotlinearData +
-  #     ggplot2::geom_hline(yintercept = unique(na.omit(data_Signals$medBlank))*signal_blank_ratio, color = "black") +
-  #     ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = data_Signals$medBlank*signal_blank_ratio+200,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
-
-
-
-  }
-
-
-
-
-  if(length(GroupIndices) > 1 | any(GroupIndices %in% "all") | length(Feature) > 1 | any(Feature %in% "all" )){
-
-    if(data.table::uniqueN(data_Signals[[Col_Batch]]) > 1){
-    plotlinearData <-  plotlinearData +
-      ggforce::facet_grid_paginate(ID ~ Batch ,
-                                   scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
-    } else {
       plotlinearData <-  plotlinearData +
-        ggforce::facet_grid_paginate(as.character(ID) ~. ,
-                                     scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
+        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),
+                            ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "seagreen") +
+        ggplot2::geom_line(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),
+                           ggplot2::aes(x = get(indipendent), y = abline), col = "orange", na.rm = TRUE) +
+        ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
+        ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
+        ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
+        ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE)
+
     }
+
+    plotlinearData <-  plotlinearData +
+      ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
+      ggplot2::geom_vline(ggplot2::aes( xintercept = -1, color = "darkgrey"), linetype = "solid", col = "black", na.rm = TRUE)
+
+    # if(!is.null(inputData_BioSamples) | !is.null(inputData_QC)| !is.null(inputData_QCref) | !is.null(inputData_Blank)){
+    #   nrQC <- sum(!is.null(inputData_BioSamples),!is.null(inputData_QC),!is.null(inputData_QCref), !is.null(inputData_Blank))
+    #
+    # }
+
+    legend_order <- c()
+
+    if(!is.null(inputData_BioSamples )){
+      plotlinearData <-  plotlinearData +
+        #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
+        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
+                            ggplot2::aes( x = -2, y = get(dependent),  shape = Sample.Type, colour = get(ClassCol)), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
+      legend_order <- c(unique(inputData_BioSamples$Sample.Type))
+    }
+    #ifelse(!is.na(Class),get(Class), "black")
+
+    if(!is.null(inputData_QC )){
+      legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
+
+      plotlinearData <-  plotlinearData +
+        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
+                            ggplot2::aes( x = x, y = get(dependent),  shape = as.factor(Sample.Type),
+                                          color = get(ClassCol)), size = 2, na.rm = TRUE) +
+        ggplot2::scale_shape_manual(values = 1: (nlevels(as.factor(QCs$Sample.Type)) +1), breaks=rev(legend_order))
+
+      #+, shape = 5
+
     }
 
 
-if("signalBlankRatio" %in% colnames(data_Signals)){
+    if(!is.null(TRANSFORM_Y)){
+      plotlinearData <- plotlinearData +
+        ggplot2:: scale_y_continuous(name = "Area", labels = function(l) {trans = scales::scientific(get(inverse_y)(l)); paste0(TRANSFORM_Y,"(", trans, ")")})#{paste0(TRANSFORM_Y,"(", scales::scientific(get(inverse_y)(l), ")"))})
+      #labels = scales::trans_format(get(inverse_y)),
+      #limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
+      if("signalBlankRatio" %in% colnames(data_Signals)){
 
-  blankmedian <- data.frame(
-    data_Signals |> dplyr::select(groupIndices, ID, Batch) |> unique()
-  )
+        plotlinearData <- plotlinearData +
+          ggplot2::geom_hline(ggplot2::aes(yintercept = get(TRANSFORM_Y)(medBlank*signal_blank_ratio)), color = "grey", linewidth = 0.5)
+        #   ggplot2::geom_hline(yintercept = get(TRANSFORM_Y)(unique(na.omit(data_Signals$medBlank))*signal_blank_ratio), color = "black") +
+        #   ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = get(TRANSFORM_Y)(data_Signals$medBlank*signal_blank_ratio)+0.2,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
+      }
+
+    } else{
+
+      plotlinearData <- plotlinearData +
+        ggplot2:: scale_y_continuous(name = "Area", labels = scales::scientific_format())
+
+      if("signalBlankRatio" %in% colnames(data_Signals)){
+
+        plotlinearData <- plotlinearData +
+          ggplot2::geom_hline(ggplot2::aes(yintercept = medBlank*signal_blank_ratio), color = "grey", linewidth = 0.5)
+        #   ggplot2::geom_hline(yintercept = get(TRANSFORM_Y)(unique(na.omit(data_Signals$medBlank))*signal_blank_ratio), color = "black") +
+        #   ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = get(TRANSFORM_Y)(data_Signals$medBlank*signal_blank_ratio)+0.2,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
+      }
+
+      # if("signalBlankRatio" %in% colnames(data_Signals)){
+      #
+      #   plotlinearData <- plotlinearData +
+      #     ggplot2::geom_hline(yintercept = unique(na.omit(data_Signals$medBlank))*signal_blank_ratio, color = "black") +
+      #     ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = data_Signals$medBlank*signal_blank_ratio+200,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
 
 
-    blankmedian$label <- paste(signal_blank_ratio," x median blank")
-    blankmedian$xtext <- data_Signals |>
-      dplyr::group_by(groupIndices) |>
-      dplyr::reframe(.groups = "drop", xblank = max(get(indipendent), na.rm = T)/2 + 2) |>
-      dplyr::select(xblank) |>
-      unlist(use.names = F)
-    blankmedian <- data_Signals |>
-      dplyr::group_by(groupIndices) |>
-      dplyr::reframe(.groups = "drop",ytext = na.omit(medBlank*signal_blank_ratio)) |>
-      unique() |>
-      dplyr::ungroup() |>
-      dplyr::right_join(blankmedian, by = "groupIndices")
+
+    }
+
+
+
+
+    if(length(GroupIndices) > 1 | any(GroupIndices %in% "all") | length(Feature) > 1 | any(Feature %in% "all" )){
+
+      if(data.table::uniqueN(data_Signals[[Col_Batch]]) > 1){
+        plotlinearData <-  plotlinearData +
+          ggforce::facet_grid_paginate(ID ~ Batch ,
+                                       scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
+      } else {
+        plotlinearData <-  plotlinearData +
+          ggforce::facet_grid_paginate(as.character(ID) ~. ,
+                                       scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
+      }
+    }
+
+
+    if("signalBlankRatio" %in% colnames(data_Signals)){
+
+      blankmedian <- data.frame(
+        data_Signals |> dplyr::select(groupIndices, ID, Batch) |> unique()
+      )
+
+
+      blankmedian$label <- paste(signal_blank_ratio," x median blank")
+      blankmedian$xtext <- data_Signals |>
+        dplyr::group_by(groupIndices) |>
+        dplyr::reframe(.groups = "drop", xblank = max(get(indipendent), na.rm = T)/2 + 2) |>
+        dplyr::select(xblank) |>
+        unlist(use.names = F)
+      blankmedian <- data_Signals |>
+        dplyr::group_by(groupIndices) |>
+        dplyr::reframe(.groups = "drop",ytext = na.omit(medBlank*signal_blank_ratio)) |>
+        unique() |>
+        dplyr::ungroup() |>
+        dplyr::right_join(blankmedian, by = "groupIndices")
       #dplyr::select(yblank) |>
       #unlist(use.names = F)
 
 
-    if(!is.null(TRANSFORM_Y)){
+      if(!is.null(TRANSFORM_Y)){
 
-  plotlinearData <- plotlinearData +
+        plotlinearData <- plotlinearData +
 
-    ggplot2::geom_text(data = blankmedian, mapping = ggplot2::aes(x = xtext, y = get(TRANSFORM_Y)(ytext) + 0.5, label = label),size = 2) #+
-    } else{
-      ggplot2::geom_text(data = blankmedian, mapping = ggplot2::aes(x = xtext, y = ytext + 50, label = label),size = 2) #+
-}
-
-
-}
+          ggplot2::geom_text(data = blankmedian, mapping = ggplot2::aes(x = xtext, y = get(TRANSFORM_Y)(ytext) + 0.5, label = label),size = 2) #+
+      } else{
+        ggplot2::geom_text(data = blankmedian, mapping = ggplot2::aes(x = xtext, y = ytext + 50, label = label),size = 2) #+
+      }
 
 
-
-  if(printR2 %in% TRUE & any(!is.na(data_Signals$R2))) {
-
-    text_label <- data_Signals[IsLinear %in% TRUE, .(ID, Batch, R2, y = get(dependent))]
-    text_label <- text_label |> dplyr::group_by(ID, Batch) |>
-      dplyr::mutate(R2 = ifelse(any(!is.na(R2)), R2[!is.na(R2)] , NA),
-                    max_y = max(y, na.rm = T)) |>
-      dplyr::select(-y) |>
-      unique()
-
-
-
-
-    plotlinearData <- plotlinearData +
-      ggplot2::geom_text(data = text_label,
-                         #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
-                         ggplot2::aes(x = 0, y = max_y + 5, label = paste(Series,": R2 = ", round(R2,4))),
-                         size = 3,
-                         hjust = -0.1,
-                         vjust = 2,
-                         #inherit.aes = FALSE
-      )
-
-
-  }
-
-
-
-
-
-  if(!is.null(inputData_BioSamples ) | !is.null(inputData_QC )){
-
-  plotlinearData <-  plotlinearData +
-    ggplot2::annotate(geom = "text", x = -3.5, y = Inf, label = "QC & Samples", size = 3,vjust = 2, na.rm = TRUE) #+
-    #ggplot2::scale_color_manual(name = "In linear Range:",
-    #                   values = c("FALSE" = "red", "TRUE" = "purple")) +
-    #ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3,4,7,8), breaks=rev(legend_order))
     }
 
-  plotlinearData <-  plotlinearData +
-    ggplot2::theme_bw() +
-    ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
-    ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
-    ggplot2::theme(panel.background=ggplot2::element_blank()) +
-    ggplot2::theme(axis.line=ggplot2::element_line()) +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
-    ggplot2::theme(legend.position="top") +
-    ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
-           shape = ggplot2::guide_legend(order = 2))
 
 
-  if(printPDF %in% TRUE){
+    if(printR2 %in% TRUE & any(!is.na(data_Signals$R2))) {
 
-    #plotObj <- vector("list", npage)
-    if(data.table::uniqueN(data_Signal$Batch) <= 2){
-      pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 9, height = 15)
-      nrRow = 10
-    }else {
-      pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
-      nrRow = 5
+      text_label <- data_Signals[IsLinear %in% TRUE, .(ID, Batch, R2, y = get(dependent))]
+      text_label <- text_label |> dplyr::group_by(ID, Batch) |>
+        dplyr::mutate(R2 = ifelse(any(!is.na(R2)), R2[!is.na(R2)] , NA),
+                      max_y = max(y, na.rm = T)) |>
+        dplyr::select(-y) |>
+        unique()
+
+
+
+
+      plotlinearData <- plotlinearData +
+        ggplot2::geom_text(data = text_label,
+                           #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
+                           ggplot2::aes(x = 0, y = max_y + 5, label = paste(Series,": R2 = ", round(R2,4))),
+                           size = 3,
+                           hjust = -0.1,
+                           vjust = 2,
+                           #inherit.aes = FALSE
+        )
+
+
     }
 
-    n <- ggforce::n_pages(plotlinearData)
 
-    for(i in 1:n) {
 
-      if(data.table::uniqueN(data_Signal$Batch) > 1){
-        suppressWarnings(print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
-                                                          scales = "free", ncol = nCol,nrow = nrRow, page = i )))
-      } else {
-        suppressWarnings( print(plotlinearData + ggforce::facet_grid_paginate(ID ~.,
-                                                            scales = "free", ncol = nCol,nrow = nrRow, page = i )))
+
+
+    if(!is.null(inputData_BioSamples ) | !is.null(inputData_QC )){
+
+      plotlinearData <-  plotlinearData +
+        ggplot2::annotate(geom = "text", x = -3.5, y = Inf, label = "QC & Samples", size = 3,vjust = 2, na.rm = TRUE) #+
+      #ggplot2::scale_color_manual(name = "In linear Range:",
+      #                   values = c("FALSE" = "red", "TRUE" = "purple")) +
+      #ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3,4,7,8), breaks=rev(legend_order))
+    }
+
+    plotlinearData <-  plotlinearData +
+      ggplot2::theme_bw() +
+      ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
+      ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
+      ggplot2::theme(panel.background=ggplot2::element_blank()) +
+      ggplot2::theme(axis.line=ggplot2::element_line()) +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
+      ggplot2::theme(legend.position="top") +
+      ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
+                      shape = ggplot2::guide_legend(order = 2))
+
+
+    if(printPDF %in% TRUE){
+
+      #plotObj <- vector("list", npage)
+      if(data.table::uniqueN(data_Signal$Batch) <= 2){
+        pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 9, height = 15)
+        nrRow = 10
+      }else {
+        pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
+        nrRow = 5
+      }
+
+      n <- ggforce::n_pages(plotlinearData)
+
+      for(i in 1:n) {
+
+        if(data.table::uniqueN(data_Signal$Batch) > 1){
+          suppressWarnings(print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
+                                                                               scales = "free", ncol = nCol,nrow = nrRow, page = i )))
+        } else {
+          suppressWarnings( print(plotlinearData + ggforce::facet_grid_paginate(ID ~.,
+                                                                                scales = "free", ncol = nCol,nrow = nrRow, page = i )))
+
+        }
+        print(paste0(i, " of ", n))
+
+
 
       }
-      print(paste0(i, " of ", n))
 
-
-
-  }
-
-    dev.off()
+      dev.off()
 
     }
 
-  return(suppressWarnings(print(plotlinearData)))
+    return(suppressWarnings(print(plotlinearData)))
   }
 
 
