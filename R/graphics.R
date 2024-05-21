@@ -118,7 +118,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     data_Signal <- dplyr::full_join(QCs, data_Signal, by = "Sample.Type")
 
-  }
+  } else {data_Signal$x = 0}
 
   data.table::setorderv(data_Signal, ID)
   data.table::setDT(data_Signal)
@@ -127,7 +127,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   if(any(Feature != "all" & Feature != "")) data_Signal <- data_Signal[get(ID) %in% Feature]
   if(any(Feature %in% "all") & any(GroupIndices %in% "all") & data.table::uniqueN(data_Signal[[ID]]) > nrFeature){
 
-    if(unique(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]) > nrFeature/2) {
+    if(data.table::uniqueN(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]) > nrFeature/2) {
       randomIDsTRUE <- sample(unique(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]), nrFeature/2, replace = F)
       randomIDs2 <- sample(setdiff(unique(data_Signal[[ID]]), randomIDsTRUE), nrFeature/2, replace = F)
       randomIds <- c(randomIDsTRUE, randomIDs2)
