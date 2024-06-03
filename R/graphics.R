@@ -132,7 +132,15 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       randomIDs2 <- sample(setdiff(unique(data_Signal[[ID]]), randomIDsTRUE), nrFeature/2, replace = F)
       randomIDs <- c(randomIDsTRUE, randomIDs2)
       data_Signal <- data_Signal[ID %in% randomIDs]
+    } else if(data.table::uniqueN(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]) < nrFeature/2){
+      randomIDsTRUE <- unique(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE])
+      randomIDs2 <- sample(setdiff(unique(data_Signal[[ID]]), randomIDsTRUE), nrFeature -length(randomIDsTRUE), replace = F)
+      randomIDs <- c(randomIDsTRUE, randomIDs2)
+      data_Signal <- data_Signal[ID %in% randomIDs]
     }
+  }else if(any(Feature %in% "all") & any(GroupIndices %in% "all") & data.table::uniqueN(data_Signal[[ID]]) <= nrFeature){
+    nrFeature = data.table::uniqueN(data_Signal[[ID]])
+
   }
 
 
