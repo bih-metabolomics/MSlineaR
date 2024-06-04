@@ -70,6 +70,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   indipendent <- Xcol
   dependent <- Ycol
   ClassCol <- COLNAMES[["Class"]]
+  Sample.Type <- COLNAMES[["Sample_type"]]
 
   data.table::setDT(inputData_Series)
   inputData_Series$Sample.Type <- inputData_Series[[Sample.Type]]
