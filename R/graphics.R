@@ -67,7 +67,6 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
   ID <-  COLNAMES[["Feature_ID"]]
   Col_Batch <-  COLNAMES[["Batch"]]
-  Sample.Type <- COLNAMES[["Sample_type"]]
   indipendent <- Xcol
   dependent <- Ycol
   ClassCol <- COLNAMES[["Class"]]
@@ -540,7 +539,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   # LR_object,statusLinear = c(TRUE, FALSE),
   ID <- COLNAMES[["Feature_ID"]]
   Col_Batch <- COLNAMES[["Batch"]]
-
+  Sample.Type <- COLNAMES[["Sample_type"]]
   x <- X
   y <- Y
   SAMPLE_ID <- COLNAMES[["Sample_ID"]]
