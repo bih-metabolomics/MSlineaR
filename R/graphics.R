@@ -561,11 +561,11 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
   }
 
   inputData_Samples$ID = inputData_Samples[[ID]]
-  inputData_Samples$Batch = inputData_Samplesl[[Col_Batch]]
+  inputData_Samples$Batch = inputData_Samples[[Col_Batch]]
   inputData_Samples$Sample.Type = inputData_Samples[[Sample.Type]]
-  inputData_Samples$Batch = inputData_Samplesl[[Col_Batch]]
+  inputData_Samples$Batch = inputData_Samples[[Col_Batch]]
   inputData_Samples$Class = inputData_Samples[[ClassGroup]]
-  inputData_Samples$Sample_ID = inputData_Samplesl[[SAMPLE_ID]]
+  inputData_Samples$Sample_ID = inputData_Samples[[SAMPLE_ID]]
 
 
   data_Signals_sample_summary <- inputData_Samples |>
