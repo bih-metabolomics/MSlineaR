@@ -475,7 +475,7 @@ Yorigin <- "Y"
 
     dataFOD <- my_fcn(
       nCORE,
-      xs = 1,#: data.table::uniqueN(processingFeature$groupIndices),
+      xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
       x = X,
       y = Y,
