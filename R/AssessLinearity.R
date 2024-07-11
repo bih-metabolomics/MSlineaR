@@ -475,7 +475,7 @@ Yorigin <- "Y"
 
     dataFOD <- my_fcn(
       nCORE,
-      xs = 1: data.table::uniqueN(processingFeature$groupIndices),
+      xs = 1,#: data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
       x = X,
       y = Y,
@@ -658,69 +658,69 @@ Yorigin <- "Y"
   }
 
   #### positive association ####
-{
-  logr::sep("Check if data curves have a positive slope")
-    # rlang::inform("
-    #               --------------------------------------------------------
-    #               \tCheck if data curves have a positive slope
-    #               --------------------------------------------------------\n")
-  processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE, groupIndices]]
-
-
-  #sink()
-    startTime = Sys.time()
-    #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
-    dataTrimPos <- my_fcn(
-      #cl,
-      nCORE,
-      xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
-      inputData = processingFeature,
-      func = trim_pos_associated,
-      x = X,
-      y = Y,
-      MIN_Feature = MIN_FEATURE
-    ) |>
-      plyr::ldply(.id = NULL)
-
-    #closeAllConnections()
-
-    #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "output")
-    #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "message")
-
-    logr::put(paste("TrimmPos: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
-
-    Y = "Y_trimPos"
-
-    processingFeature <- data.table::data.table(dplyr::full_join(dataTrimPos,
-                                                                 processingFeature[!IDintern %in% dataTrimPos$IDintern],
-                                                                 by = colnames(processingFeature)))
-    processingGroup <- dplyr::full_join(processingGroup,
-                                        unique(data.table::copy(processingFeature)[,'trimPos' :=any(trimPos %in% TRUE),groupIndices][,.(groupIndices, trimPos)]),
-                                        by = "groupIndices")
-
-    TrimPosGroups <- data.table::uniqueN(dataTrimPos |> dplyr::filter(trimPos %in% TRUE) %>% dplyr::select(groupIndices))
-    TrimPosFeatures <- data.table::uniqueN(dataTrimPos |> dplyr::filter(trimPos %in% TRUE) |> dplyr::select(IDintern))
-
-
-    countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
-    processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern], by = colnames(processingFeature))
-    processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "Feature_ID", "Batch"))
-
-    logr::put(paste0("In total ", TrimPosFeatures," ",  Signals," in ", TrimPosGroups, " ",Series," were removed."))
-
-    # check length of points
-    checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
-    processingFeature <- checkData[[1]]
-    cutoffNew <- checkData [[2]]
-
-    cutoff <- dplyr::full_join(cutoff, cutoffNew, by = colnames(cutoff))
-
-    step = step + 1
-    # assert_that(n_distinct(dataTrim$groupIndices) == n_distinct(processing$groupIndices))
-
-
-
-}
+# {
+#   logr::sep("Check if data curves have a positive slope")
+#     # rlang::inform("
+#     #               --------------------------------------------------------
+#     #               \tCheck if data curves have a positive slope
+#     #               --------------------------------------------------------\n")
+#   processingFeature <- processingFeature[groupIndices %in% processingGroup[get(paste0("enoughPeaks_", step-1)) %in% TRUE, groupIndices]]
+#
+#
+#   #sink()
+#     startTime = Sys.time()
+#     #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+#     dataTrimPos <- my_fcn(
+#       #cl,
+#       nCORE,
+#       xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
+#       inputData = processingFeature,
+#       func = trim_pos_associated,
+#       x = X,
+#       y = Y,
+#       MIN_Feature = MIN_FEATURE
+#     ) |>
+#       plyr::ldply(.id = NULL)
+#
+#     #closeAllConnections()
+#
+#     #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "output")
+#     #sink(paste0(OUTPUT_DIR,"/my_log.txt"), append = TRUE, type = "message")
+#
+#     logr::put(paste("TrimmPos: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
+#
+#     Y = "Y_trimPos"
+#
+#     processingFeature <- data.table::data.table(dplyr::full_join(dataTrimPos,
+#                                                                  processingFeature[!IDintern %in% dataTrimPos$IDintern],
+#                                                                  by = colnames(processingFeature)))
+#     processingGroup <- dplyr::full_join(processingGroup,
+#                                         unique(data.table::copy(processingFeature)[,'trimPos' :=any(trimPos %in% TRUE),groupIndices][,.(groupIndices, trimPos)]),
+#                                         by = "groupIndices")
+#
+#     TrimPosGroups <- data.table::uniqueN(dataTrimPos |> dplyr::filter(trimPos %in% TRUE) %>% dplyr::select(groupIndices))
+#     TrimPosFeatures <- data.table::uniqueN(dataTrimPos |> dplyr::filter(trimPos %in% TRUE) |> dplyr::select(IDintern))
+#
+#
+#     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
+#     processingFeature <- dplyr::full_join(countList[[1]], processingFeature[!IDintern %in% countList[[1]]$IDintern], by = colnames(processingFeature))
+#     processingGroup <- dplyr::full_join(processingGroup, countList[[2]], by = c("groupIndices", "Feature_ID", "Batch"))
+#
+#     logr::put(paste0("In total ", TrimPosFeatures," ",  Signals," in ", TrimPosGroups, " ",Series," were removed."))
+#
+#     # check length of points
+#     checkData <- checkLength(step, processingGroup, processingFeature, Compounds, Dilutions, Series, Signals, MIN_FEATURE)
+#     processingFeature <- checkData[[1]]
+#     cutoffNew <- checkData [[2]]
+#
+#     cutoff <- dplyr::full_join(cutoff, cutoffNew, by = colnames(cutoff))
+#
+#     step = step + 1
+#     # assert_that(n_distinct(dataTrim$groupIndices) == n_distinct(processing$groupIndices))
+#
+#
+#
+# }
 
 
 

@@ -53,7 +53,7 @@ if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- 
   #cook <- cooks.distance(linearRange)
   #cookref <- dat$DilutionPoint[which(cook > 1)]
 
-  lr <- abs(std_residuals) < ceiling(sd_residuals*10)/10 &  (slopes > refslopemin & slopes < refslopemax)
+  lr <- abs(std_residuals) < ceiling(sd_residuals*10)/10 #&  (slopes > refslopemin & slopes < refslopemax)
 
   #lr <- !(abs(std_residuals) >= ceiling(sd_residuals*10)/10 & dat$DilutionPoint %in% cookref)
 
