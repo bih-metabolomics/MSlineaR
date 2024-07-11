@@ -463,17 +463,17 @@ plot_Barplot_Summary <- function(inputData_Series,
               OutlierFOD = sum(OutlierFOD, na.rm = T),
               Trim = sum(trim %in% TRUE, na.rm = T),
               OutlierSOD = sum(OutlierSOD, na.rm = T),
-              Slope = sum(trimPos %in% TRUE, na.rm = T),
+              #Slope = sum(trimPos %in% TRUE, na.rm = T),
               LR_TRUE = sum(IsLinear %in% TRUE, na.rm = T),
               LR_FALSE = sum(IsLinear %in% FALSE, na.rm = T)
               ) |>
     dplyr::group_by(DilutionPoint, Batch = get(Col_Batch)) |>
-    dplyr::mutate(min_Feature = data.table::uniqueN(inputData_Series[[ID]]) - sum(Missing, Blank, OutlierFOD, Trim, OutlierSOD, Slope, LR_TRUE, LR_FALSE)) |>
+    dplyr::mutate(min_Feature = data.table::uniqueN(inputData_Series[[ID]]) - sum(Missing, Blank, OutlierFOD, Trim, OutlierSOD,  LR_TRUE, LR_FALSE)) |> #Slope,
     tidyr::pivot_longer(names_to = "Type",values_to =  "count" ,cols = -c(1:2))
 
 
 
-  data_Signals_summary$Type <- factor(data_Signals_summary$Type, levels = rev(c("LR_TRUE", "LR_FALSE", "Slope", "OutlierSOD", "Trim", "OutlierFOD", "Blank", "Missing", "min_Feature")))
+  data_Signals_summary$Type <- factor(data_Signals_summary$Type, levels = rev(c("LR_TRUE", "LR_FALSE", "OutlierSOD", "Trim", "OutlierFOD", "Blank", "Missing", "min_Feature"))) #"Slope",
   data_Signals_summary <- data_Signals_summary |> dplyr::filter(count > 0)
 
 
