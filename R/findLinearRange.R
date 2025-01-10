@@ -34,7 +34,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   #we = NULL
 
 
-  linearRange <- lm(dat[[y]] ~ dat[[x]], weights = we)
+  linearRange <- lm(dat[[y]] ~ dat[[x]])#, weights = we)
   ablineIntensity <- fitted(linearRange)
 
   ###use residuals
@@ -53,7 +53,8 @@ if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- 
   #cook <- cooks.distance(linearRange)
   #cookref <- dat$DilutionPoint[which(cook > 1)]
 
-  lr <- abs(std_residuals) < ceiling(sd_residuals*10)/10 #&  (slopes > refslopemin & slopes < refslopemax)
+  lr <- abs(std_residuals) < ceiling(sd_residuals*10)/10 
+  # &  (slopes > refslopemin & slopes < refslopemax)
 
   #lr <- !(abs(std_residuals) >= ceiling(sd_residuals*10)/10 & dat$DilutionPoint %in% cookref)
 
@@ -164,25 +165,24 @@ if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- 
 
         } else{
 
-          dat$IsLinear = FALSE
+          dat$IsLinear = dat$IsLinear
           dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
           dat$color[dat$IsLinear %in% FALSE] <- "black"
-          dat$R2 <- NA
-          dat$abline <- NA
+          dat$R2 <- dat$R2
+          dat$abline <-dat$abline
 
-          tmpGroup$linear = FALSE
-          tmpGroup$LRStart = NA
-          tmpGroup$LRStartY = NA
-          tmpGroup$LRStartX =  NA
-          tmpGroup$LREnd = NA
-          tmpGroup$LREndY = NA
-          tmpGroup$LREndX = NA
-          tmpGroup$LRLength = NA
-          tmpGroup$enoughPointsWithinLR = NA
-          tmpGroup$LRFlag = NA
-          tmpGroup$Intercept <- NA
-          tmpGroup$slope <- NA
-          tmpGroup$R2 <- NA
+        tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
+        tmpGroup$LRStartY = dat$Y[dat$IsLinear %in% TRUE][1]
+        tmpGroup$LRStartX =  dat[[real_x]][dat$IsLinear %in% TRUE][1]
+        tmpGroup$LREnd = data.table::last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
+        tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
+        tmpGroup$LREndX = data.table::last(dat[[real_x]][dat$IsLinear %in% TRUE])
+        tmpGroup$LRLength = sum(dat$IsLinear)
+        tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= min_feature
+        tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
+        tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
+        tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
+        tmpGroup$LRFlag = "min 1 signal has negative slope"
       }}
 
       } else{
