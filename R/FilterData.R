@@ -39,7 +39,7 @@ MS_filterSamples <- function(
   #data.table::setDT(inputDataSummary)
 
   dat <- data.table::copy(inputData)
-  dat <- dat[!grep("notEnough", LRFlag)]
+  #dat <- dat[!grep("notEnough", LRFlag)]
 
 
   #datSummary <- data.table::copy(inputDataSummary)
@@ -87,6 +87,36 @@ MS_filterSamples <- function(
                        'LR_Status' = vctrs::vec_count(Status_LR)$key,
                        'LR_Status_n' = vctrs::vec_count(Status_LR)$count,
                        'LR_Status_n[%]' = round(vctrs::vec_count(Status_LR)$count/length(Status_LR)*100,2))
+
+    ClassSummaryUL <- ClassSummary |> drop_na(LR_Status) |>
+      dplyr::group_by(Compound_ID, col_Class) |>
+      dplyr::filter(any(LR_Status %in% "ULOL") & any(LR_Status %in% "TRUE")) |>
+      dplyr::reframe(
+        Signals = Signals,
+        'LR_Status' = "ULOL_TRUE",
+
+        'LR_Status_n' = sum(LR_Status_n),
+
+        'LR_Status_n[%]' = sum(`LR_Status_n[%]`)
+
+      ) |> unique()
+
+    ClassSummaryLL <- ClassSummary |> drop_na(LR_Status) |>
+      dplyr::group_by(Compound_ID, col_Class) |>
+      dplyr::filter(any(LR_Status %in% "BLOL") & any(LR_Status %in% "TRUE")) |>
+      dplyr::reframe(
+        Signals = Signals,
+        'LR_Status' = "BLOL_TRUE",
+
+        'LR_Status_n' = sum(LR_Status_n),
+
+        'LR_Status_n[%]' = sum(`LR_Status_n[%]`)
+
+      )|> unique()
+
+    ClassSummary <- rbindlist(list(ClassSummary, ClassSummaryLL, ClassSummaryUL))
+
+
     summaryData <- ClassSummary
 
     if(filter.calc %in% "all") {
@@ -128,7 +158,23 @@ MS_filterSamples <- function(
         dplyr::filter(Filter %in% TRUE) |>
         dplyr::select(Compound_ID) |> unique()
 
-      Compounds <- rbind(Compounds_TRUE, Compounds_outside)
+      Compounds_outside2 <- ClassSummary |>
+        dplyr::group_by(Compound_ID, LR_Status) |>
+        dplyr::filter(!Compound_ID %in% c(Compounds_TRUE$Compound_ID, Compounds_outside$Compound_ID)) |>
+        dplyr::filter(Compound_ID %in% unique(c(ClassSummaryLL$Compound_ID, ClassSummaryUL$Compound_ID))) |>
+        dplyr::filter(`LR_Status_n[%]` >= filter.percent) |>
+        dplyr::group_by(Compound_ID, col_Class) |>
+        dplyr::filter(`LR_Status_n[%]` == max(`LR_Status_n[%]`)) |>
+        dplyr::group_by(Compound_ID) |>
+        dplyr::mutate(Filter = data.table::uniqueN(col_Class) >= 2 & data.table::uniqueN(LR_Status) >= 2 & (all(c("ULOL_TRUE", "BLOL") %in% unique(LR_Status)) |
+                                                                                                              all(c("ULOL_TRUE", "BLOL_TRUE") %in% unique(LR_Status)) |
+                                                                                                              all(c("BLOL_TRUE", "ULOL") %in% unique(LR_Status))
+        )) |>
+        dplyr::filter(Filter %in% TRUE) |>
+        dplyr::select(Compound_ID) |> unique()
+
+
+      Compounds <- rbind(Compounds_TRUE, Compounds_outside, Compounds_outside2) |> unique()
 
     }
 
@@ -212,5 +258,4 @@ MS_filterSamples <- function(
   return(list(filteredData, summaryData))
 
 }
-
 
