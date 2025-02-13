@@ -754,7 +754,7 @@ Yorigin <- "Y"
     y = Y,
     real_x = COLNAMES[["X"]],
     min_feature = MIN_FEATURE,
-    sd_res_factor = LR_SD_RES_FACTOR
+    sd_res_factor = 3#LR_SD_RES_FACTOR
   )
 
   #closeAllConnections()
@@ -1124,15 +1124,15 @@ Yorigin <- "Y"
   if(GET_OUTPUT %in% TRUE){
 
     if(any(c("DilutionCurves", "all") %in% which_output)){
-      write.csv(output1, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_signalBased.csv")))
-      write.csv(output2, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_featureBased.csv")))
+      fwrite(output1, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_signalBased.csv")))
+      fwrite(output2, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_featureBased.csv")))
       # writexl::write_xlsx(x = list(Signals = output1, Features = output2),
       #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,".xlsx")))
     }
 
     if(any(c("BiologicalSamples", "all") %in% which_output)){
      # write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_signalBased.csv")))
-      write.csv(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "result.csv")))
+      fwrite(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "result.csv")))
 
       # writexl::write_xlsx(x = list(Signals = output3, summary = output4),
       #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples.xlsx")))
