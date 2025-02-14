@@ -100,6 +100,10 @@ trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, thresh=0)
   #browser()
   if (data.table::last(dat[[y]]) != max(dat[[y]])) {
 
+    fin <- FALSE
+    i = 1
+    max_red <- list()
+    while(fin == FALSE){
     maxPoint <- which.max(dat[[y]])
     maxminPoint <- which(dat[[y]] %in% min(dat[[y]][maxPoint:length(dat[[y]])]))
     dat.reduced.max <- data.table::copy(dat)[
@@ -113,10 +117,34 @@ trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, thresh=0)
     dat.reduced.max[nrow(dat.reduced.max),
                     ':=' (Comment = "trim: lastPoint",
                           trim = TRUE)]
+if(any(dat.reduced.max$trim %in% FALSE)){
+    if(data.table::last(dat.reduced.max[[y]][dat.reduced.max$trim %in% FALSE]) != max(dat.reduced.max[[y]][dat.reduced.max$trim %in% FALSE])){
+      fin <- FALSE
+      max_red[[i]] <- dat.reduced.max[dat.reduced.max$trim %in% TRUE,]
+      dat <- dat.reduced.max[dat.reduced.max$trim %in% FALSE,]
+      i = i +1
+
+    } else {
+      fin <- TRUE
+      max_red[[i]] <- dat.reduced.max
+      dat.reduced.max <- rbindlist(max_red) |> dplyr::arrange(DilutionPoint)
+
+    }}else{fin <- TRUE
+    max_red[[i]] <- dat.reduced.max
+    dat.reduced.max <- rbindlist(max_red) |> dplyr::arrange(DilutionPoint)
+        }
+
+    }
+
 
   } else {dat.reduced.max <- dat[, trim := FALSE]}
 
   if (dat[[y]][1] != min(dat[[y]])){
+
+    fin <- FALSE
+    i = 1
+    min_red <- list()
+    while(fin == FALSE){
 
     minPoint <- which.min(dat[[y]])
     minmaxPoint <- which.max(dat[[y]][1:minPoint])
@@ -128,6 +156,21 @@ trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, thresh=0)
     #                               Comment = "trim: <firstPoint")]
     dat.reduced.min[1, ':=' (Comment = "trim: firstPoint",
                              trim = TRUE)]
+if(any(dat.reduced.min$trim %in% FALSE)){
+    if(data.table::last(dat.reduced.min[[y]][dat.reduced.min$trim %in% FALSE]) != min(dat.reduced.min[[y]][dat.reduced.min$trim %in% FALSE])){
+      fin <- FALSE
+      min_red[[i]] <- dat.reduced.min[dat.reduced.min$trim %in% TRUE,]
+      dat <- dat.reduced.min[dat.reduced.min$trim %in% FALSE,]
+      i = i +1
+
+    } else {
+      fin <- TRUE
+      min_red[[i]] <- dat.reduced.min
+      dat.reduced.min <- rbindlist(min_red) |> dplyr::arrange(DilutionPoint)
+
+    }} else{fin <- TRUE}
+
+    }
 
 
 
