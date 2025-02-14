@@ -754,7 +754,7 @@ Yorigin <- "Y"
     y = Y,
     real_x = COLNAMES[["X"]],
     min_feature = MIN_FEATURE,
-    sd_res_factor = 3#LR_SD_RES_FACTOR
+    sd_res_factor = LR_SD_RES_FACTOR
   )
 
   #closeAllConnections()
@@ -1166,6 +1166,7 @@ Yorigin <- "Y"
                                           output_dir = IMG_OUTPUT_DIR,outputfileName = paste0(PREFIX,"_Summary_Calibration_Barplot"))
   logr::put("summary_barplot_dilution was created")
 
+  gc()
   #8) scatter plot
   FDS_scatterplot <- plot_FDS(printPDF = printPlot,
                               inputData_Series = output1,
