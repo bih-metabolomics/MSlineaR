@@ -71,7 +71,7 @@ getConc <- function(dats, datCal, y, INVERSE_Y){
   dat <- data.table::copy(dats)
 
 
-  dat <- dat[datCal, on = "groupIndices"]
+  dat <- dat[datCal, on = intersect(colnames(dat), colnames(datCal))]
 
   #y = b0 + b1*x
   dat[, ConcentrationLR := (get(y) - Intercept)/slope, by = .I]
@@ -79,10 +79,12 @@ getConc <- function(dats, datCal, y, INVERSE_Y){
   if(!is.null(INVERSE_Y) ){
     dat$ConcentrationLR <- sapply(paste0(INVERSE_Y,"(",dat$ConcentrationLR,")"),function(i) eval(parse(text = i)))
   }
-  dat$ConcentrationLR <- dat$ConcentrationLR/dat$xfactor
+  dat[, ConcentrationLR := ConcentrationLR/(3/min(expected_conc[Sample.Type %in% "Standard"])), by = Compound]
+  #dat$ConcentrationLR <- dat$ConcentrationLR/(3/dat$xfactor
 
-  dats <- dats[dat[ ,.(IDintern, ConcentrationLR)], on = "IDintern"]
-  return(dats)
+
+  #dats <- dats[dat[ ,.(IDintern, ConcentrationLR)], on = "IDintern"]
+  return(dat)
 
 }
 

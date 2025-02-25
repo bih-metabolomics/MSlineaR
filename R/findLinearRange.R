@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_res_factor = 2, min_feature, real_x, slopedev = 40){#modelObject
+findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_res_factor = 2, min_feature, real_x){#modelObject #, slopedev = 40
   #browser()
 
   dat <- data.table::copy(dats)
@@ -20,13 +20,14 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   #int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(modelObject$fit) -min(modelObject$fit))/2 + min(modelObject$fit), which = TRUE, na.rm = T)
   #int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(dat[[y]]) -min(dat[[y]]))/2 + min(dat[[y]]), which = TRUE, na.rm = T)
 
-  #if(length(int50) > 1) int50 <- max(int50)
-  #if(int50 == length(dat[[x]])) int50 <- length(dat[[x]]) -1
-  #if(int50 == 1) int50 = 2
+  int50 <- DescTools::Closest(x = dat[[y]] ,a = (min(dat[[y]]) + max(dat[[y]]))/2, which = TRUE, na.rm = T)
+  if(length(int50) > 1) int50 <- max(int50)
+  if(int50 == length(dat[[x]])) int50 <- length(dat[[x]]) -1
+  if(int50 == 1) int50 = 2
   #dat$color[int50] <-  "green"
 
   #int50 <- ceiling(length(dat[[y]])/2)
-  int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(dat[[y]]) - min(dat[[y]]))/2 + min(dat[[y]]), which = TRUE, na.rm = T)
+  #int50 <- DescTools::Closest(x = dat[[y]] ,a = (min(dat[[y]]) + max(dat[[y]]))/2, which = TRUE, na.rm = T)
 
 
 
@@ -37,7 +38,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
 
 
   linearRange <- lm(dat[[y]] ~ dat[[x]] , weights = we)
-  quadratic <- lm(dat[[y]] ~ poly(dat[[x]], 2, raw = TRUE))
+  #quadratic <- lm(dat[[y]] ~ poly(dat[[x]], 2, raw = TRUE))
 
   ablineIntensity <- fitted(linearRange)
 
@@ -45,23 +46,24 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
 
   #std_residuals <- rstandard(linearRange)
   std_residuals <- residuals(linearRange)
-  sd_residuals <- abs(sd_res_factor*sd(std_residuals[which(abs(std_residuals) < 3)]))
-  if(sd_residuals < 1) sd_residuals <- 1
+  #std_residuals_qu <- residuals(quadratic)
+  #sd_residuals <- abs(sd_res_factor*sd(std_residuals[which(abs(std_residuals) < 3)]))
+  #if(sd_residuals < 1) sd_residuals <- 1
 
   #use slope
-  refslopemin <- coef(linearRange)[2]*100/3
-  refslopemax <- coef(linearRange)[2]*100*3
-  slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(y) ~ get(x)))[2]*100)
-  medSlope <- median(slopes[(int50 - 1) : (int50 + 1)])
-  refmedSlopemin <- medSlope - slopedev *medSlope /100
-  refmedSlopemax <- medSlope + slopedev *medSlope /100
-  if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- c(slopes[1],refslopemin*2, slopes[-1])}
+  #refslopemin <- coef(linearRange)[2]*100/3
+  #refslopemax <- coef(linearRange)[2]*100*3
+  #slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(y) ~ get(x)))[2]*100)
+  #medSlope <- median(slopes[(int50 - 1) : (int50 + 1)])
+  #refmedSlopemin <- medSlope - slopedev *medSlope /100
+  #refmedSlopemax <- medSlope + slopedev *medSlope /100
+  #if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- c(slopes[1],refslopemin*2, slopes[-1])}
 
   ##use cooks distance
   #cook <- cooks.distance(linearRange)
   #cookref <- dat$DilutionPoint[which(cook > 1)]
 
-  lr <- abs(std_residuals) < ceiling(sd_residuals*10)/10  &  (slopes > refmedSlopemin & slopes < refmedSlopemax)
+  lr <- abs(std_residuals) < sd_res_factor  #&  (slopes > refmedSlopemin & slopes < refmedSlopemax)
 
   #lr <- !(abs(std_residuals) >= ceiling(sd_residuals*10)/10 & dat$DilutionPoint %in% cookref)
 
