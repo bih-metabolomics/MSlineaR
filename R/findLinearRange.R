@@ -75,7 +75,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
   if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= min_feature)){ #& any(consNDX$position[consNDX$values %in% TRUE] >= int50)
 
       TRUEpos <- which( consNDX$position[consNDX$values %in% TRUE] >= int50  & consNDX$lengths[consNDX$values %in% TRUE] >= min_feature)
-      if(length(TRUEpos >1)) TRUEpos <- dplyr::last(TRUEpos)
+      if(length(TRUEpos) >1) TRUEpos <- dplyr::last(TRUEpos)
     maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE
     ][TRUEpos] - consNDX$length[consNDX$values %in% TRUE][TRUEpos] +1) : consNDX$position[consNDX$values %in% TRUE][TRUEpos]
     maxTrueRange <- maxTrueRange[maxTrueRange!=0]
@@ -127,7 +127,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
       LR_TRUE_list <- lapply(indices, function(i) c(minsublist[i] -1,LR_TRUE_list[[i]]))
       LR_TRUE_list <- lapply(LR_TRUE_list, function(x) {x[x!=0]})
 
-      if(any(lengths(LR_TRUE_list) >= min_feature & length(LR_TRUE_list) == 1)){
+      if(any(LR_TRUE_list_Length >= min_feature) & length(LR_TRUE_list_Length) == 1){
 
 
         dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length >= min_feature)]), IsLinear := TRUE]
@@ -149,7 +149,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
         tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
         tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
 
-        } else if(any(lengths(LR_TRUE_list) >= min_feature & length(LR_TRUE_list) > 1 & length(max(LR_TRUE_list_Length)) == 1)){
+        } else if(any(LR_TRUE_list_Length >= min_feature) & length(LR_TRUE_list_Length) > 1 & length(max(LR_TRUE_list_Length)) == 1){
 
           dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length == max(LR_TRUE_list_Length))]), IsLinear := TRUE]
           dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length != max(LR_TRUE_list_Length))]), IsLinear := FALSE]

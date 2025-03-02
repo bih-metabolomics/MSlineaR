@@ -157,7 +157,7 @@ if(any(dat.reduced.max$trim %in% FALSE)){
     dat.reduced.min[1, ':=' (Comment = "trim: firstPoint",
                              trim = TRUE)]
 if(any(dat.reduced.min$trim %in% FALSE)){
-    if(data.table::last(dat.reduced.min[[y]][dat.reduced.min$trim %in% FALSE]) != min(dat.reduced.min[[y]][dat.reduced.min$trim %in% FALSE])){
+    if(dat.reduced.min[[y]][dat.reduced.min$trim %in% FALSE][1] != min(dat.reduced.min[[y]][dat.reduced.min$trim %in% FALSE])){
       fin <- FALSE
       min_red[[i]] <- dat.reduced.min[dat.reduced.min$trim %in% TRUE,]
       dat <- dat.reduced.min[dat.reduced.min$trim %in% FALSE,]
