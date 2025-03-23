@@ -63,7 +63,7 @@ getLRstatus <- function(dats, datCal, y){
 #' @export
 #'
 #' @examples
-getConc <- function(dats, datCal, y, INVERSE_Y){
+getConc <- function(dats, datCal, y, INVERSE_Y, NAME_Standard, COL_expConc){
 
   setDT(dats)
   setDT(datCal)
@@ -79,7 +79,7 @@ getConc <- function(dats, datCal, y, INVERSE_Y){
   if(!is.null(INVERSE_Y) ){
     dat$ConcentrationLR <- sapply(paste0(INVERSE_Y,"(",dat$ConcentrationLR,")"),function(i) eval(parse(text = i)))
   }
-  dat[, ConcentrationLR := ConcentrationLR/(3/min(expected_conc[Sample.Type %in% "Standard"])), by = Compound]
+  dat[, ConcentrationLR := ConcentrationLR/(3/min(as.numeric(get(COL_expConc))[Sample.Type %in% NAME_Standard], na.rm = TRUE)), by = Compound]
   #dat$ConcentrationLR <- dat$ConcentrationLR/(3/dat$xfactor
 
 
