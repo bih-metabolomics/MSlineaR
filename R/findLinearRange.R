@@ -74,8 +74,13 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_re
 
   if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= min_feature)){ #& any(consNDX$position[consNDX$values %in% TRUE] >= int50)
 
-      TRUEpos <- which( consNDX$position[consNDX$values %in% TRUE] >= int50  & consNDX$lengths[consNDX$values %in% TRUE] >= min_feature)
-      if(length(TRUEpos) >1) TRUEpos <- dplyr::last(TRUEpos)
+    TRUEpos <- which( consNDX$position[consNDX$values %in% TRUE] >= int50  & consNDX$lengths[consNDX$values %in% TRUE] >= min_feature)
+    } else{TRUEpos <- NULL}
+
+    if(length(TRUEpos) > 0){
+
+
+      if(length(TRUEpos) > 1) TRUEpos <- dplyr::last(TRUEpos)
     maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE
     ][TRUEpos] - consNDX$length[consNDX$values %in% TRUE][TRUEpos] +1) : consNDX$position[consNDX$values %in% TRUE][TRUEpos]
     maxTrueRange <- maxTrueRange[maxTrueRange!=0]
