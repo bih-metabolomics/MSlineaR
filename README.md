@@ -3,8 +3,7 @@
 ---
 
 # MSlineaR
-
-The goal of `MSlineaR` is to clean up a data set of serial concentrated or diluted Compounds to only signals which show a linear response. It can be used for targeted and untargeted metabolomic data sets. In short the package use a serial diluted or concentrated data set to determine the linear portion of the dilution/calibration curve. Therefore the following steps will be performed:
+`MSlineaR` is a dataset tool to reduce the risk of false positives by limiting datasets to only high quality data (in combination with other more standard filtering steps such as with RSD or D-ratios). It reduces a dataset to only those signals that show a clear linear response in signal when the concentraton is increased. It requires a dataset which includes either serial concentrated or diluted compounds. It can be used for targeted and untargeted metabolomic data sets. In short the package use a serial diluted or concentrated data set to determine the linear portion of the dilution/calibration curve. Therefore the following steps will be performed:
 
 1.  The data will be checked and transformed.
 
@@ -102,15 +101,15 @@ pivot_longer(cols = c("Compound_01" : "Compound_34"),, names_to = "Compound", va
 
 ### **2) Sample Table**
 
-The Sample Table contains all meta data for the individual samples. The table needs to be present in long format and should contain following columns:
+The Sample Table contains all meta data for the individual samples. The table needs to be present in long format and should contain the following columns:
 
--   mandatory: Identification of the samples -\> the column name must be identical in both tables
+-   mandatory: identification of the samples -\> the column name must be identical in both tables
 
--   mandatory: type of the samples, e.g. Calibrants, samples, pooled QC etc
+-   mandatory: type of samples, e.g. calibrants, samples, pooled QC etc
 
 -   mandatory: order of injection
 
--   mandatory: Dilution step normalized to the highest dilution. That means the highest diluted sample get a dilution factor of 1, if the dilution factor is 3 than the second highest diluted sample get 3, the next one 9 , the next one 27,...
+-   mandatory: dilution step normalized to the highest dilution i.e. the most dilute sample is given a dilution factor of 1. If the dilution factor is 3 (i.e. every sample is 3 times more dilute than its nearest neighbour), than the second most dilute sample is termed 3, the next one 9 , the next one 27,...This process also allows for uneven dilution steps between dilution points
 
 -   mandatory: Identification of the Batch -\> the column name must be identical in both tables
 
