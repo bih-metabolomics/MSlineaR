@@ -57,6 +57,7 @@ devtools::install_github("bih-metabolomics/MSlineaR")
 
 ## Input Data Tables
 
+An example dataset is given at the bottom of this file.
 MSlineaR needs two tables as input, one with information about the features and one for the sample meta data.
 
 ### **1) Feature Table**
