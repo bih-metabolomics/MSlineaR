@@ -134,7 +134,7 @@ The Sample Table contains all meta data for the individual samples. The table ne
 -   *output_name*: name of the output file
 
 -   *output_dir*: directory where the output files should be saved
--   
+   
 -   *analysisType:* You can choose between "targeted" or "untargeted"
 
 -   *inputData_feature*: Data table or data frame with at least three columns, see above
