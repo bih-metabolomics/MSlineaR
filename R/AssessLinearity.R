@@ -1233,7 +1233,7 @@ Yorigin <- "Y"
                                                     ordered = column_injectionOrder,
                                                     outputfileName = paste0( PREFIX,"_Summary_Barplot_QC"))
 
-  logr::put("summary_barplot_sample was created")
+  logr::put("summary_barplotQC was created")
 
 
 
@@ -1243,9 +1243,9 @@ Yorigin <- "Y"
     "All_DilutionCurves_Signals" = output1,
     "All_DilutionCurves_Features" = output2,
     #"All_Samples_Signals" = output3,
-    "result" = output4,
-    "dataModel_FOD" = ifelse(FOD %in% TRUE, dataFODModel, c()),
-    "dataModel_SOD" = ifelse(SOD %in% TRUE, dataSODModel, c())
+    "result" = output4#,
+    #"dataModel_FOD" = ifelse(FOD %in% TRUE, dataFODModel, c()),
+    #"dataModel_SOD" = ifelse(SOD %in% TRUE, dataSODModel, c())
     # "Parameters" = list(
     #   data = DAT,
     #   COLNAMES = COLNAMES,
