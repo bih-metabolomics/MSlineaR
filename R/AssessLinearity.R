@@ -1244,8 +1244,8 @@ Yorigin <- "Y"
     "All_DilutionCurves_Features" = output2,
     #"All_Samples_Signals" = output3,
     "result" = output4,
-    "dataModel_FOD" = dataFODModel,
-    "dataModel_SOD" = dataSODModel#,
+    "dataModel_FOD" = ifelse(FOD %in% TRUE, dataFODModel, c()),
+    "dataModel_SOD" = ifelse(SOD %in% TRUE, dataSODModel, c())
     # "Parameters" = list(
     #   data = DAT,
     #   COLNAMES = COLNAMES,
