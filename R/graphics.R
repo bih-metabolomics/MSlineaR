@@ -11,6 +11,8 @@
 #' @export
 #'
 #' @examples
+#' @importFrom dplyr full_join
+
 combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #inputData_Blank#, inputData_QC_ref, inputData_Blank
                         ){
 
@@ -55,6 +57,14 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 #' @export
 #'
 #' @examples
+#' @importFrom grDevices dev.off pdf
+#' @importFrom plyr .
+#' @importFrom stats na.omit
+#' @importFrom assertthat not_empty
+#' @import data.table
+#' @import dplyr
+#' @import ggplot2
+#' @importFrom ggforce facet_grid_paginate
 plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#inputData_Blank,
                      nrFeature = 50,
                      signal_blank_ratio = 5,
@@ -442,6 +452,14 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 #' @examples
 
 
+#' @importFrom grDevices dev.off pdf
+#' @importFrom plyr .
+#' @importFrom stats na.omit
+#' @importFrom assertthat not_empty
+#' @importFrom tidyr pivot_longer
+#' @import data.table
+#' @import dplyr
+#' @import ggplot2
 plot_Barplot_Summary <- function(inputData_Series,
                                 printPDF = TRUE, GroupIndices = "all",  Feature = "all",
                                 outputfileName = c("Summary_Barplot"),
@@ -527,6 +545,16 @@ plot_Barplot_Summary <- function(inputData_Series,
 #' @export
 #'
 #' @examples
+#' @importFrom grDevices dev.off pdf
+#' @importFrom plyr .
+#' @importFrom stats na.omit
+#' @importFrom assertthat not_empty
+#' @importFrom tidyr pivot_longer
+#' @import data.table
+#' @import dplyr
+#' @import ggplot2
+#' @importFrom ggforce facet_grid_paginate
+
 plot_Barplot_Summary_Sample <- function(inputData_Samples,
                                         printPDF = TRUE, GroupIndices = "all",  Feature = "all",
                                         outputfileName = c("Summary_Barplot_Samples"),

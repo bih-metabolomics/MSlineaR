@@ -9,6 +9,12 @@
 #' @export
 #'
 #' @examples
+#' @import dplyr
+#' @import data.table
+#' @importFrom tibble tibble
+#' @importFrom Matrix tail
+#' @importFrom DescTools Closest
+#' @importFrom stats fitted lm residuals
 findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_res_factor = 2, min_feature, real_x){#modelObject #, slopedev = 40
   #browser()
 

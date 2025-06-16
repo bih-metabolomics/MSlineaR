@@ -4,7 +4,7 @@
 \alias{getConc}
 \title{Title}
 \usage{
-getConc(dats, datCal, y, INVERSE_Y)
+getConc(dats, datCal, y, INVERSE_Y, NAME_Standard, COL_expConc)
 }
 \arguments{
 \item{dats}{data table with information about the biological samples.

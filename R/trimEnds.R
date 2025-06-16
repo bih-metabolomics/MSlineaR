@@ -9,6 +9,9 @@
 #' @export
 #'
 #' @examples
+#' @import data.table
+#' @import dplyr
+#' @importFrom stats median
 trimm_signalBlank <- function(dats, blanks, y, y_trans,yblank, noise){
 
   setDT(dats)
@@ -91,6 +94,9 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,yblank, noise){
 #' @export
 #'
 #' @examples
+#' @import data.table
+#' @import dplyr
+#' @importFrom tidyr unite
 trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, thresh=0){
 
   dats$trim <- FALSE
@@ -208,6 +214,9 @@ if(any(dat.reduced.min$trim %in% FALSE)){
 #' @export
 #'
 #' @examples
+#' @import data.table
+#' @import dplyr
+
 trim_pos_associated <- function(dats, y, x, MIN_Feature){
 data.table::setDT(dats)
 

@@ -18,6 +18,9 @@
 #' @export
 #'
 #' @examples
+#' @import data.table
+#' @import dplyr
+#' @importFrom tidyr drop_na
 MS_filterSamples <- function(
     inputData,
     Compound_ID = "groupIndices",

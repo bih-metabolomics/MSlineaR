@@ -81,7 +81,21 @@
 #' a linear range will be taken but flagged that in one or more batches linearity is missing
 #'
 #'
-#' @importFrom  dplyr %>%
+#' @import dplyr
+#' @import data.table
+#' @importFrom stats median sd
+#' @importFrom logr sep log_open put log_close
+#' @importFrom rlang inform abort
+#' @importFrom testthat expect_setequal
+#' @importFrom pbapply pboptions
+#' @importFrom progressr handlers handler_progress
+#' @importFrom R.utils getAbsolutePath
+#' @importFrom plyr ldply .
+#' @importFrom purrr map
+#' @importFrom tibble tibble
+#' @importFrom assertthat are_equal
+#' @importFrom tidyr drop_na
+#'
 #' @return
 #'
 #'
@@ -89,7 +103,7 @@
 #' @export
 #'
 #' @examples
-#'
+
 MS_AssessLinearity <- function(
     analysisType = c("targeted", "untargeted", NULL)[1],
 

@@ -8,6 +8,7 @@
 #' @export
 #'
 #' @examples
+#' @import data.table
 countMinimumValue <- function(DAT, MIN_FEATURE = parent.frame()$MIN_FEATURE, step, y){
 
   stopifnot(exprs ={"Parameter MIN_FEATURE needs to be greater or equal than 3" = MIN_FEATURE >= 3})

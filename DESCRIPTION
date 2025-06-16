@@ -35,12 +35,17 @@ Imports:
     ggforce,
     DT,
     logr,
-    writexl
-Suggests: 
+    writexl,
+    R.utils,
+    Matrix,
+    rlang,
     testthat,
+    tibble,
+    tidyr
+Suggests: 
     tidyselect,
     lattice,
     survival,
     MASS
 Depends: 
-    R (>= 4.1.2)
+    R (>= 4.2.0)

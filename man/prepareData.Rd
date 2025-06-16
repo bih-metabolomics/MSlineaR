@@ -10,7 +10,6 @@ prepareData(
   TRANSFORM = parent.frame()$TRANSFORM,
   TRANSFORM_X = parent.frame()$TRANSFORM_X,
   TRANSFORM_Y = parent.frame()$TRANSFORM_Y,
-  DILUTION_FACTOR = parent.frame()$DILUTION_FACTOR,
   COLNAMES = parent.frame()$COLNAMES,
   TYPE = parent.frame()$TYPE
 )

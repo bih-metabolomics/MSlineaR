@@ -14,6 +14,8 @@
 #' @export
 #'
 #' @examples
+#' @import data.table
+#' @importFrom plyr .
 getLRstatus <- function(dats, datCal, y){
 
   data.table::setDT(dats)
@@ -63,6 +65,7 @@ getLRstatus <- function(dats, datCal, y){
 #' @export
 #'
 #' @examples
+#' @importFrom data.table setDT
 getConc <- function(dats, datCal, y, INVERSE_Y, NAME_Standard, COL_expConc){
 
   setDT(dats)

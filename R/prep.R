@@ -53,7 +53,8 @@
 #' @export
 #'
 #' @examples
-#'
+#' @import data.table
+#' @importFrom rlang abort
 checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = parent.frame()$TYPE, QC = parent.frame()$QC,
                       BLANK = parent.frame()$BLANK,
                       SAMPLE = parent.frame()$SAMPLE,#Y_SAMPLE = parent.frame()$Y_SAMPLE,
@@ -190,6 +191,8 @@ is.wholenumber <-
 #' @export
 #'
 #' @examples
+#' @import data.table
+#' @importFrom rlang abort
 prepareData <- function(dat,
                         TRANSFORM = parent.frame()$TRANSFORM,
                         TRANSFORM_X = parent.frame()$TRANSFORM_X,
@@ -258,6 +261,12 @@ prepareData <- function(dat,
 #' @examples
 #'
 
+#' @importFrom utils setTxtProgressBar txtProgressBar
+#' @importFrom parallel makePSOCKcluster stopCluster
+#' @importFrom doSNOW registerDoSNOW
+#' @importFrom foreach foreach
+#' @import data.table
+#'
 my_fcn <- function(nCORE, xs, func, inputData, ...) {
   #parallel::clusterExport(cl, exportObjects)
   cl <- parallel::makePSOCKcluster(nCORE)
@@ -278,18 +287,18 @@ my_fcn <- function(nCORE, xs, func, inputData, ...) {
   return(y)
   }
 
-my_fcn6 <- function(xs, func, inputData, ...) {
-  #parallel::clusterExport(cl, exportObjects)
-  #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
-  #on.exit(parallel::stopCluster(cl))
-  #doSNOW::registerDoSNOW(cl)
-#  pb <- progressr::progressor(along = xs)
-#  progress <- function(i)  pb(sprintf("x=%g", i))
- # opts <- list(progress=progress)
-  y <- foreach::foreach(i = xs) %do% {func(data.table::setDT(inputData)[inputData$groupIndices %in% unique(inputData$groupIndices)[i]], ...)}
-  #parallel::stopCluster(cl)
-  #return(y)
-}
+# my_fcn6 <- function(xs, func, inputData, ...) {
+#   #parallel::clusterExport(cl, exportObjects)
+#   #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
+#   #on.exit(parallel::stopCluster(cl))
+#   #doSNOW::registerDoSNOW(cl)
+# #  pb <- progressr::progressor(along = xs)
+# #  progress <- function(i)  pb(sprintf("x=%g", i))
+#  # opts <- list(progress=progress)
+#   y <- foreach::foreach(i = xs) %do% {func(data.table::setDT(inputData)[inputData$groupIndices %in% unique(inputData$groupIndices)[i]], ...)}
+#   #parallel::stopCluster(cl)
+#   #return(y)
+# }
 
 
 
@@ -307,15 +316,16 @@ my_fcn6 <- function(xs, func, inputData, ...) {
 # }
 
 # } else{
-my_fcn2 <- function(xs, func, inputData, ...) {
-  p <- progressr::progressor(along = xs)
-  y <- map(xs, function(i) {
-    p(sprintf("x=%g", i))
-    # inputData[groupIndices %in% x, func(.SD, ...)]
-    func(data.table::setDT(inputData)[groupIndices %in% unique(groupIndices)[i]], ...)
-    # groupInd <- unique(inputData$groupIndices)[x]
-    # inputData = filter(inputData, groupIndices %in% groupInd)
-    # func(inputData, ...)
-  })
-}
+
+# my_fcn2 <- function(xs, func, inputData, ...) {
+#   p <- progressr::progressor(along = xs)
+#   y <- map(xs, function(i) {
+#     p(sprintf("x=%g", i))
+#     # inputData[groupIndices %in% x, func(.SD, ...)]
+#     func(data.table::setDT(inputData)[groupIndices %in% unique(groupIndices)[i]], ...)
+#     # groupInd <- unique(inputData$groupIndices)[x]
+#     # inputData = filter(inputData, groupIndices %in% groupInd)
+#     # func(inputData, ...)
+#   })
 # }
+# # }

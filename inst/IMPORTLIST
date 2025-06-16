@@ -1,0 +1,15 @@
+all_of = dplyr
+as.factor = base
+diff = base
+format = base
+intersect = base
+is.double = base
+map = purrr
+mean = base
+p = inner
+plot = base
+print = base
+setdiff = base
+summary = base
+tail = Matrix
+which = base
