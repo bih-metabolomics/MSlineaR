@@ -131,6 +131,10 @@ The Sample Table contains all meta data for the individual samples. The table ne
 
 ## Input Arguments for function `AssessLinearity`
 
+-   *output_name*: name of the output file
+
+-   *output_dir*: directory where the output files should be saved
+-   
 -   *analysisType:* You can choose between "targeted" or "untargeted"
 
 -   *inputData_feature*: Data table or data frame with at least three columns, see above
@@ -165,11 +169,7 @@ The Sample Table contains all meta data for the individual samples. The table ne
 
 -   *min_feature:* Minimal number of consecutive signals present per dilution/concentration curve, to consider this curve as linear (default = 6, according to EMA guidelines 2012)
 
--   *R2_min:* Minimum coefficient of determination, which needs to be reached to consider the signal as linear (default = 0.9).
-
--   *output_name*: name of the output file
-
--   *output_dir*: directory where the output files should be saved
+-   *R2_min:* Minimum coefficient of determination, which needs to be reached to consider the signal as linear (default = 0.9)
 
 -   *n_core*: How many cores should be used for parallel processing (default = 1)
 
@@ -194,6 +194,8 @@ data_tbl_sample  <- MSlineaR::Sample_tbl
 
 
 targetedMSCal <- MS_AssessLinearity(
+  output_name = "Test_targeted",
+  output_dir = "Test",
   analysisType ="targeted",
   inputData_feature = data_tbl_feature,
   inputData_sample = data_tbl_sample,
@@ -211,8 +213,6 @@ targetedMSCal <- MS_AssessLinearity(
   column_sampleClass = "Group",
   signal_blank_ratio = 5,
   min_feature = 5,  
-  output_name = "Test_targeted",
-  output_dir = " ",
   nCORE = 4
 )
 ```
