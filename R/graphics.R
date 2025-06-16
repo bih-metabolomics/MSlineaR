@@ -477,10 +477,10 @@ plot_Barplot_Summary <- function(inputData_Series,
   data_Signals_summary <- inputData_Series |>
     dplyr::group_by(DilutionPoint, Batch = get(Col_Batch)) |>
     dplyr::reframe(Missing = sum(is.na(get(y))),
-              Blank = sum(signalBlankRatio, na.rm = TRUE),
-              OutlierFOD = sum(OutlierFOD, na.rm = T),
-              Trim = sum(trim %in% TRUE, na.rm = T),
-              OutlierSOD = sum(OutlierSOD, na.rm = T),
+              Blank = ifelse("signalBlankRatio" %in% colnames(inputData_Series), sum(signalBlankRatio, na.rm = TRUE), 0),
+              OutlierFOD =  ifelse("OutlierFOD" %in% colnames(inputData_Series), sum(OutlierFOD, na.rm = T), 0),
+              Trim = ifelse("trim" %in% colnames(inputData_Series), sum(trim %in% TRUE, na.rm = T), 0),
+              OutlierSOD = ifelse("OutlierSOD" %in% colnames(inputData_Series), sum(OutlierSOD, na.rm = T), 0),
               #Slope = sum(trimPos %in% TRUE, na.rm = T),
               LR_TRUE = sum(IsLinear %in% TRUE, na.rm = T),
               LR_FALSE = sum(IsLinear %in% FALSE, na.rm = T)
