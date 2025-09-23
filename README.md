@@ -3,6 +3,11 @@
 ---
 
 # MSlineaR
+
+Thank you for your interest on MSlineaR. If you use it please cite:
+
+**Janine Wiebach, Ulrike Bruning, Álvaro Fernández-Ochoa, Jochen Kruppa-Scheetz, Maëlle Bonhomme, Dominique Votion, Jennifer Kirwan "MSlineaR software: a new R package assessing linearity to improve quality assurance and statistical robustness in untargeted metabolomics" paper in preparation**
+
 `MSlineaR` is a dataset tool to reduce the risk of false positives by limiting datasets to only high quality data (in combination with other more standard filtering steps such as with RSD or D-ratios). It reduces a dataset to only those signals that show a clear linear response in signal when the concentraton is increased. It requires a dataset which includes either serial concentrated or diluted compounds. It can be used for targeted and untargeted metabolomic data sets. In short the package use a serial diluted or concentrated data set to determine the linear portion of the dilution/calibration curve. Therefore the following steps will be performed:
 
 1.  The data will be checked and transformed.
