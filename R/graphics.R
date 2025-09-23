@@ -167,7 +167,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     data_Signals <- data_Signal |> dplyr::arrange(groupIndices)#[groupIndices %in% 1, ]#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
 
     plotlinearData <-
-      ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(dependent)), shape = Sample.Type) +
+      ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(dependent), shape = Sample.Type)) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type])),colour = "black")
 
     if("signalBlankRatio" %in% colnames(data_Signals)){
@@ -231,14 +231,14 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     #
     # }
 
-    legend_order <- c()
+    legend_order <- unique(inputData_Series$Sample.Type)
 
     if(!is.null(inputData_BioSamples )){
       plotlinearData <-  plotlinearData +
         #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
         ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
                             ggplot2::aes( x = -2, y = get(dependent),  shape = Sample.Type, colour = get(ClassCol)), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
-      legend_order <- c(unique(inputData_BioSamples$Sample.Type))
+      legend_order <- c(legend_order, unique(inputData_BioSamples$Sample.Type))
     }
     #ifelse(!is.na(Class),get(Class), "black")
 
@@ -248,8 +248,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       plotlinearData <-  plotlinearData +
         ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
                             ggplot2::aes( x = x, y = get(dependent),  shape = as.factor(Sample.Type),
-                                          color = get(ClassCol)), size = 2, na.rm = TRUE) +
-        ggplot2::scale_shape_manual(values = 1: (nlevels(as.factor(QCs$Sample.Type)) +1), breaks=rev(legend_order))
+                                          color = get(ClassCol)), size = 2, na.rm = TRUE) #+
+        #ggplot2::scale_shape_manual(values = 1: (nlevels(as.factor(QCs$Sample.Type)) +2), breaks=rev(legend_order))
 
       #+, shape = 5
 
