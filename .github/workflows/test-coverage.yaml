@@ -48,13 +48,9 @@ jobs:
         with:
           name: coverage-test-failures
           path: ${{ runner.temp }}/package
-      - name: Upload coverage reports to Codecov with GitHub Action
-        #uses: actions/checkout@main
-        uses: codecov/codecov-action@v5
-        with:
-          fail_ci_if_error: true # optional (default = false)
-          files: ./coverage1.xml,./coverage2.xml # optional
-          flags: unittests # optional
-          name: codecov-umbrella # optional
-          token: ${{ secrets.CODECOV }}
+      - name: Upload coverage reports to Codecov
+        run: |
+          curl -Os https://cli.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov --verbose upload-process --fail-on-error -t ${{ secrets.CODECOV }} -n 'service'-${{ github.run_id }} -F service -f coverage-service.xml
           verbose: true # optional (default = false)
