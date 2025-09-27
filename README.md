@@ -1,6 +1,7 @@
 ---
 ---
 ---
+[![test-coverage](https://github.com/bih-metabolomics/MSlineaR/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/bih-metabolomics/MSlineaR/actions/workflows/test-coverage.yaml)
 
 # MSlineaR
 
