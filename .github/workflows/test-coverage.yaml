@@ -52,9 +52,9 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
          directory: ./coverage/reports/
-          fail_ci_if_error: true
-          files: ./coverage1.xml,./coverage2.xml,!./cache
-          flags: unittests
-          name: codecov-umbrella
-          token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true
+         fail_ci_if_error: true
+         files: ./coverage1.xml,./coverage2.xml,!./cache
+         flags: unittests
+         name: codecov-umbrella
+         token: ${{ secrets.CODECOV_TOKEN }}
+         verbose: true
