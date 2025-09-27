@@ -3,6 +3,9 @@
 ---
 [![test-coverage](https://github.com/bih-metabolomics/MSlineaR/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/bih-metabolomics/MSlineaR/actions/workflows/test-coverage.yaml)
 
+[![codecov](https://codecov.io/gh/bih-metabolomics/MSlineaR/graph/badge.svg?token=MQYBO83IUS)](https://codecov.io/gh/bih-metabolomics/MSlineaR)
+
+
 # MSlineaR
 
 Thank you for your interest in MSlineaR. If you use it please cite:
