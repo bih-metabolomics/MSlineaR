@@ -1,11 +1,30 @@
-#' Title
+#' determine metrics for linearity and linear range of dilution/ calibration curve
 #'
-#' @param dat
-#' @param x
-#' @param y
-#' @param res
+#' @description `findLinearRange()` first determines a suitable range by forcing
+#' a linear regression model through halfmax intensity, calculating the residuals and
+#' removing all dilution points where the residuals are bigger than predefined value `max_res`.
+#' Using this range the method calculates metrics for monotonicity using spearman rho,
+#' linearity by using deviation of observed to predicted values from linear regression model,
+#' proportionality across range by calculating the slope of linear regression model
+#' and the goodness-of-fit by calculating the adjusted R^2.
+#' @param x String; Column name of the log transformed independent variable
+#' @param dats Long format data frame or data table for one metabolite including information about dependent and independent variable.
+#' Further necessary columns are: groupIndices, DilutionPoint (1:x), IDintern, color.
+#' @param max_res Integer; points of serial diluted/concentrated series,
+#' which are less than `max_res` are considered for checking of linearity.
+#' Default to 3.
+#' @param min_feature Integer, ranging between 3 and maximum number of dilutions/concentrations.
+#' Minimum number of points present in one serial diluted/concentrated series
+#' marked as linear to consider this signal as linear. Default to 6, according to EMA guidelines2022.
+#' @param real_x String; Column name of the untransformed independent variable
+#' @param slope_tol Integer, allowed tolerance for slope deviation. Default to 0.15
+#' @param delta_tol Integer, allowed tolerance for maximum deviation of observed
+#' values to predicted value from linear regression model. Default set to 0.182 (~ 20%).
+#' @param y String; Column name of the log transformed dependent variable
 #'
-#' @return
+#' @return list of two data frames. One with results per dilution point, one with result of features.
+#'
+#'
 #' @export
 #'
 #' @examples
@@ -15,246 +34,247 @@
 #' @importFrom Matrix tail
 #' @importFrom DescTools Closest
 #' @importFrom stats fitted lm residuals
-findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  sd_res_factor = 2, min_feature, real_x){#modelObject #, slopedev = 40
-  #browser()
+
+findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_res = 3, min_feature = 5, real_x, slope_tol = 0.15, delta_tol = 0.182 ){
 
   dat <- data.table::copy(dats)
   data.table::setorder(dat,DilutionPoint)
   dat <- dat[!is.na(get(y))]
-  #modelObject <- unique(dat[[modelObject]])
-  #modelObject <- unlist(modelObject, recursive = F)
-  #int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(modelObject$fit) -min(modelObject$fit))/2 + min(modelObject$fit), which = TRUE, na.rm = T)
-  #int50 <- DescTools::Closest(x = dat[[y]] ,a = (max(dat[[y]]) -min(dat[[y]]))/2 + min(dat[[y]]), which = TRUE, na.rm = T)
 
+  # calculate point nearest half max intensity
   int50 <- DescTools::Closest(x = dat[[y]] ,a = (min(dat[[y]]) + max(dat[[y]]))/2, which = TRUE, na.rm = T)
   if(length(int50) > 1) int50 <- max(int50)
   if(int50 == length(dat[[x]])) int50 <- length(dat[[x]]) -1
   if(int50 == 1) int50 = 2
-  #dat$color[int50] <-  "green"
-
-  #int50 <- ceiling(length(dat[[y]])/2)
-  #int50 <- DescTools::Closest(x = dat[[y]] ,a = (min(dat[[y]]) + max(dat[[y]]))/2, which = TRUE, na.rm = T)
-
 
 
   #create linear regression line going through int50
   we <- rep(1, length(dat[[x]]))
   we[(int50 - 1) : (int50 + 1)] <- 1000
-  #we = NULL
 
 
-  linearRange <- lm(dat[[y]] ~ dat[[x]] , weights = we)
+  linearModel <- lm(dat[[y]] ~ dat[[x]] , weights = we)
   #quadratic <- lm(dat[[y]] ~ poly(dat[[x]], 2, raw = TRUE))
 
-  ablineIntensity <- fitted(linearRange)
+  fit <- fitted(linearModel)
 
   ###use residuals
 
-  #std_residuals <- rstandard(linearRange)
-  std_residuals <- residuals(linearRange)
-  #std_residuals_qu <- residuals(quadratic)
-  #sd_residuals <- abs(sd_res_factor*sd(std_residuals[which(abs(std_residuals) < 3)]))
-  #if(sd_residuals < 1) sd_residuals <- 1
+  fit_residuals <- residuals(linearModel)
+  dat$Residuals_all = fit_residuals
 
-  #use slope
-  #refslopemin <- coef(linearRange)[2]*100/3
-  #refslopemax <- coef(linearRange)[2]*100*3
-  #slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(y) ~ get(x)))[2]*100)
-  #medSlope <- median(slopes[(int50 - 1) : (int50 + 1)])
-  #refmedSlopemin <- medSlope - slopedev *medSlope /100
-  #refmedSlopemax <- medSlope + slopedev *medSlope /100
-  #if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- c(slopes[1],refslopemin*2, slopes[-1])}
+  lr <- abs(fit_residuals) < max_res
 
-  ##use cooks distance
-  #cook <- cooks.distance(linearRange)
-  #cookref <- dat$DilutionPoint[which(cook > 1)]
-
-  lr <- abs(std_residuals) < sd_res_factor  #&  (slopes > refmedSlopemin & slopes < refmedSlopemax)
-
-  #lr <- !(abs(std_residuals) >= ceiling(sd_residuals*10)/10 & dat$DilutionPoint %in% cookref)
-
-   consNDX <- rle(lr)
-
+  consNDX <- rle(lr)
   consNDX$position <- cumsum(consNDX$length)
 
 
-  if(any(consNDX$length[which(consNDX$values %in% TRUE)]>= min_feature)){ #& any(consNDX$position[consNDX$values %in% TRUE] >= int50)
+  if(any(consNDX$length[which(consNDX$values %in% TRUE)] >= min_feature)){
 
     TRUEpos <- which( consNDX$position[consNDX$values %in% TRUE] >= int50  & consNDX$lengths[consNDX$values %in% TRUE] >= min_feature)
-    } else{TRUEpos <- NULL}
 
-    if(length(TRUEpos) > 0){
+  } else{TRUEpos <- NULL}
+
+  if(length(TRUEpos) > 0){
 
 
-      if(length(TRUEpos) > 1) TRUEpos <- dplyr::last(TRUEpos)
-    maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE
-    ][TRUEpos] - consNDX$length[consNDX$values %in% TRUE][TRUEpos] +1) : consNDX$position[consNDX$values %in% TRUE][TRUEpos]
+    if(length(TRUEpos) > 1) TRUEpos <- dplyr::last(TRUEpos)
+    maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE][TRUEpos] - consNDX$length[consNDX$values %in% TRUE][TRUEpos] +1) : consNDX$position[consNDX$values %in% TRUE][TRUEpos]
     maxTrueRange <- maxTrueRange[maxTrueRange!=0]
-    # if(length(consNDX$length[which(consNDX$values %in% TRUE)]))
 
+    dat$InRange <- dat$DilutionPoint >= dat$DilutionPoint[maxTrueRange[1]] & dat$DilutionPoint <= dat$DilutionPoint[tail(maxTrueRange,1)]
 
-    tmpGroup <- tibble::tibble(
-      groupIndices = unique(dat$groupIndices),
-      linear = TRUE,
-      LRStart = dat$DilutionPoint[maxTrueRange[1]],
-      LRStartY = dat$Y[maxTrueRange[1]],
-      LRStartX = dat[[real_x]][maxTrueRange[1]],
-      LREnd = dat$DilutionPoint[tail(maxTrueRange,1)],
-      LREndY = dat$Y[tail(maxTrueRange,1)],
-      LREndX = dat[[real_x]][tail(maxTrueRange,1)],
-      LRLength = length(maxTrueRange),
-      enoughPointsWithinLR = LRLength >= min_feature,
-      LRFlag = NA
+    out <- create_output_findLinearRange(inRange = TRUE, data = dat, y = y, x = x)
+    tmpGroup <- out[[1]]
+    dat <- out[[2]]
 
-    )
-
-    dat[, ':=' (IsLinear = DilutionPoint >= tmpGroup$LRStart & DilutionPoint <= tmpGroup$LREnd,
-                IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
-                #modelFit = modelObject$fit,
-                #ablineLimit1 = limitup,
-                #ablineLimit2 = limitdown,
-                Residuals = std_residuals
-
-    )]
-    dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
-    dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
-    dat$abline[dat$IsLinear %in% TRUE] = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))
-    tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
-    tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
-    tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
-
-    dat$Comment[dat$IsLinear %in% TRUE] <- unlist(apply(cbind(dat$Comment[dat$IsLinear %in% TRUE], "linearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
+    dat$Comment[dat$InRange %in% TRUE] <- unlist(apply(cbind(dat$Comment[dat$InRange %in% TRUE], "linearModel"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
 
     # linear but not positive associated?
-    if(any(dat$IsPositivAssociated[tmpGroup$LRStart : tmpGroup$LREnd] %in% FALSE)){
+    if(any(dat$positiveSlope[dat$InRange %in% TRUE] %in% FALSE)){
 
-      LR_TRUE <- which(dat$IsPositivAssociated %in% 1)
-      LR_TRUE_list <- split(LR_TRUE, cumsum(c(1, diff(LR_TRUE) != 1)))
-      LR_TRUE_list_Length <- lengths(LR_TRUE_list)
+      Range_TRUE <- which(dat$positiveSlope[dat$InRange %in% TRUE] %in% 1)
+      Range_TRUE_list <- split(Range_TRUE, cumsum(c(1, diff(Range_TRUE) != 1)))
+      Range_TRUE_list_Length <- lengths(Range_TRUE_list)
 
-      indices <- 1:length( LR_TRUE_list)
-      minsublist <- sapply(indices, function(i) min(LR_TRUE_list[[i]]))
+      indices <- 1:length( Range_TRUE_list)
+      minsublist <- sapply(indices, function(i) min(Range_TRUE_list[[i]]))
 
-      LR_TRUE_list <- lapply(indices, function(i) c(minsublist[i] -1,LR_TRUE_list[[i]]))
-      LR_TRUE_list <- lapply(LR_TRUE_list, function(x) {x[x!=0]})
+      Range_TRUE_list <- lapply(indices, function(i) c(minsublist[i] -1,Range_TRUE_list[[i]]))
+      Range_TRUE_list <- lapply(Range_TRUE_list, function(x) {x[x!=0]})
 
-      if(any(LR_TRUE_list_Length >= min_feature) & length(LR_TRUE_list_Length) == 1){
-
-
-        dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length >= min_feature)]), IsLinear := TRUE]
-        dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length < min_feature)]), IsLinear := FALSE]
-        dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
-        dat$color[dat$IsLinear %in% FALSE] <- "black"
-        dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
-        dat$abline[dat$IsLinear %in% TRUE] = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))
-
-        tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
-        tmpGroup$LRStartY = dat$Y[dat$IsLinear %in% TRUE][1]
-        tmpGroup$LRStartX =  dat[[real_x]][dat$IsLinear %in% TRUE][1]
-        tmpGroup$LREnd = data.table::last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
-        tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
-        tmpGroup$LREndX = data.table::last(dat[[real_x]][dat$IsLinear %in% TRUE])
-        tmpGroup$LRLength = sum(dat$IsLinear)
-        tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= min_feature
-        tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
-        tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
-        tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
-
-        } else if(any(LR_TRUE_list_Length >= min_feature) & length(LR_TRUE_list_Length) > 1 & length(max(LR_TRUE_list_Length)) == 1){
-
-          dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length == max(LR_TRUE_list_Length))]), IsLinear := TRUE]
-          dat[unlist(LR_TRUE_list[which(LR_TRUE_list_Length != max(LR_TRUE_list_Length))]), IsLinear := FALSE]
-          dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
-          dat$color[dat$IsLinear %in% FALSE] <- "black"
-          dat$R2[dat$IsLinear %in% TRUE] <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
-          dat$abline[dat$IsLinear %in% TRUE] = fitted(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))
+      if(length(Range_TRUE_list_Length[Range_TRUE_list_Length >= min_feature]) == 1 ){
 
 
-          tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
-          tmpGroup$LRStartY = dat$Y[dat$IsLinear %in% TRUE][1]
-          tmpGroup$LRStartX =  dat[[real_x]][dat$IsLinear %in% TRUE][1]
-          tmpGroup$LREnd = data.table::last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
-          tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
-          tmpGroup$LREndX = data.table::last(dat[[real_x]][dat$IsLinear %in% TRUE])
-          tmpGroup$LRLength = sum(dat$IsLinear)
-          tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= min_feature
-          tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
-          tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
-          tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
-          tmpGroup$LRFlag = "mutiple linear ranges"
+        dat[unlist(Range_TRUE_list[which(Range_TRUE_list_Length >= min_feature)]), InRange := TRUE]
+        dat[unlist(Range_TRUE_list[which(Range_TRUE_list_Length < min_feature)]), InRange := FALSE]
 
-        } else{
+        out <- create_output_findLinearRange(inRange = TRUE, data = dat, y = y, x = x)
+        tmpGroup <- out[[1]]
+        dat <- out[[2]]
 
-          dat$IsLinear = dat$IsLinear
-          dat$color[dat$IsLinear %in% TRUE] <- "darkseagreen"
-          dat$color[dat$IsLinear %in% FALSE] <- "black"
-          dat$R2 <- dat$R2
-          dat$abline <-dat$abline
+      } else if(length(Range_TRUE_list_Length[Range_TRUE_list_Length >= min_feature]) > 1 &
+                length(max(Range_TRUE_list_Length)) == 1){
 
-        tmpGroup$LRStart = dat$DilutionPoint[dat$IsLinear %in% TRUE][1]
-        tmpGroup$LRStartY = dat$Y[dat$IsLinear %in% TRUE][1]
-        tmpGroup$LRStartX =  dat[[real_x]][dat$IsLinear %in% TRUE][1]
-        tmpGroup$LREnd = data.table::last(dat$DilutionPoint[dat$IsLinear %in% TRUE])
-        tmpGroup$LREndY = data.table::last(dat$Y[dat$IsLinear %in% TRUE])
-        tmpGroup$LREndX = data.table::last(dat[[real_x]][dat$IsLinear %in% TRUE])
-        tmpGroup$LRLength = sum(dat$IsLinear)
-        tmpGroup$enoughPointsWithinLR = tmpGroup$LRLength >= min_feature
-        tmpGroup$Intercept <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[1]]
-        tmpGroup$slope <- lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ])$coefficients[[2]]
-        tmpGroup$R2 <- summary(lm(get(y) ~ get(x), data = dat[color %in% "darkseagreen", ]))$adj.r.squared
-        tmpGroup$LRFlag = "min 1 signal has negative slope"
-      }}
+        dat[unlist(Range_TRUE_list[which(Range_TRUE_list_Length == max(Range_TRUE_list_Length))]), InRange := TRUE]
+        dat[unlist(Range_TRUE_list[which(Range_TRUE_list_Length != max(Range_TRUE_list_Length))]), InRange := FALSE]
+
+        out <- create_output_findLinearRange(inRange = TRUE, data = dat, y = y, x = x)
+        tmpGroup <- out[[1]]
+        dat <- out[[2]]
+
+        tmpGroup$RangeFlag = "mutiple linear ranges"
 
       } else{
 
-        tmpGroup <- tibble::tibble(
-          groupIndices = unique(dat$groupIndices),
-          linear = FALSE,
-          LRStart = NA,
-          LRStartY = NA,
-          LRStartX = NA,
-          LREnd = NA,
-          LREndY = NA,
-          LREndX = NA,
-          LRLength = NA,
-          enoughPointsWithinLR = NA,
-          LRFlag = NA,
-          Intercept = NA,
-          slope = NA,
-          R2 = NA
 
-        )
+        tmpGroup$RangeFlag = "mutiple linear ranges, min 1 signal has negative slope"
+      }}
 
-        dat[, ':=' (IsLinear = FALSE,
-                    IsPositivAssociated = c(get(y)[1] < get(y)[2], (get(y)[-1] - data.table::shift(get(y), 1, type = "lag")[-1]) > 0),
-                    #modelFit = modelObject$fit,
-                    #ablineLimit1 = limitup,
-                    #ablineLimit2 = limitdown,
-                    Residuals = std_residuals,
-                    R2 = NA,
-                    abline = NA
-        )]
-        dat$Comment[dat$IsLinear %in% FALSE] <- unlist(apply(cbind(dat$Comment[dat$IsLinear %in% FALSE], "NolinearRange"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
+  } else{
 
-      }
+    out <- create_output_findLinearRange(inRange = FALSE, data = dat, y = y, x = x)
+    tmpGroup <- out[[1]]
+    dat <- out[[2]]
+
+    dat$Comment <- unlist(apply(cbind(dat$Comment, "No linearModel"), 1, function(x) paste(x[!is.na(x)], collapse = "_")))
+
+
+  }
+
   dat <- data.table::setorder(dplyr::full_join(dat, dats[!IDintern %in% dat$IDintern], by = colnames(dats)), DilutionPoint)
 
-  linearY <- "Y_LR"
+  linearY <- "Y_Range"
+
   dat[[linearY]] <- dat[[y]]
-  dat[[linearY]][is.na(dat[, get(y)]) | dat$IsLinear %in% FALSE | is.na(dat$IsLinear)] <- NA
-  dat$Intercept <- tmpGroup$Intercept
-  dat$slope <- tmpGroup$slope
-  dat$LRStartY <- tmpGroup$LRStartY
-  dat$LRStart <- tmpGroup$LRStart
-  dat$LREndY <- tmpGroup$LREndY
-  dat$LREnd <- tmpGroup$LREnd
+  dat[[linearY]][is.na(dat[, get(y)]) | dat$InRange %in% FALSE | is.na(dat$InRange)] <- NA
 
+  tmpGroup$Slope_within_Tolerance = abs(tmpGroup$slope - 1) <= slope_tol
+  tmpGroup$Linearity_Criterion_Deviation = tmpGroup$deltaMax <= delta_tol
 
+  dat$color = ifelse(dat$InRange %in% TRUE, "darkseagreen",dat$color)
 
-#dat <- subset(dat, select = -fittingModel)
   tmp <- list(dat, tmpGroup)
   return(tmp)
 }
+
+
+
+#' Title
+#'
+#' @param inRange
+#' @param data
+#' @param y
+#' @param x
+#'
+#' @return
+#' @export
+#'
+#' @examples
+create_output_findLinearRange <- function(inRange, data, y = y, x = x){
+
+
+
+  if(inRange %in% TRUE){
+
+    model <- lm(get(y) ~ get(x), data = data[data$InRange %in% TRUE, ])
+    fit <- fitted(model)
+    summary_model <- summary(model)
+
+    spearman_rho <- cor(data[[x]][data$InRange %in% TRUE], data[[y]][data$InRange %in% TRUE], method = "spearman")
+
+    Deviation <- data[[y]][data$InRange %in% TRUE] - fit
+    Deviation_perc <- (exp(Deviation) -1)*100
+
+
+
+
+    tmpGroup <- tibble::tibble(
+
+      groupIndices = unique(data$groupIndices),
+      RangeStart = data$DilutionPoint[data$InRange %in%TRUE][1],
+      RangeStartY = data$Y[data$DilutionPoint %in% RangeStart],
+      RangeStartX = data[[real_x]][data$DilutionPoint %in% RangeStart],
+      RangeEnd = last(data$DilutionPoint[data$InRange %in%TRUE]),
+      RangeEndY = data$Y[data$DilutionPoint %in% RangeEnd],
+      RangeEndX = data[[real_x]][data$DilutionPoint %in% RangeEnd],
+      RangeLength = sum(data$InRange %in%TRUE),
+      enoughPointsWithinRange = RangeLength >= min_feature,
+      RangeFlag = NA,
+      slope = coef(model)[2],
+      Intercept = coef(model)[1],
+      R2 = summary_model$adj.r.squared,
+      spearman_rho = spearman_rho,
+      positiveSlope = all(diff(dat[[y]][data$InRange %in% TRUE]) > 0),
+      deltaMax = max(abs(Deviation), na.rm = TRUE),
+      deltaMax_relative = max(abs(Deviation_perc),na.rm = TRUE)
+
+
+    )
+
+    data <- data[, ':=' (
+      positiveSlope = c(get(y)[1] < get(y)[2], diff(data[[y]]) > 0),
+      R2 = ifelse(data$InRange %in% TRUE, tmpGroup$R2,NA)
+
+
+
+
+    )]
+
+    data$predicted[data$InRange %in% TRUE] <- fit
+    data$ResidualsInRange[data$InRange %in% TRUE] <- resid(model)
+    data$delta[data$InRange %in% TRUE] <- Deviation
+    data$delta_percent[data$InRange %in% TRUE] <- Deviation_perc
+
+
+  } else{
+
+    tmpGroup <- tibble::tibble(
+
+      groupIndices = unique(data$groupIndices),
+      RangeStart = NA,
+      RangeStartY = NA,
+      RangeStartX = NA,
+      RangeEnd = NA,
+      RangeEndY = NA,
+      RangeEndX = NA,
+      RangeLength = NA,
+      enoughPointsWithinRange = NA,
+      RangeFlag = NA,
+      slope = NA,
+      Intercept = NA,
+      R2 = NA,
+      spearman_rho = NA,
+      monoton = NA,
+      deltaMax = NA,
+      deltaMax_relative = NA
+
+
+    )
+
+    data <- data[, ':=' (
+      positiveSlope = NA,
+      R2 = NA,
+      predicted = NA,
+      ResidualsInRange = NA,
+      deta = NA,
+      delta_percent = NA
+
+    )]
+
+
+
+  }
+
+  return(list(tmpGroup, data))
+
+}
+
+
+
+
+
+
 
 
 

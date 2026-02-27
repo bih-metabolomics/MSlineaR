@@ -3,6 +3,7 @@
 ---
 
 # MSlineaR
+
 `MSlineaR` is a dataset tool to reduce the risk of false positives by limiting datasets to only high quality data (in combination with other more standard filtering steps such as with RSD or D-ratios). It reduces a dataset to only those signals that show a clear linear response in signal when the concentraton is increased. It requires a dataset which includes either serial concentrated or diluted compounds. It can be used for targeted and untargeted metabolomic data sets. In short the package use a serial diluted or concentrated data set to determine the linear portion of the dilution/calibration curve. Therefore the following steps will be performed:
 
 1.  The data will be checked and transformed.
@@ -57,8 +58,7 @@ devtools::install_github("bih-metabolomics/MSlineaR")
 
 ## Input Data Tables
 
-An example dataset is given at the bottom of this file.
-MSlineaR needs two tables as input, one with information about the features and one for the sample meta data.
+An example dataset is given at the bottom of this file. MSlineaR needs two tables as input, one with information about the features and one for the sample meta data.
 
 ### **1) Feature Table**
 
@@ -134,7 +134,7 @@ The Sample Table contains all meta data for the individual samples. The table ne
 -   *output_name*: name of the output file
 
 -   *output_dir*: directory where the output files should be saved
-   
+
 -   *analysisType:* You can choose between "targeted" or "untargeted"
 
 -   *inputData_feature*: Data table or data frame with at least three columns, see above
