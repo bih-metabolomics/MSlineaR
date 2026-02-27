@@ -1187,7 +1187,7 @@ Yorigin <- "Y"
                               inputData_BioSamples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
                               inputData_QC = SampleQC,
                               COLNAMES = COLNAMES, Xcol = Xraw, Ycol = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
-                              Series = Series, output_dir = IMG_OUTPUT_DIR, outputfileName = paste0(PREFIX,"_CalibrationPlot")
+                              Series = Series, output_dir = IMG_OUTPUT_DIR, outputfileName = paste0(PREFIX,"_CalibrationPlot"),signal_blank_ratio = NOISE
   )
 
   logr::put("Scatterplot was created")
