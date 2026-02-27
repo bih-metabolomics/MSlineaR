@@ -1,10 +1,18 @@
 ---
 ---
 ---
+[![test-coverage](https://github.com/bih-metabolomics/MSlineaR/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/bih-metabolomics/MSlineaR/actions/workflows/test-coverage.yaml)
+
+[![codecov](https://codecov.io/gh/bih-metabolomics/MSlineaR/graph/badge.svg?token=MQYBO83IUS)](https://codecov.io/gh/bih-metabolomics/MSlineaR)
+
 
 # MSlineaR
 
-`MSlineaR` is a dataset tool to reduce the risk of false positives by limiting datasets to only high quality data (in combination with other more standard filtering steps such as with RSD or D-ratios). It reduces a dataset to only those signals that show a clear linear response in signal when the concentraton is increased. It requires a dataset which includes either serial concentrated or diluted compounds. It can be used for targeted and untargeted metabolomic data sets. In short the package use a serial diluted or concentrated data set to determine the linear portion of the dilution/calibration curve. Therefore the following steps will be performed:
+Thank you for your interest in MSlineaR. If you use it please cite:
+
+**Janine Wiebach, Ulrike Bruning, Álvaro Fernández-Ochoa, Jochen Kruppa-Scheetz, Maëlle Bonhomme, Dominique Votion, Jennifer Kirwan "MSlineaR software: a new R package assessing linearity to improve quality assurance and statistical robustness in untargeted metabolomics" paper in preparation**
+
+`MSlineaR` is a dataset tool to reduce the risk of false positives by limiting datasets to only high quality data (in combination with other more standard filtering steps such as with RSD or D-ratios). It reduces a dataset to only those signals that show a clear linear response in signal when the concentration is increased. It requires a dataset which includes either serially concentrated or diluted compounds. It can be used for targeted and untargeted metabolomic data sets. In short the package uses a serial diluted or concentrated data set to determine the linear portion of the dilution/calibration curve. Therefore the following steps will be performed:
 
 1.  The data will be checked and transformed.
 
@@ -20,9 +28,9 @@
 
 7.  Determining the linear part of the curve by using a linear regression model. Only curves with an Coefficient of Determination (R²) higher or equal to a predefined R² are considered as linear.
 
-8.  If the data set consists of several batches, the algorithm checks if a linear part was found in all batches. If not than the compound will be flagged and if requested can be removed.
+8.  If the data set consists of several batches, the algorithm checks if a linear part was found in all batches. If not, then the compound will be flagged and, if requested, can be removed.
 
-After these steps for each dilution/concentration curve are the information available about if the respective compound has a linear part and and where it starts and ends. With these information the signals of biological samples can be classified into signals which are in the linear range and signals which are outside of the linear range.
+After these steps, for each dilution/concentration curve, the information is available about whether the respective compound has a linear part and where it starts and ends. With these information, the signals of biological samples can be classified into signals which are in the linear range and signals which are outside of the linear range.
 
 ## Installation
 
@@ -35,7 +43,7 @@ To get the latest development version from `MSlineaR` from [GitHub](https://gith
 devtools::install_github("bih-metabolomics/MSlineaR")
 ```
 
-As long as `MSlineaR` is not a public package, you need to have access to my repository and additionally you need create a personal access token in github. Ask me if you have trouble with installing the package.
+As long as `MSlineaR` is not a public package, you need to have access to my repository and additionally you need to create a personal access token in github. Ask me if you have trouble installing the package.
 
 Install `MSlineaR` by running the following commands in R:
 
@@ -43,10 +51,10 @@ Install `MSlineaR` by running the following commands in R:
 if (!requireNamespace("usethis")) install.packages("usethis")
   
 # set config
-# add github user name and email adress, which you are using for github
+# add github user name and email address, which you are using for github
 usethis::use_git_config(user.name = "USERNAME", user.email = "EMAIL")
 
-#Go to github page to generate token only for first time
+#Go to the GitHub page to generate token (only needed the first time).
 usethis::create_github_token()
 
 #paste your PAT into pop-up that follows...
@@ -58,7 +66,8 @@ devtools::install_github("bih-metabolomics/MSlineaR")
 
 ## Input Data Tables
 
-An example dataset is given at the bottom of this file. MSlineaR needs two tables as input, one with information about the features and one for the sample meta data.
+An example dataset is given at the bottom of this file.
+MSlineaR needs two tables as input, one with information about the features and one for the sample meta data.
 
 ### **1) Feature Table**
 
@@ -86,9 +95,9 @@ The Feature table should be present in long format with following columns:
 
 : example for feature table
 
-**Reformating table from wide into long format**
+**Reformatting table from wide into long format**
 
-Many peakpicking software, e.g. xcms, providing the data in wide format. The data can be easily reformated into long format using following code:
+Many peakpicking software, e.g. xcms, provide the data in wide format. The data can be easily reformatted into long format using following code:
 
 ``` r
 library(tidyr)
@@ -102,7 +111,7 @@ pivot_longer(cols = c("Compound_01" : "Compound_34"),, names_to = "Compound", va
 
 ### **2) Sample Table**
 
-The Sample Table contains all meta data for the individual samples. The table needs to be present in long format and should contain the following columns:
+The Sample Table contains all meta data for the individual samples. The table needs to be in long format and should contain the following columns:
 
 -   mandatory: identification of the samples -\> the column name must be identical in both tables
 
@@ -110,7 +119,7 @@ The Sample Table contains all meta data for the individual samples. The table ne
 
 -   mandatory: order of injection
 
--   mandatory: dilution step normalized to the highest dilution i.e. the most dilute sample is given a dilution factor of 1. If the dilution factor is 3 (i.e. every sample is 3 times more dilute than its nearest neighbour), than the second most dilute sample is termed 3, the next one 9 , the next one 27,...This process also allows for uneven dilution steps between dilution points
+-   mandatory: dilution step normalized to the highest dilution i.e. the most dilute sample is given a dilution factor of 1. If the dilution factor is 3 (i.e. every sample is 3 times more dilute than its nearest neighbour), then the second most dilute sample is termed 3, the next one 9 , the next one 27,...This process also allows for uneven dilution steps between dilution points
 
 -   mandatory: Identification of the Batch -\> the column name must be identical in both tables
 
@@ -134,7 +143,7 @@ The Sample Table contains all meta data for the individual samples. The table ne
 -   *output_name*: name of the output file
 
 -   *output_dir*: directory where the output files should be saved
-
+   
 -   *analysisType:* You can choose between "targeted" or "untargeted"
 
 -   *inputData_feature*: Data table or data frame with at least three columns, see above
@@ -151,7 +160,7 @@ The Sample Table contains all meta data for the individual samples. The table ne
 
     -   *sampleType_QC*: Sample types of the QC samples (default = "QCpool", disabled = NULL). This parameter could include a vector with more sample types.
 
--   *column_sampleID*: Column name in *inputData_feature* and *inputData_sample* indicating a unique sample identifier per Batch (default = "Sample.Identifiaction").
+-   *column_sampleID*: Column name in *inputData_feature* and *inputData_sample* indicating a unique sample identifier per Batch (default = "Sample.Identification").
 
 -   *column_featureID*: Column name in *inputData_feature* indicating a unique feature identifier (default = "CompoundID")
 
@@ -277,7 +286,7 @@ The function provides the possibility to disable each step separately and to cha
 
     -   *sampleType_QC*: Sample types of the QC samples (default = "QCpool", disabled = NULL). This parameter could include a vector with more sample types.
 
--   *column_sampleID*: Column name in *inputData_feature* and *inputData_sample* indicating a unique sample identifier per Batch (default = "Sample.Identifiaction").
+-   *column_sampleID*: Column name in *inputData_feature* and *inputData_sample* indicating a unique sample identifier per Batch (default = "Sample.Identification").
 
 -   *column_featureID*: Column name in *inputData_feature* indicating a unique feature identifier (default = "CompoundID")
 
