@@ -14,11 +14,11 @@ testthat::test_that("function findLinearRange works", {
                                             DilutionPoint = 1:10,
                                             color = c("grey", "grey" , rep("black",8))))
 
-  datOut1 <- findLinearRange(dat1,  x., y., max_res = 3, min_feature = 5, real_x = "X", slope_tol = 0.15, delta_tol = 0.182 )
+  datOut1 <- findLinearRange(dat1,  x., y., max_res = 2, min_feature = 5, real_x = "X", slope_tol = 0.15, delta_tol = 0.182 )
 
-  testthat::expect_true(round(datOut1[[2]]$R2) == 1)
+  testthat::expect_true(all(is.na(datOut1[[1]]$InRange[c(1,2)])))
   testthat::expect_true(datOut1[[2]]$RangeLength == 8)
-  testthat::expect_true(datOut1[[2]]$slope == 1)
+  testthat::expect_true(datOut1[[2]]$enoughPointsWithinRange)
   testthat::expect_true(datOut1[[2]]$spearman_rho == 1)
   testthat::expect_true(datOut1[[2]]$Slope_within_Tolerance)
   testthat::expect_true(datOut1[[2]]$Linearity_Criterion_Deviation)
