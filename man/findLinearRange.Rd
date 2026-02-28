@@ -2,20 +2,51 @@
 % Please edit documentation in R/findLinearRange.R
 \name{findLinearRange}
 \alias{findLinearRange}
-\title{Title}
+\title{determine metrics for linearity and linear range of dilution/ calibration curve}
 \usage{
 findLinearRange(
   dats,
   x = "DilutionPoint",
   y = "IntensityNorm",
-  sd_res_factor = 2,
-  min_feature,
-  real_x
+  max_res = 3,
+  min_feature = 5,
+  real_x,
+  slope_tol = 0.15,
+  delta_tol = 0.182
 )
 }
 \arguments{
-\item{res}{}
+\item{dats}{Long format data frame or data table for one metabolite including information about dependent and independent variable.
+Further necessary columns are: groupIndices, DilutionPoint (1:x), IDintern, color.}
+
+\item{x}{String; Column name of the log transformed independent variable}
+
+\item{y}{String; Column name of the log transformed dependent variable}
+
+\item{max_res}{Integer; points of serial diluted/concentrated series,
+which are less than \code{max_res} are considered for checking of linearity.
+Default to 3.}
+
+\item{min_feature}{Integer, ranging between 3 and maximum number of dilutions/concentrations.
+Minimum number of points present in one serial diluted/concentrated series
+marked as linear to consider this signal as linear. Default to 6, according to EMA guidelines2022.}
+
+\item{real_x}{String; Column name of the untransformed independent variable}
+
+\item{slope_tol}{Integer, allowed tolerance for slope deviation. Default to 0.15}
+
+\item{delta_tol}{Integer, allowed tolerance for maximum deviation of observed
+values to predicted value from linear regression model. Default set to 0.182 (~ 20\%).}
+}
+\value{
+list of two data frames. One with results per dilution point, one with result of features.
 }
 \description{
-Title
+\code{findLinearRange()} first determines a suitable range by forcing
+a linear regression model through halfmax intensity, calculating the residuals and
+removing all dilution points where the residuals are bigger than predefined value \code{max_res}.
+Using this range the method calculates metrics for monotonicity using spearman rho,
+linearity by using deviation of observed to predicted values from linear regression model,
+proportionality across range by calculating the slope of linear regression model
+and the goodness-of-fit by calculating the adjusted R^2.
 }

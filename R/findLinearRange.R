@@ -173,7 +173,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
 #'
 #' @examples
-create_output_findLinearRange <- function(inRange, data, y = y, x = x){
+create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x){
 
 
 
