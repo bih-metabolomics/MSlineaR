@@ -1,5 +1,7 @@
 testthat::test_that("function findLinearRange works", {
 
+  set.seed(1)
+
   y. = "logY"
   x. = "logX"
 
