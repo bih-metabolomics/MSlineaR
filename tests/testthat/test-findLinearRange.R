@@ -1,24 +1,28 @@
-testthat::test_that("function trimEnds works", {
+testthat::test_that("function findLinearRange works", {
 
-  y. = "Y"
-  x. = "X"
+  y. = "logY"
+  x. = "logX"
 
   dat1 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
                                             IDintern = paste0("s", 1:10),
                                             ID = rep(1,10),
                                             REPLICATE = rep(1,10),
                                             X = 1:10,
-                                            Y = c(10, 3,2:9),
+                                            logX = log(c(1:10)*3),
+                                            Y = c(2.1, 2.7,3:10),
+                                            logY = log(c(NA, NA,3:10)),
                                             DilutionPoint = 1:10,
-                                            color = rep("black",10)))
+                                            color = c("grey", "grey" , rep("black",8))))
 
-  datOut1 <- chooseModel(dat1, y., x.,  abbr = "FOD")$`1`$dat
+  datOut1 <- findLinearRange(dat1,  x., y., max_res = 3, min_feature = 5, real_x, slope_tol = 0.15, delta_tol = 0.182 )
 
-  testthat::expect_true(all(trimEnds(dats = datOut1,y = "Y_FOD", x., thresh = 0)$trim[2:4]))
-  testthat::expect_true(all(trimEnds(datOut1,y = "Y_FOD", x., thresh = 0.5)$trim[2:3]))
-  testthat::expect_equal(trimEnds(datOut1,y = "Y_FOD", x.)$trim[1], NA)
-  testthat::expect_match(trimEnds(datOut1,y = "Y_FOD", x.)$Comment[2], "trim: firstPoint")
-  testthat::expect_match(trimEnds(datOut1,y = "Y_FOD", x.)$Comment[3], "trim: <firstPoint")
+  testthat::expect_true(datOut1[[2]]$R2 == 1)
+  testthat::expect_true(datOut1[[2]]$RangeLength == 8)
+  testthat::expect_true(datOut1[[2]]$slope == 1)
+  testthat::expect_true(datOut1[[2]]$spearman_rho == 1)
+  testthat::expect_true(datOut1[[2]]$Slope_within_Tolerance)
+  testthat::expect_true(datOut1[[2]]$Linearity_Criterion_Deviation)
+
 
 
   dat2 <- data.table::data.table(data.frame(groupIndices = rep(1,10),
@@ -26,17 +30,18 @@ testthat::test_that("function trimEnds works", {
                                             ID = rep(1,10),
                                             REPLICATE = rep(1,10),
                                             X = 1:10,
-                                            Y = c(10, 3,2:5,9,6,8,7),
+                                            logX = log(c(1:10)*3),
+                                            Y = c(3.5, 3.2, 5:10, 10.3, 9.7),
+                                            logY = log(c(3.5, 3.2, 5:10, 10.3, 9.7)),
                                             DilutionPoint = 1:10,
-                                            color = rep("black",10)))
+                                            color = c(rep("black",10))))
 
-  datOut2 <- chooseModel(dat2, y., x., abbr = "FOD")$`1`$dat
+  datOut2 <- findLinearRange(dat2,  x., y., max_res = 3, min_feature = 5, real_x, slope_tol = 0.15, delta_tol = 0.182 )
 
-  testthat::expect_true(all(trimEnds(datOut2,y = "Y_FOD", x.)$trim[2:4]))
-  testthat::expect_equal(trimEnds(datOut2,y = "Y_FOD", x.)$trim[1], NA)
-  testthat::expect_match(trimEnds(datOut2,y = "Y_FOD", x.)$Comment[2], "trim: firstPoint")
-  testthat::expect_match(trimEnds(datOut2,y = "Y_FOD", x.)$Comment[3], "trim: <firstPoint")
-  testthat::expect_match(trimEnds(datOut2,y = "Y_FOD", x.)$Comment[9], "trim: >lastPoint")
-  testthat::expect_match(trimEnds(datOut2,y = "Y_FOD", x.)$Comment[10], "trim: lastPoint")
+  testthat::expect_false(all(datOut2[[1]]$positiveSlope[c(1,2,10)]))
+  testthat::expect_true(datOut2[[2]]$RangeLength == 8)
+  testthat::expect_true(datOut2[[2]]$enoughPointsWithinRange)
+  testthat::expect_false(datOut2[[2]]$Slope_within_Tolerance)
+  testthat::expect_true(datOut2[[2]]$Linearity_Criterion_Deviation)
 
 })
