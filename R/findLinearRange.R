@@ -207,7 +207,7 @@ create_output_findLinearRange <- function(inRange, data, y = y, x = x){
       Intercept = coef(model)[1],
       R2 = summary_model$adj.r.squared,
       spearman_rho = spearman_rho,
-      positiveSlope = all(diff(dat[[y]][data$InRange %in% TRUE]) > 0),
+      positiveSlope = all(diff(dat[[y]][data$InRange %in% TRUE]) > 0,na.rm = TRUE),
       deltaMax = max(abs(Deviation), na.rm = TRUE),
       deltaMax_relative = max(abs(Deviation_perc),na.rm = TRUE)
 

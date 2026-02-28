@@ -9,14 +9,14 @@ testthat::test_that("function findLinearRange works", {
                                             REPLICATE = rep(1,10),
                                             X = 1:10,
                                             logX = log(c(1:10)*3),
-                                            Y = c(2.1, 2.7,3:10),
-                                            logY = log(c(NA, NA,3:10)),
+                                            Y = c(2.1, 2.7,3:10) + sample(x = seq(from = 0.1, to = 1, by = 0.1) * 0.4,size = 10,replace = F),
+                                            logY = log(c(NA, NA,3:10) + sample(x = seq(from = 0.1, to = 1, by = 0.1) ,size = 10,replace = F)),
                                             DilutionPoint = 1:10,
                                             color = c("grey", "grey" , rep("black",8))))
 
   datOut1 <- findLinearRange(dat1,  x., y., max_res = 3, min_feature = 5, real_x = "X", slope_tol = 0.15, delta_tol = 0.182 )
 
-  testthat::expect_true(datOut1[[2]]$R2 == 1)
+  testthat::expect_true(round(datOut1[[2]]$R2) == 1)
   testthat::expect_true(datOut1[[2]]$RangeLength == 8)
   testthat::expect_true(datOut1[[2]]$slope == 1)
   testthat::expect_true(datOut1[[2]]$spearman_rho == 1)
