@@ -36,7 +36,7 @@ testthat::test_that("function findLinearRange works", {
                                             DilutionPoint = 1:10,
                                             color = c(rep("black",10))))
 
-  datOut2 <- findLinearRange(dat2,  x., y., max_res = 3, min_feature = 5, real_x, slope_tol = 0.15, delta_tol = 0.182 )
+  datOut2 <- findLinearRange(dat2,  x., y., max_res = 3, min_feature = 5, real_x = "X", slope_tol = 0.15, delta_tol = 0.182 )
 
   testthat::expect_false(all(datOut2[[1]]$positiveSlope[c(1,2,10)]))
   testthat::expect_true(datOut2[[2]]$RangeLength == 8)
