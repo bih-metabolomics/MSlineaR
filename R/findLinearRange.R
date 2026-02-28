@@ -84,7 +84,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
     dat$InRange <- dat$DilutionPoint >= dat$DilutionPoint[maxTrueRange[1]] & dat$DilutionPoint <= dat$DilutionPoint[tail(maxTrueRange,1)]
 
-    out <- create_output_findLinearRange(inRange = TRUE, data = dat, y = y, x = x, real_x = real_x)
+    out <- create_output_findLinearRange(inRange = TRUE, data = dat, y = y, x = x, real_x = real_x, min_feature = min_feature)
     tmpGroup <- out[[1]]
     dat <- out[[2]]
 
@@ -120,7 +120,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
         dat[unlist(Range_TRUE_list[which(Range_TRUE_list_Length == max(Range_TRUE_list_Length))]), InRange := TRUE]
         #dat[unlist(Range_TRUE_list[which(Range_TRUE_list_Length != max(Range_TRUE_list_Length))]), InRange := FALSE]
 
-        out <- create_output_findLinearRange(inRange = TRUE, data = dat, y = y, x = x, real_x = real_x)
+        out <- create_output_findLinearRange(inRange = TRUE, data = dat, y = y, x = x, real_x = real_x, min_feature = min_feature)
         tmpGroup <- out[[1]]
         dat <- out[[2]]
 
@@ -135,7 +135,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
   } else{
 
     dat$InRange <- FALSE
-    out <- create_output_findLinearRange(inRange = FALSE, data = dat, y = y, x = x, real_x = real_x)
+    out <- create_output_findLinearRange(inRange = FALSE, data = dat, y = y, x = x, real_x = real_x, min_feature = min_feature)
     tmpGroup <- out[[1]]
     dat <- out[[2]]
 
@@ -173,7 +173,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
 #'
 #' @examples
-create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x){
+create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x, min_feature = min_feature){
 
 
 
