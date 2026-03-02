@@ -15,13 +15,20 @@ chooseModel(
 )
 }
 \arguments{
+\item{dats}{data table after trimming step}
+
 \item{y}{log transformed dependent variable (area)}
 
 \item{x}{log transformed independent variable (Dilution)}
 
 \item{model}{Which regression model should be used? Currently the user can choose between "logistic", "linear" and "quadratic". Default are all three.}
 
-\item{abbr}{}
+\item{SDRES_MIN}{Integer, minimum value for standard deviation of residuals.
+If model has a lower  standard deviation of residuals, the potential outlier will only be flagged if it has a negative slope too.}
+
+\item{STDRES}{Integer, threshold value for standardized residuals. Signals which have a higher value are flagged as outliers.}
+
+\item{abbr}{Which step it is ? First outlier detection ("FOD") or second one ("SOD")}
 }
 \description{
 Because the structure of the data is unclear, a 2-step approach is used to

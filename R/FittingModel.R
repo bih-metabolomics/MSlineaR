@@ -23,12 +23,12 @@
 #' @param STDRES Integer, threshold value for standardized residuals. Signals which have a higher value are flagged as outliers.
 #' @param abbr Which step it is ? First outlier detection ("FOD") or second one ("SOD")
 #'
-#' @return
+#' @return data.table with signals flagged as outliers.
 #' @export
 #' @import data.table
 #' @importFrom drc drm L.3
 #' @importFrom Metrics rmse
-#' @examples
+
 #'
 #' @importFrom stats coef fitted lm na.exclude poly predict residuals rstandard sd
 chooseModel <- function(dats,
