@@ -27,7 +27,7 @@
 #'
 #' @export
 #'
-#' @examples
+
 #' @import dplyr
 #' @import data.table
 #' @importFrom tibble tibble
@@ -172,7 +172,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 #' @return list including two tables with metrics for each signal in the first one and information about the whole feature in the second one
 
 #'
-#' @examples
+
 create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x, min_feature = min_feature){
 
 

@@ -13,7 +13,7 @@
 #' @return data.table with information about flagged signals
 #' @export
 #'
-#' @examples
+
 #' @import data.table
 #' @import dplyr
 #' @importFrom stats median
@@ -104,7 +104,7 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans, noise){
 #' @return long format data.table with information about trimmed signals
 #' @export
 #'
-#' @examples
+
 #' @import data.table
 #' @import dplyr
 #' @importFrom tidyr unite

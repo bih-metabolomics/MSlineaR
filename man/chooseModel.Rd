@@ -30,6 +30,9 @@ If model has a lower  standard deviation of residuals, the potential outlier wil
 
 \item{abbr}{Which step it is ? First outlier detection ("FOD") or second one ("SOD")}
 }
+\value{
+data.table with signals flagged as outliers.
+}
 \description{
 Because the structure of the data is unclear, a 2-step approach is used to
 identify outliers.
