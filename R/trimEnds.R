@@ -1,18 +1,23 @@
-#' Title
+#' Signal/Noise using Blank samples
 #'
-#' @param dats
-#' @param blanks
-#' @param y
-#' @param noise
+#' @description
+#' `trimm_signalBlank ()` removes all signals which are lower than x times of the median from all blank samples
 #'
-#' @return
+#'
+#' @param dats data table with information about dilution/concentration curve and blank samples
+#' @param blanks name of blank sample in column Sample.Type
+#' @param y untransformed dependent variable (area)
+#' @param noise Integer, indicating how higher the samples need to be compared to the median of the blanks
+#' @param y_trans log-transformed dependent variable
+#'
+#' @return data.table with information about flagged signals
 #' @export
 #'
 #' @examples
 #' @import data.table
 #' @import dplyr
 #' @importFrom stats median
-trimm_signalBlank <- function(dats, blanks, y, y_trans,yblank, noise){
+trimm_signalBlank <- function(dats, blanks, y, y_trans, noise){
 
   setDT(dats)
   setDT(blanks)
@@ -24,7 +29,7 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,yblank, noise){
   dat$Y_sb <- dat[[y_trans]]
 
 
-  medblank <- median(blank[[yblank]], na.rm = T)
+  medblank <- median(blank[[y]], na.rm = T)
 
   if(!is.na(medblank)){
 
@@ -83,21 +88,27 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans,yblank, noise){
 
 
 
-#' Title
+#' Trim unstable ends from dilution /concentration curve
 #'
-#' @param dats
-#' @param y
-#' @param x
-#' @param thresh
+#' @description
+#' ` trimEnds ()` checks if the first point is the minimum and the last point is
+#'  the maximum of the dilution/concentration curve. If both is the case no trimming
+#'  is performed. Otherwise the ends will be removed until the last point of the
+#'  new range is the highest and the first point is lowest respectively.
 #'
-#' @return
+#' @param dats Long format data frame or data table for one metabolite including information about dependent and independent variable.
+#' Further necessary columns are: groupIndices, DilutionPoint (1:x), IDintern, color.
+#' @param y String; Column name of the log transformed independent variable
+#' @param x String; Column name of the log transformed dependent variable
+#'
+#' @return long format data.table with information about trimmed signals
 #' @export
 #'
 #' @examples
 #' @import data.table
 #' @import dplyr
 #' @importFrom tidyr unite
-trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, thresh=0){
+trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X){ # thresh=0
 
   dats$trim <- FALSE
   dats$trim[is.na(dats[[y]])] <- NA # | dats$OutlierFOD %in% TRUE
@@ -201,95 +212,3 @@ if(any(dat.reduced.min$trim %in% FALSE)){
 
   return(dats)
 }
-
-
-
-#' Title
-#'
-#' @param dats
-#' @param y
-#' @param x
-#'
-#' @return
-#' @export
-#'
-#' @examples
-#' @import data.table
-#' @import dplyr
-
-trim_pos_associated <- function(dats, y, x, MIN_Feature){
-data.table::setDT(dats)
-
-  dats$trimPos <- FALSE
-  dats$trimPos[is.na(dats[[y]])] <- NA # | dats$OutlierFOD %in% TRUE
-  dat <- data.table::setorderv(dats,x)[!is.na(get(y))]# & !OutlierFOD %in% TRUE]
-
-
-  IsPositivAssociated =rle(c(dat[[y]][1] < dat[[y]][2], (dat[[y]][-1] - data.table::shift(dat[[y]], 1, type = "lag")[-1]) > 0))
-  if(any(IsPositivAssociated$values %in% TRUE & IsPositivAssociated$lengths >= MIN_Feature)){
-
-    if(length(max(IsPositivAssociated$lengths[IsPositivAssociated$values %in% TRUE])) == 1 ){
-      PA_TRUE_length_max <- max(IsPositivAssociated$lengths[IsPositivAssociated$values %in% TRUE])
-      PA_TRUE_length_max_pos <- which(IsPositivAssociated$lengths %in% PA_TRUE_length_max)
-
-      rangeStart = ifelse(PA_TRUE_length_max_pos == 1, 1, cumsum(IsPositivAssociated$lengths)[PA_TRUE_length_max_pos-1] +1)
-
-      PA_TRUE_range <- c(rangeStart:cumsum(IsPositivAssociated$lengths)[PA_TRUE_length_max_pos])
-
-      exspected_min <- min(PA_TRUE_range)
-      exspected_max <- max(PA_TRUE_range)
-
-      if(dat[[y]][exspected_max] != data.table::last(dat[[y]]) &
-         any(dat[[y]][exspected_max : which.max(dat[[y]])] < dat[[y]][exspected_max])){
-
-        last_min <- which(dat[[y]] %in% min(dat[[y]][exspected_max:which.max(dat[[y]])]))
-        dat <- dat[get(y) >= dat[last_min, get(y)],
-                   ':=' (trimPos = TRUE,
-                         Comment = paste(Comment,"trimPos", sep = "_"))]
-
-      }else if(dat[[y]][exspected_min] != dat[[y]][1] &
-               any(dat[[y]][1: exspected_min] > dat[[y]][exspected_min])){
-
-        first_max <- which(dat[[y]] %in% max(dat[[y]][1: exspected_min]))
-
-        second_max <- which(dat[[y]] %in% min(dat[[y]][dat[[y]] > dat[[y]][first_max]])) -1
-        dat <- dat[1:second_max,
-                        ':=' (trimPos = TRUE,
-                              Comment = paste(Comment,"trimPos", sep = "_"))]
-      }else{
-
-        dat$trimPos[PA_TRUE_range] <- FALSE
-        dat$trimPos[-PA_TRUE_range] <- TRUE
-
-
-
-
-      }
-
-      #if(PA_TRUE_length_max == )
-
-
-
-    }else{
-
-      dat$Comment = paste0(dat$Comment[dat$trimPos %in% FALSE], "_Multiple.PA.ranges")
-    }
-
-
-  }
-
-  dats <- dplyr::full_join(dat, dats[!IDintern %in% dat$IDintern ], by = colnames(dats))
-
-  dats$Comment[dats$trimPos %in% FALSE] <- paste0(dats$Comment[dats$trimPos %in% FALSE], "_NoTrimPos")
-  dats$color[dats$trimPos %in% TRUE] <- "grey"
-  dats$Y_trimPos <- dats[[y]]
-  dats$Y_trimPos[dats$trimPos %in% TRUE] <- NA
-
-  return(dats)
-
-
-}
-
-
-
-

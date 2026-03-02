@@ -428,7 +428,7 @@ Yorigin <- "Y"
     #            --------------------------------------------------------\n")
 
     blanks <-  dataReduced[get(COLNAMES[["Sample_type"]]) %in% BLANK]
-    Yblank <- COLNAMES[["Y"]]
+    #Yblank <- COLNAMES[["Y"]]
 
 
 #closeAllConnections()
@@ -441,7 +441,7 @@ Yorigin <- "Y"
       inputData = processingFeature,
       y = Yorigin,
       y_trans = Y,
-      yblank = Yblank,
+      #yblank = Yblank,
       func = trimm_signalBlank,#(function in trimmEnds.R)
       blanks = blanks,
       noise = NOISE
