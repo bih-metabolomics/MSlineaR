@@ -2,13 +2,24 @@
 % Please edit documentation in R/trimEnds.R
 \name{trimm_signalBlank}
 \alias{trimm_signalBlank}
-\title{Title}
+\title{Signal/Noise using Blank samples}
 \usage{
-trimm_signalBlank(dats, blanks, y, y_trans, yblank, noise)
+trimm_signalBlank(dats, blanks, y, y_trans, noise)
 }
 \arguments{
-\item{noise}{}
+\item{dats}{data table with information about dilution/concentration curve and blank samples}
+
+\item{blanks}{name of blank sample in column Sample.Type}
+
+\item{y}{untransformed dependent variable (area)}
+
+\item{y_trans}{log-transformed dependent variable}
+
+\item{noise}{Integer, indicating how higher the samples need to be compared to the median of the blanks}
+}
+\value{
+data.table with information about flagged signals
 }
 \description{
-Title
+\code{trimm_signalBlank ()} removes all signals which are lower than x times of the median from all blank samples
 }

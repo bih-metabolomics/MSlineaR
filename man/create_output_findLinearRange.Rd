@@ -4,7 +4,14 @@
 \alias{create_output_findLinearRange}
 \title{calculate linear regression from choosen range and generate output table for function \code{findLinearRange()}}
 \usage{
-create_output_findLinearRange(inRange, data, y = y, x = x)
+create_output_findLinearRange(
+  inRange,
+  data,
+  y = y,
+  x = x,
+  real_x = real_x,
+  min_feature = min_feature
+)
 }
 \arguments{
 \item{inRange}{Boolean; Does the feature has a choosen range?}

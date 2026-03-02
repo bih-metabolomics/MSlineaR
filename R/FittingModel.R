@@ -1,9 +1,26 @@
-#' Title
+#' Flag Outliers
+#'
+#'@description
+#'Because the structure of the data is unclear, a 2-step approach is used to
+#'identify outliers.
+#'1.)	For each model (linear, quadratic, logarithmic) outliers will be examined
+#'using standardized residuals. An outlier is defined as absolute standardized
+#'residuals >= 2 (can be changed by user). That results in two data sets per model,
+#'one including all data and one where the outlier was excluded.
+#'2.)	After that the root mean square error (RMSE) is calculated for both data sets
+#'and compared. The data set resulting in the lowest RMSE will retain.
+#'After completing this for all three regression models, the RMSE of the best fit
+#'per model will be compared and the outliers from the model showing the lowest RMSE
+#'will be removed from the data
+#'
 #'
 #' @param dats
-#' @param y
-#' @param x
-#' @param model
+#' @param y log transformed dependent variable (area)
+#' @param x log transformed independent variable (Dilution)
+#' @param model Which regression model should be used? Currently the user can choose between "logistic", "linear" and "quadratic". Default are all three.
+#' @param SDRES_MIN
+#' @param STDRES
+#' @param abbr
 #'
 #' @return
 #' @export
@@ -88,11 +105,12 @@ chooseModel <- function(dats,
 
   if ("linear" %in% model) {
     linear <- lm(get(outlierY) ~ get(x), data = dat)
-    if(any(abs(rstandard(linear)) > STDRES) ){ #& abs(sd(residuals(linear))) > SDRES_MIN
+    abs_std_residuals <- abs(rstandard(linear))
+    if(any(abs_std_residuals > STDRES) ){ #& abs(sd(residuals(linear))) > SDRES_MIN
       if(abs(sd(residuals(linear))) > SDRES_MIN){
         datOutLin <- dat
-        datOutLin[[outlierY]][which(abs(rstandard(linear)) > STDRES)] <- NA
-        datOutLin[[outlierName]][which(abs(rstandard(linear)) > STDRES)] <- TRUE
+        datOutLin[[outlierY]][which(abs_std_residuals > STDRES)] <- NA
+        datOutLin[[outlierName]][which(abs_std_residuals > STDRES)] <- TRUE
 
         linearOut <- lm(get(outlierY) ~ get(x), data = datOutLin)
         #RMSE
@@ -106,14 +124,14 @@ chooseModel <- function(dats,
         slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(outlierY) ~ get(x)))[2]*100)
         if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- c(slopes[1],refslopemin*2, slopes[-1])}
 
-        pos_slope <- c(which(abs(rstandard(linear)) > STDRES), which(abs(rstandard(linear)) > STDRES) + 1)
+        pos_slope <- c(which(abs_std_residuals > STDRES), which(abs_std_residuals > STDRES) + 1)
         pos_slope <- pos_slope[pos_slope <= nrow(dat)]
 
         if(any(slopes[pos_slope] < 0)){
 
           datOutLin <- dat
-          datOutLin[[outlierY]][which(abs(rstandard(linear)) > STDRES)] <- NA
-          datOutLin[[outlierName]][which(abs(rstandard(linear)) > STDRES)] <- TRUE
+          datOutLin[[outlierY]][which(abs_std_residuals > STDRES)] <- NA
+          datOutLin[[outlierName]][which(abs_std_residuals > STDRES)] <- TRUE
 
           linearOut <- lm(get(outlierY) ~ get(x), data = datOutLin)
           #RMSE

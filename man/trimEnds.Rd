@@ -2,13 +2,24 @@
 % Please edit documentation in R/trimEnds.R
 \name{trimEnds}
 \alias{trimEnds}
-\title{Title}
+\title{Trim unstable ends from dilution /concentration curve}
 \usage{
-trimEnds(dats, y = parent.frame()$Y, x = parent.frame()$X, thresh = 0)
+trimEnds(dats, y = parent.frame()$Y, x = parent.frame()$X)
 }
 \arguments{
-\item{thresh}{}
+\item{dats}{Long format data frame or data table for one metabolite including information about dependent and independent variable.
+Further necessary columns are: groupIndices, DilutionPoint (1:x), IDintern, color.}
+
+\item{y}{String; Column name of the log transformed independent variable}
+
+\item{x}{String; Column name of the log transformed dependent variable}
+}
+\value{
+long format data.table with information about trimmed signals
 }
 \description{
-Title
+\code{ trimEnds ()} checks if the first point is the minimum and the last point is
+the maximum of the dilution/concentration curve. If both is the case no trimming
+is performed. Otherwise the ends will be removed until the last point of the
+new range is the highest and the first point is lowest respectively.
 }

@@ -15,8 +15,24 @@ chooseModel(
 )
 }
 \arguments{
-\item{model}{}
+\item{y}{log transformed dependent variable (area)}
+
+\item{x}{log transformed independent variable (Dilution)}
+
+\item{model}{Which regression model should be used? Currently the user can choose between "logistic", "linear" and "quadratic". Default are all three.}
+
+\item{abbr}{}
 }
 \description{
-Title
+Because the structure of the data is unclear, a 2-step approach is used to
+identify outliers.
+1.)	For each model (linear, quadratic, logarithmic) outliers will be examined
+using standardized residuals. An outlier is defined as absolute standardized
+residuals >= 2 (can be changed by user). That results in two data sets per model,
+one including all data and one where the outlier was excluded.
+2.)	After that the root mean square error (RMSE) is calculated for both data sets
+and compared. The data set resulting in the lowest RMSE will retain.
+After completing this for all three regression models, the RMSE of the best fit
+per model will be compared and the outliers from the model showing the lowest RMSE
+will be removed from the data
 }
