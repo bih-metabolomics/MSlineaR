@@ -2,7 +2,7 @@
 % Please edit documentation in R/FittingModel.R
 \name{chooseModel}
 \alias{chooseModel}
-\title{Title}
+\title{Flag Outliers}
 \usage{
 chooseModel(
   dats,

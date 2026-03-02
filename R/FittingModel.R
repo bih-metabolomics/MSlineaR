@@ -14,13 +14,14 @@
 #'will be removed from the data
 #'
 #'
-#' @param dats
+#' @param dats data table after trimming step
 #' @param y log transformed dependent variable (area)
 #' @param x log transformed independent variable (Dilution)
 #' @param model Which regression model should be used? Currently the user can choose between "logistic", "linear" and "quadratic". Default are all three.
-#' @param SDRES_MIN
-#' @param STDRES
-#' @param abbr
+#' @param SDRES_MIN Integer, minimum value for standard deviation of residuals.
+#' If model has a lower  standard deviation of residuals, the potential outlier will only be flagged if it has a negative slope too.
+#' @param STDRES Integer, threshold value for standardized residuals. Signals which have a higher value are flagged as outliers.
+#' @param abbr Which step it is ? First outlier detection ("FOD") or second one ("SOD")
 #'
 #' @return
 #' @export
