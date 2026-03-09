@@ -37,6 +37,108 @@
 
 findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_res = 3, min_feature = 5, real_x, slope_tol = 0.15, delta_tol = 0.182 ){
 
+  create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x, min_feature = min_feature){
+
+
+
+    if(inRange %in% TRUE){
+
+      model <- lm(get(y) ~ get(x), data = data[data$InRange %in% TRUE, ])
+      fit <- fitted(model)
+      summary_model <- summary(model)
+
+      spearman_rho <- cor(data[[x]][data$InRange %in% TRUE], data[[y]][data$InRange %in% TRUE], method = "spearman")
+
+      Deviation <- data[[y]][data$InRange %in% TRUE] - fit
+      Deviation_perc <- (exp(Deviation) -1)*100
+
+
+
+
+      tmpGroup <- tibble::tibble(
+
+        groupIndices = unique(data$groupIndices),
+        RangeStart = data$DilutionPoint[data$InRange %in%TRUE][1],
+        RangeStartY = data$Y[data$DilutionPoint %in% RangeStart],
+        RangeStartX = data[[real_x]][data$DilutionPoint %in% RangeStart],
+        RangeEnd = dplyr::last(data$DilutionPoint[data$InRange %in%TRUE]),
+        RangeEndY = data$Y[data$DilutionPoint %in% RangeEnd],
+        RangeEndX = data[[real_x]][data$DilutionPoint %in% RangeEnd],
+        RangeLength = sum(data$InRange %in%TRUE),
+        enoughPointsWithinRange = RangeLength >= min_feature,
+        RangeFlag = NA,
+        slope = coef(model)[2],
+        Intercept = coef(model)[1],
+        R2 = summary_model$adj.r.squared,
+        spearman_rho = spearman_rho,
+        positiveSlope = all(diff(data[[y]][data$InRange %in% TRUE]) > 0,na.rm = TRUE),
+        deltaMax = max(abs(Deviation), na.rm = TRUE),
+        deltaMax_relative = max(abs(Deviation_perc),na.rm = TRUE)
+
+
+      )
+
+      data <- data[, ':=' (
+        positiveSlope = c(get(y)[1] < get(y)[2], diff(data[[y]]) > 0),
+        R2 = ifelse(data$InRange %in% TRUE, tmpGroup$R2,NA)
+
+
+
+
+      )]
+
+      data$predicted[data$InRange %in% TRUE] <- fit
+      data$ResidualsInRange[data$InRange %in% TRUE] <- resid(model)
+      data$delta[data$InRange %in% TRUE] <- Deviation
+      data$delta_percent[data$InRange %in% TRUE] <- Deviation_perc
+
+
+    } else{
+
+      tmpGroup <- tibble::tibble(
+
+        groupIndices = unique(data$groupIndices),
+        RangeStart = NA,
+        RangeStartY = NA,
+        RangeStartX = NA,
+        RangeEnd = NA,
+        RangeEndY = NA,
+        RangeEndX = NA,
+        RangeLength = NA,
+        enoughPointsWithinRange = NA,
+        RangeFlag = NA,
+        slope = NA,
+        Intercept = NA,
+        R2 = NA,
+        spearman_rho = NA,
+        monoton = NA,
+        deltaMax = NA,
+        deltaMax_relative = NA
+
+
+      )
+
+      data <- data[, ':=' (
+        positiveSlope = NA,
+        R2 = NA,
+        predicted = NA,
+        ResidualsInRange = NA,
+        deta = NA,
+        delta_percent = NA
+
+      )]
+
+
+
+    }
+
+    return(list(tmpGroup, data))
+
+  }
+
+
+
+
   dat <- data.table::copy(dats)
   data.table::setorder(dat,DilutionPoint)
   dat <- dat[!is.na(get(y))]
@@ -173,104 +275,104 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
 #'
 
-create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x, min_feature = min_feature){
-
-
-
-  if(inRange %in% TRUE){
-
-    model <- lm(get(y) ~ get(x), data = data[data$InRange %in% TRUE, ])
-    fit <- fitted(model)
-    summary_model <- summary(model)
-
-    spearman_rho <- cor(data[[x]][data$InRange %in% TRUE], data[[y]][data$InRange %in% TRUE], method = "spearman")
-
-    Deviation <- data[[y]][data$InRange %in% TRUE] - fit
-    Deviation_perc <- (exp(Deviation) -1)*100
-
-
-
-
-    tmpGroup <- tibble::tibble(
-
-      groupIndices = unique(data$groupIndices),
-      RangeStart = data$DilutionPoint[data$InRange %in%TRUE][1],
-      RangeStartY = data$Y[data$DilutionPoint %in% RangeStart],
-      RangeStartX = data[[real_x]][data$DilutionPoint %in% RangeStart],
-      RangeEnd = last(data$DilutionPoint[data$InRange %in%TRUE]),
-      RangeEndY = data$Y[data$DilutionPoint %in% RangeEnd],
-      RangeEndX = data[[real_x]][data$DilutionPoint %in% RangeEnd],
-      RangeLength = sum(data$InRange %in%TRUE),
-      enoughPointsWithinRange = RangeLength >= min_feature,
-      RangeFlag = NA,
-      slope = coef(model)[2],
-      Intercept = coef(model)[1],
-      R2 = summary_model$adj.r.squared,
-      spearman_rho = spearman_rho,
-      positiveSlope = all(diff(data[[y]][data$InRange %in% TRUE]) > 0,na.rm = TRUE),
-      deltaMax = max(abs(Deviation), na.rm = TRUE),
-      deltaMax_relative = max(abs(Deviation_perc),na.rm = TRUE)
-
-
-    )
-
-    data <- data[, ':=' (
-      positiveSlope = c(get(y)[1] < get(y)[2], diff(data[[y]]) > 0),
-      R2 = ifelse(data$InRange %in% TRUE, tmpGroup$R2,NA)
-
-
-
-
-    )]
-
-    data$predicted[data$InRange %in% TRUE] <- fit
-    data$ResidualsInRange[data$InRange %in% TRUE] <- resid(model)
-    data$delta[data$InRange %in% TRUE] <- Deviation
-    data$delta_percent[data$InRange %in% TRUE] <- Deviation_perc
-
-
-  } else{
-
-    tmpGroup <- tibble::tibble(
-
-      groupIndices = unique(data$groupIndices),
-      RangeStart = NA,
-      RangeStartY = NA,
-      RangeStartX = NA,
-      RangeEnd = NA,
-      RangeEndY = NA,
-      RangeEndX = NA,
-      RangeLength = NA,
-      enoughPointsWithinRange = NA,
-      RangeFlag = NA,
-      slope = NA,
-      Intercept = NA,
-      R2 = NA,
-      spearman_rho = NA,
-      monoton = NA,
-      deltaMax = NA,
-      deltaMax_relative = NA
-
-
-    )
-
-    data <- data[, ':=' (
-      positiveSlope = NA,
-      R2 = NA,
-      predicted = NA,
-      ResidualsInRange = NA,
-      deta = NA,
-      delta_percent = NA
-
-    )]
-
-
-
-  }
-
-  return(list(tmpGroup, data))
-
-}
+# create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x, min_feature = min_feature){
+#
+#
+#
+#   if(inRange %in% TRUE){
+#
+#     model <- lm(get(y) ~ get(x), data = data[data$InRange %in% TRUE, ])
+#     fit <- fitted(model)
+#     summary_model <- summary(model)
+#
+#     spearman_rho <- cor(data[[x]][data$InRange %in% TRUE], data[[y]][data$InRange %in% TRUE], method = "spearman")
+#
+#     Deviation <- data[[y]][data$InRange %in% TRUE] - fit
+#     Deviation_perc <- (exp(Deviation) -1)*100
+#
+#
+#
+#
+#     tmpGroup <- tibble::tibble(
+#
+#       groupIndices = unique(data$groupIndices),
+#       RangeStart = data$DilutionPoint[data$InRange %in%TRUE][1],
+#       RangeStartY = data$Y[data$DilutionPoint %in% RangeStart],
+#       RangeStartX = data[[real_x]][data$DilutionPoint %in% RangeStart],
+#       RangeEnd = last(data$DilutionPoint[data$InRange %in%TRUE]),
+#       RangeEndY = data$Y[data$DilutionPoint %in% RangeEnd],
+#       RangeEndX = data[[real_x]][data$DilutionPoint %in% RangeEnd],
+#       RangeLength = sum(data$InRange %in%TRUE),
+#       enoughPointsWithinRange = RangeLength >= min_feature,
+#       RangeFlag = NA,
+#       slope = coef(model)[2],
+#       Intercept = coef(model)[1],
+#       R2 = summary_model$adj.r.squared,
+#       spearman_rho = spearman_rho,
+#       positiveSlope = all(diff(data[[y]][data$InRange %in% TRUE]) > 0,na.rm = TRUE),
+#       deltaMax = max(abs(Deviation), na.rm = TRUE),
+#       deltaMax_relative = max(abs(Deviation_perc),na.rm = TRUE)
+#
+#
+#     )
+#
+#     data <- data[, ':=' (
+#       positiveSlope = c(get(y)[1] < get(y)[2], diff(data[[y]]) > 0),
+#       R2 = ifelse(data$InRange %in% TRUE, tmpGroup$R2,NA)
+#
+#
+#
+#
+#     )]
+#
+#     data$predicted[data$InRange %in% TRUE] <- fit
+#     data$ResidualsInRange[data$InRange %in% TRUE] <- resid(model)
+#     data$delta[data$InRange %in% TRUE] <- Deviation
+#     data$delta_percent[data$InRange %in% TRUE] <- Deviation_perc
+#
+#
+#   } else{
+#
+#     tmpGroup <- tibble::tibble(
+#
+#       groupIndices = unique(data$groupIndices),
+#       RangeStart = NA,
+#       RangeStartY = NA,
+#       RangeStartX = NA,
+#       RangeEnd = NA,
+#       RangeEndY = NA,
+#       RangeEndX = NA,
+#       RangeLength = NA,
+#       enoughPointsWithinRange = NA,
+#       RangeFlag = NA,
+#       slope = NA,
+#       Intercept = NA,
+#       R2 = NA,
+#       spearman_rho = NA,
+#       monoton = NA,
+#       deltaMax = NA,
+#       deltaMax_relative = NA
+#
+#
+#     )
+#
+#     data <- data[, ':=' (
+#       positiveSlope = NA,
+#       R2 = NA,
+#       predicted = NA,
+#       ResidualsInRange = NA,
+#       deta = NA,
+#       delta_percent = NA
+#
+#     )]
+#
+#
+#
+#   }
+#
+#   return(list(tmpGroup, data))
+#
+# }
 
 
 

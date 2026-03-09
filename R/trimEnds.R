@@ -144,11 +144,11 @@ if(any(dat.reduced.max$trim %in% FALSE)){
     } else {
       fin <- TRUE
       max_red[[i]] <- dat.reduced.max
-      dat.reduced.max <- rbindlist(max_red) |> dplyr::arrange(DilutionPoint)
+      dat.reduced.max <- data.table::rbindlist(max_red) |> dplyr::arrange(DilutionPoint)
 
     }}else{fin <- TRUE
     max_red[[i]] <- dat.reduced.max
-    dat.reduced.max <- rbindlist(max_red) |> dplyr::arrange(DilutionPoint)
+    dat.reduced.max <- data.table::rbindlist(max_red) |> dplyr::arrange(DilutionPoint)
         }
 
     }
@@ -183,7 +183,7 @@ if(any(dat.reduced.min$trim %in% FALSE)){
     } else {
       fin <- TRUE
       min_red[[i]] <- dat.reduced.min
-      dat.reduced.min <- rbindlist(min_red) |> dplyr::arrange(DilutionPoint)
+      dat.reduced.min <- data.table::rbindlist(min_red) |> dplyr::arrange(DilutionPoint)
 
     }} else{fin <- TRUE}
 

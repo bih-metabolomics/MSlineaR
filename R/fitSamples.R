@@ -29,15 +29,15 @@ getLRstatus <- function(dats, datCal, y){
   dat <- dat[, grep("^i\\.", names(dat), value=TRUE) := NULL]
   }
   dat$Status_LR <- NA
-  dat$Status_LR = data.table::between(lower = dat$LRStartY, x = dat[[y]], upper = dat$LREndY, NAbounds = NA)
+  dat$Status_LR = data.table::between(lower = dat$RangeStartY, x = dat[[y]], upper = dat$RangeEndY, NAbounds = NA)
 
-  dat$Status_LR[dat[[y]] < dat$LRStartY] <- "BLOL"
-  dat$Status_LR[dat[[y]] > dat$LREndY] <- "ULOL"
+  dat$Status_LR[dat[[y]] < dat$RangeStartY] <- "BLOL"
+  dat$Status_LR[dat[[y]] > dat$RangeEndY] <- "ULOL"
 
 
   dat$Status_LR[dat$aboveR2 %in% c(NA,FALSE)] <- FALSE
 
-  dats <- dats[dat[ ,.( IDintern,LRFlag, Status_LR, LRStartY, LREndY)], on = "IDintern"]
+  dats <- dats[dat[ ,.( IDintern,LRFlag, Status_LR, RangeStartY, RangeEndY)], on = "IDintern"]
   if(any(startsWith(names(dats), "i."))){
   dats <- dats[, grep("^i\\.", names(dats), value=TRUE) := NULL]
 }

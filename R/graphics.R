@@ -19,9 +19,9 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 
   data_Signals <- inputData_Series
 
-  if(!is.null(inputData_BioSamples)) data_Signals <- dplyr::full_join(data_Signals, inputData_BioSamples,
+  if(!is.na(inputData_BioSamples)) data_Signals <- dplyr::full_join(data_Signals, inputData_BioSamples,
                                                                       by = intersect(colnames(data_Signals), colnames(inputData_BioSamples)))
-  if(!is.null(inputData_QC)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC,
+  if(!is.na(inputData_QC)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC,
                                                               by = intersect(colnames(data_Signals), colnames(inputData_QC)))
   # if(!is.null(inputData_QC_ref)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC_ref,
   #                                                                 by = intersect(colnames(data_Signals), colnames(inputData_QC_ref)))
@@ -85,7 +85,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   data.table::setDT(inputData_Series)
   inputData_Series$Sample.Type <- inputData_Series[[Sample.Type]]
 
-  if(!is.null(inputData_BioSamples)){
+  if(!is.na(inputData_BioSamples)){
 
     inputData_BioSamples$Sample.Type <- inputData_BioSamples[[Sample.Type]]
     data.table::setDT(inputData_BioSamples)
@@ -96,7 +96,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     }
 
   }
-  if(!is.null(inputData_QC)){
+  if(!is.na(inputData_QC)){
     inputData_QC$Sample.Type <- inputData_QC[[Sample.Type]]
     data.table::setDT(inputData_QC)
     if(!is.null(TRANSFORM_Y)) {
@@ -115,10 +115,11 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   data_Signal <- combineData(inputData_Series, inputData_BioSamples, inputData_QC)# inputData_Blank)#, inputData_QC_ref, inputData_Blank)
   data_Signal$ID = data_Signal[[ID]]
   data_Signal$Batch = data_Signal[[Col_Batch]]
+ #data_Signal$ID <- paste(data_Signal$ID, data_Signal$Batch, sep = "_")
   data_Signal$Sample.Type = data_Signal[[Sample.Type]]
 
 
-  if(!is.null(inputData_QC)){
+  if(!is.na(inputData_QC)){
     QCs = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
                      x = -c(3 : (length(unique(inputData_QC[[Sample.Type]])) + 2)))
 
@@ -130,7 +131,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
   } else {data_Signal$x = 0}
 
-  data.table::setorderv(data_Signal, ID)
+  data.table::setorderv(data_Signal, c(ID, Col_Batch))
   data.table::setDT(data_Signal)
 
   if(any(GroupIndices != "all" & GroupIndices != "")) data_Signal <- data_Signal[groupIndices %in% GroupIndices]
@@ -158,16 +159,16 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-    nrRow <- ifelse(data.table::uniqueN(data_Signal$Batch) <=2, 10, 5)
-    nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
+    nrRow <- ifelse(data.table::uniqueN(data_Signal$groupIndices) >= 5, 5, data.table::uniqueN(data_Signal$groupIndices))
+    nCol = 1#data.table::uniqueN(data_Signal[[Col_Batch]])
     #npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
 
 
 
-    data_Signals <- data_Signal |> dplyr::arrange(groupIndices)#[groupIndices %in% 1, ]#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
+    data_Signals <- data_Signal #|> dplyr::arrange(groupIndices)#[groupIndices %in% 1, ]#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
 
     plotlinearData <-
-      ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(dependent), shape = Sample.Type)) +
+      ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(dependent), shape = Batch)) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type])),colour = "black")
 
     if("signalBlankRatio" %in% colnames(data_Signals)){
@@ -195,26 +196,26 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
     }
 
-    if("IsLinear" %in% colnames(data_Signals)){
+    if("InRange" %in% colnames(data_Signals)){
 
-      Xinterstart = data_Signals[[indipendent]][data_Signals$LRStart ]
-      Xinterend = data_Signals[[indipendent]][data_Signals$LREnd ]
+      Xinterstart = data_Signals[[indipendent]][data_Signals$RangeStart ]
+      Xinterend = data_Signals[[indipendent]][data_Signals$RangeEnd ]
 
 
       if(!is.null(TRANSFORM_Y)){
-        Yinterstart = get(TRANSFORM_Y)(data_Signals$LRStartY)
-        Yinterend = get(TRANSFORM_Y)(data_Signals$LREndY)
+        Yinterstart = get(TRANSFORM_Y)(data_Signals$RangeStartY)
+        Yinterend = get(TRANSFORM_Y)(data_Signals$RangeEndY)
       } else{
-        Yinterstart =  data_Signals$LRStartY
-        Yinterend = data_Signals$LREndY
+        Yinterstart =  data_Signals$RangeStartY
+        Yinterend = data_Signals$RangeEndY
       }
 
 
       plotlinearData <-  plotlinearData +
-        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),
+        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & InRange %in% TRUE),
                             ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "seagreen") +
-        ggplot2::geom_line(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & IsLinear %in% TRUE),
-                           ggplot2::aes(x = get(indipendent), y = abline), col = "orange", na.rm = TRUE) +
+        ggplot2::geom_line(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & InRange %in% TRUE),
+                           ggplot2::aes(x = get(indipendent), y = predicted ), col = "orange", na.rm = TRUE) +
         #ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
         #ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
         ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
@@ -226,14 +227,14 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
       ggplot2::geom_vline(ggplot2::aes( xintercept = -1, color = "darkgrey"), linetype = "solid", col = "black", na.rm = TRUE)
 
-    # if(!is.null(inputData_BioSamples) | !is.null(inputData_QC)| !is.null(inputData_QCref) | !is.null(inputData_Blank)){
+    # if(!is.na(inputData_BioSamples) | !is.null(inputData_QC)| !is.null(inputData_QCref) | !is.null(inputData_Blank)){
     #   nrQC <- sum(!is.null(inputData_BioSamples),!is.null(inputData_QC),!is.null(inputData_QCref), !is.null(inputData_Blank))
     #
     # }
 
     legend_order <- unique(inputData_Series$Sample.Type)
 
-    if(!is.null(inputData_BioSamples )){
+    if(!is.na(inputData_BioSamples )){
       plotlinearData <-  plotlinearData +
         #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
         ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
@@ -242,7 +243,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     }
     #ifelse(!is.na(Class),get(Class), "black")
 
-    if(!is.null(inputData_QC )){
+    if(!is.na(inputData_QC )){
       legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
 
       plotlinearData <-  plotlinearData +
@@ -297,15 +298,15 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     if(length(GroupIndices) > 1 | any(GroupIndices %in% "all") | length(Feature) > 1 | any(Feature %in% "all" )){
 
-      if(data.table::uniqueN(data_Signals[[Col_Batch]]) > 1){
+      #if(data.table::uniqueN(data_Signals[[Col_Batch]]) > 1){
+       # plotlinearData <-  plotlinearData  +
+        #  ggforce::facet_grid_paginate(ID ~ Batch ,
+         #                              scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
+      #} else {
         plotlinearData <-  plotlinearData +
-          ggforce::facet_grid_paginate(ID ~ Batch ,
+          ggforce::facet_wrap_paginate(. ~ ID ,
                                        scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
-      } else {
-        plotlinearData <-  plotlinearData +
-          ggforce::facet_grid_paginate(as.character(ID) ~. ,
-                                       scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
-      }
+      #}
     }
 
 
@@ -348,7 +349,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     if(printR2 %in% TRUE & any(!is.na(data_Signals$R2))) {
 
-      text_label <- data_Signals[IsLinear %in% TRUE, .(ID, Batch, R2, y = get(dependent))]
+      text_label <- data_Signals[InRange %in% TRUE, .(ID, Batch, R2, y = get(dependent))]
       text_label <- text_label |> dplyr::group_by(ID, Batch) |>
         dplyr::mutate(R2 = ifelse(any(!is.na(R2)), R2[!is.na(R2)] , NA),
                       max_y = max(y, na.rm = T)) |>
@@ -375,7 +376,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-    if(!is.null(inputData_BioSamples ) | !is.null(inputData_QC )){
+    if(!is.na(inputData_BioSamples ) | !is.na(inputData_QC )){
 
       plotlinearData <-  plotlinearData +
         ggplot2::annotate(geom = "text", x = -3.5, y = Inf, label = "QC & Samples", size = 3,vjust = 2, na.rm = TRUE) #+
@@ -394,6 +395,66 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       ggplot2::theme(legend.position="top") +
       ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
                       shape = ggplot2::guide_legend(order = 2))
+
+
+    ####residual diagnostic
+    if(diagnostic %in% TRUE){
+
+      plotRes <- ggplot(data_Signals |> filter(InRange %in% TRUE), aes( y = ResidualsInRange, x = `X_transformed(log)`, shape = Batch, color = Batch)) +
+        geom_point() +
+        geom_hline(yintercept = 0)
+
+      plotRes <-  plotRes +
+        ggforce::facet_wrap_paginate(. ~ ID , scales = "free",
+                                     ncol = nCol,
+                                     nrow = nrRow,
+                                     page = 1 ) +
+        ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,
+                                    breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
+        ggplot2::theme_bw() +
+        ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
+        ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
+        ggplot2::theme(panel.background=ggplot2::element_blank()) +
+        ggplot2::theme(axis.line=ggplot2::element_line()) +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
+        ggplot2::theme(legend.position="top") +
+        ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
+                        shape = ggplot2::guide_legend(order = 2))
+
+
+
+      plotQQplot <- ggplot(data_Signals |> filter(InRange %in% TRUE), aes( sample =  ResidualsInRange,  shape = Batch, color = Batch)) +
+        stat_qq() +
+        stat_qq_line()
+
+      plotQQplot <-  plotQQplot +
+        ggforce::facet_wrap_paginate(. ~ ID , scales = "free",
+                                     ncol = nCol,
+                                     nrow = nrRow,
+                                     page = 1 ) +
+        #ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,
+      #                              breaks = x,  labels = data_Signals$DilutionPoint) +
+        ggplot2::theme_bw() +
+        ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
+        ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
+        ggplot2::theme(panel.background=ggplot2::element_blank()) +
+        ggplot2::theme(axis.line=ggplot2::element_line()) +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
+        ggplot2::theme(legend.position="top") +
+        ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
+                        shape = ggplot2::guide_legend(order = 2))
+
+
+      plotlinearData + plotRes + plotQQplot
+
+
+
+    }
+
+    library(patchwork)
+
+
+
 
 
     if(printPDF %in% TRUE){
@@ -482,8 +543,8 @@ plot_Barplot_Summary <- function(inputData_Series,
               Trim = ifelse("trim" %in% colnames(inputData_Series), sum(trim %in% TRUE, na.rm = T), 0),
               OutlierSOD = ifelse("OutlierSOD" %in% colnames(inputData_Series), sum(OutlierSOD, na.rm = T), 0),
               #Slope = sum(trimPos %in% TRUE, na.rm = T),
-              LR_TRUE = sum(IsLinear %in% TRUE, na.rm = T),
-              LR_FALSE = sum(IsLinear %in% FALSE, na.rm = T)
+              LR_TRUE = sum(InRange %in% TRUE, na.rm = T),
+              LR_FALSE = sum(InRange %in% FALSE, na.rm = T)
               ) |>
     dplyr::group_by(DilutionPoint, Batch = get(Col_Batch)) |>
     dplyr::mutate(min_Feature = data.table::uniqueN(inputData_Series[[ID]]) - sum(Missing, Blank, OutlierFOD, Trim, OutlierSOD,  LR_TRUE, LR_FALSE)) |> #Slope,

@@ -176,9 +176,9 @@ MS_AssessLinearity <- function(
   TYPE = analysisType
   DAT_F = inputData_feature
   DAT_S = inputData_sample
-  QC =  sampleType_QC
-  BLANK = sampleType_blank
-  SAMPLE = sampleType_sample
+  QC =  ifelse(is.null(sampleType_QC), NA,sampleType_QC)
+  BLANK = ifelse(is.null(sampleType_blank), NA, sampleType_blank)
+  SAMPLE = ifelse(is.null(sampleType_sample), NA, sampleType_sample)
   SAMPLE_ID = column_sampleID
   FEATURE_ID = column_featureID
   CALIBRANTS = sampleType_serial
@@ -768,7 +768,10 @@ Yorigin <- "Y"
     y = Y,
     real_x = COLNAMES[["X"]],
     min_feature = MIN_FEATURE,
-    sd_res_factor = LR_SD_RES_FACTOR
+    max_res = LR_SD_RES_FACTOR,
+    slope_tol = 0.15,
+    delta_tol = 0.182
+
   )
 
   #closeAllConnections()
@@ -778,7 +781,7 @@ Yorigin <- "Y"
 
   logr::put(paste("FindLinear Range: ",format(round(difftime(Sys.time(), startTime),2)),"\n"))
 
-  Y = "Y_LR"
+  Y = "Y_Range"
 
   dataLRFeature = data.table::data.table(purrr::map(dataLinearRange,1)|> plyr::ldply(.id = NULL))
   dataLRGroup = data.table::data.table(purrr::map(dataLinearRange,2)|> plyr::ldply(.id = NULL))
@@ -787,9 +790,9 @@ Yorigin <- "Y"
   dataLRGroup$enoughPointsWithinLR[dataLRGroup$aboveR2 %in% FALSE] = FALSE
 
 
-  dataLRFeaturesub <- dataLRFeature[groupIndices %in% dataLRGroup[aboveR2 %in% FALSE, groupIndices] & IsLinear %in% "darkseagreen", .(IDintern, color, IsLinear, Comment)]
+  dataLRFeaturesub <- dataLRFeature[groupIndices %in% dataLRGroup[aboveR2 %in% FALSE, groupIndices] & color %in% "darkseagreen", .(IDintern, color, InRange, Comment)]
   dataLRFeature[dataLRFeaturesub,':=' ( color = "black",
-                                        IsLinear = FALSE,
+                                        InRange = FALSE,
                                         Comment = paste0(Comment, "_small R2")) , on = "IDintern"]
 
 
@@ -826,7 +829,7 @@ Yorigin <- "Y"
 
     processingGroup <-   processingGroup[, enoughPeak_allBatches := all(get(paste0("enoughPeaks_", step)) %in% TRUE), by = Feature_ID]
     conflictBatches <- processingGroup[enoughPeak_allBatches %in% FALSE]
-    processingFeature$Y_allBatches <- processingFeature$Y_LR
+    processingFeature$Y_allBatches <- processingFeature$Y_Range
 
     if(BATCH_HARMONIZATION == TRUE){
       processingFeature[groupIndices %in% conflictBatches$groupIndices, Y_allBatches := FALSE]
@@ -887,7 +890,7 @@ Yorigin <- "Y"
 
   #### biological samples ####
 
-  if(GET_LR_STATUS %in% TRUE){ #CAL_CONC %in% TRUE |
+  if(!is.na(SAMPLE) & GET_LR_STATUS %in% TRUE){ #CAL_CONC %in% TRUE |
 
     logr::sep("prepare biological samples")
   # rlang::inform("
@@ -946,7 +949,7 @@ Yorigin <- "Y"
 
   #### QC samples ####
 
-  if(!is.null(QC)){
+  if(!is.na(QC)){
 
     logr::sep("check QC samples")
     # rlang::inform("
@@ -957,7 +960,7 @@ Yorigin <- "Y"
 
     SampleQC <- dataReduced[get(COLNAMES[["Sample_type"]]) %in% QC]
 
-    if(!is.null(BLANK)){
+    if(!is.na(BLANK)){
 
       SampleBlank <- dataReduced[get(COLNAMES[["Sample_type"]]) %in% BLANK]
       SampleQC <- rbind(SampleQC, SampleBlank)
@@ -1039,13 +1042,14 @@ Yorigin <- "Y"
 
   #4) full table biological Samples - Signal based
 
-  if(!is.null(column_sampleClass))dataOrigin[[column_sampleClass]] <- as.character(dataOrigin[[column_sampleClass]])
+  if(!is.na(column_sampleClass)) dataOrigin[[column_sampleClass]] <- as.character(dataOrigin[[column_sampleClass]])
   dataOrigin[[column_batch]] <- as.character(dataOrigin[[column_batch]])
 
+  if(!is.na(SAMPLE)){
   table_Feature_all <- dplyr::full_join(data.table::copy(SampleFeature),data.table::copy(processingFeature), by = colnames(SampleFeature))
   output3 <- dplyr::full_join(data.table::copy(table_Feature_all), dataOrigin, by = intersect(colnames(dataOrigin), colnames(table_Feature_all)))
 
-  output4 <- output3[,c(colnames(dataOrigin), "groupIndices","Status_LR", "LRFlag"), with = F]
+  output4 <- output3[,c(colnames(dataOrigin), "groupIndices","Status_LR", "LRFlag"), with = F]}
   #output3.1 <- SampleFeature
 
   # #5) filtered table biological Samples - Signal based (high quality)
@@ -1144,7 +1148,7 @@ Yorigin <- "Y"
       #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,".xlsx")))
     }
 
-    if(any(c("BiologicalSamples", "all") %in% which_output)){
+    if(!is.na(SAMPLE) & any(c("BiologicalSamples", "all") %in% which_output)){
      # write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_signalBased.csv")))
       fwrite(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "result.csv")))
 
@@ -1184,8 +1188,8 @@ Yorigin <- "Y"
   #8) scatter plot
   FDS_scatterplot <- plot_FDS(printPDF = printPlot,
                               inputData_Series = output1,
-                              inputData_BioSamples = output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),
-                              inputData_QC = SampleQC,
+                              inputData_BioSamples = ifelse(!is.na(SAMPLE), output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE),NA),
+                              inputData_QC = ifelse(!is.na(QC),SampleQC,NA),
                               COLNAMES = COLNAMES, Xcol = Xraw, Ycol = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
                               Series = Series, output_dir = IMG_OUTPUT_DIR, outputfileName = paste0(PREFIX,"_CalibrationPlot"),signal_blank_ratio = NOISE
   )
