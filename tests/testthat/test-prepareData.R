@@ -1212,8 +1212,8 @@ testthat::test_that("function prepareData works", {
   TYPE. = "targeted"
   CALIBRANTS. = "Calibration Standard"
   BLANK. = "Blank"
-  QC. = NULL
-  SAMPLE. = NULL
+  QC. = NA
+  SAMPLE. = NA
   Y_SAMPLE. = NULL
   #DILUTION_FACTOR. = 2
   NOISE. = NULL
