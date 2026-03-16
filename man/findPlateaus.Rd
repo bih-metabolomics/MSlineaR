@@ -2,9 +2,9 @@
 % Please edit documentation in R/trimEnds.R
 \name{findPlateaus}
 \alias{findPlateaus}
-\title{Title}
+\title{Detect plateaus on upper and lower end of curve by using slope}
 \usage{
-findPlateaus(dats, y = y, x = x, slope_ratio = 0.5)
+findPlateaus(dats, y, x, slope_ratio)
 }
 \arguments{
 \item{dats}{Long format data frame or data table for one metabolite including
@@ -14,7 +14,7 @@ information about dependent and independent variable. Called from function \code
 
 \item{x}{String; Column name of the log transformed independent variable}
 
-\item{slope_ratio}{Integer; factor, describing the allwid difference between
+\item{slope_ratio}{Integer; factor, describing the allowed difference between
 the calculated slope and the middle slope of the curve. Default 0.5, which means
 if the slopes at the beginning or the end is equal or less than half of the
 slope in the middle, the dilution points are probably in a plateau and will be removed.}
@@ -23,5 +23,5 @@ slope in the middle, the dilution points are probably in a plateau and will be r
 vector of booleans
 }
 \description{
-Title
+Detect plateaus on upper and lower end of curve by using slope
 }

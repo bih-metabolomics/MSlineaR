@@ -236,7 +236,8 @@ if(any(dat.reduced.min$trim %in% FALSE)){
 }
 
 
-#' detect plateaus on upper and lower end of curve by using slope
+
+#' Detect plateaus on upper and lower end of curve by using slope
 #'
 #' @param dats Long format data frame or data table for one metabolite including
 #' information about dependent and independent variable. Called from function `TrimmEnds()`
@@ -246,8 +247,6 @@ if(any(dat.reduced.min$trim %in% FALSE)){
 #'  the calculated slope and the middle slope of the curve. Default 0.5, which means
 #'  if the slopes at the beginning or the end is equal or less than half of the
 #'  slope in the middle, the dilution points are probably in a plateau and will be removed.
-#' @param ...
-#'
 #' @return vector of booleans
 #' @export
 #'
