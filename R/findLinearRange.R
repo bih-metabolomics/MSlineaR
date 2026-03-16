@@ -35,7 +35,7 @@
 #' @importFrom DescTools Closest
 #' @importFrom stats fitted lm residuals
 
-findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_res = 3, min_feature = 5, real_x, slope_tol = 0.15, delta_tol = 0.182 ){
+findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_res = 3, min_feature = 5, real_x, slope_tol = 0.15, delta_tol = 0.182, rho_tol = 0 ){
 
   create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x, min_feature = min_feature){
 
@@ -48,6 +48,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
       summary_model <- summary(model)
 
       spearman_rho <- cor(data[[x]][data$InRange %in% TRUE], data[[y]][data$InRange %in% TRUE], method = "spearman")
+      spearman_rho_all <- cor(data[[x]], data[[y]], method = "spearman")
 
       Deviation <- data[[y]][data$InRange %in% TRUE] - fit
       Deviation_perc <- (exp(Deviation) -1)*100
@@ -70,8 +71,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
         slope = coef(model)[2],
         Intercept = coef(model)[1],
         R2 = summary_model$adj.r.squared,
-        spearman_rho = spearman_rho,
-        positiveSlope = all(diff(data[[y]][data$InRange %in% TRUE]) > 0,na.rm = TRUE),
+        spearman_rho_inRange = spearman_rho,
+        spearman_rho_complete = spearman_rho_all,
+        positiveSlope_inRange = all(diff(data[[y]][data$InRange %in% TRUE]) > 0,na.rm = TRUE),
+        positiveSlope_complete = all(diff(data[[y]]) > 0,na.rm = TRUE),
         deltaMax = max(abs(Deviation), na.rm = TRUE),
         deltaMax_relative = max(abs(Deviation_perc),na.rm = TRUE)
 
@@ -95,6 +98,8 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
     } else{
 
+      spearman_rho_all <- cor(data[[x]], data[[y]], method = "spearman")
+
       tmpGroup <- tibble::tibble(
 
         groupIndices = unique(data$groupIndices),
@@ -110,8 +115,11 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
         slope = NA,
         Intercept = NA,
         R2 = NA,
-        spearman_rho = NA,
-        monoton = NA,
+        spearman_rho_inRange = NA,
+        spearman_rho_complete = spearman_rho_all,
+        positiveSlope_inRange = NA,
+        positiveSlope_complete = all(diff(data[[y]]) > 0,na.rm = TRUE),
+        #monoton = NA,
         deltaMax = NA,
         deltaMax_relative = NA
 
@@ -255,6 +263,9 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
   tmpGroup$Slope_within_Tolerance = abs(tmpGroup$slope - 1) <= slope_tol
   tmpGroup$Linearity_Criterion_Deviation = tmpGroup$deltaMax <= delta_tol
+  tmpGroup$Monotonicity_inRange =  abs(1 - round(tmpGroup$spearman_rho_inRange,2)) <= rho_tol
+  tmpGroup$Monotonicity_complete = abs(1 - round(tmpGroup$spearman_rho_complete,2)) <= rho_tol
+
 
   dat$color = ifelse(dat$InRange %in% TRUE, "darkseagreen",dat$color)
 
