@@ -131,7 +131,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
         R2 = NA,
         predicted = NA,
         ResidualsInRange = NA,
-        deta = NA,
+        delta = NA,
         delta_percent = NA
 
       )]
