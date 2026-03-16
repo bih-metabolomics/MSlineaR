@@ -60,10 +60,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
         groupIndices = unique(data$groupIndices),
         RangeStart = data$DilutionPoint[data$InRange %in%TRUE][1],
-        RangeStartY = data$Y[data$DilutionPoint %in% RangeStart],
+        RangeStartY = data[[y]][data$DilutionPoint %in% RangeStart],
         RangeStartX = data[[real_x]][data$DilutionPoint %in% RangeStart],
         RangeEnd = dplyr::last(data$DilutionPoint[data$InRange %in%TRUE]),
-        RangeEndY = data$Y[data$DilutionPoint %in% RangeEnd],
+        RangeEndY = data[[y]][data$DilutionPoint %in% RangeEnd],
         RangeEndX = data[[real_x]][data$DilutionPoint %in% RangeEnd],
         RangeLength = sum(data$InRange %in%TRUE),
         enoughPointsWithinRange = RangeLength >= min_feature,

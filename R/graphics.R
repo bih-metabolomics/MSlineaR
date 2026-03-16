@@ -19,9 +19,9 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 
   data_Signals <- inputData_Series
 
-  if(!is.na(inputData_BioSamples)) data_Signals <- dplyr::full_join(data_Signals, inputData_BioSamples,
+  if(!is.null(inputData_BioSamples)) data_Signals <- dplyr::full_join(data_Signals, inputData_BioSamples,
                                                                       by = intersect(colnames(data_Signals), colnames(inputData_BioSamples)))
-  if(!is.na(inputData_QC)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC,
+  if(!is.null(inputData_QC)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC,
                                                               by = intersect(colnames(data_Signals), colnames(inputData_QC)))
   # if(!is.null(inputData_QC_ref)) data_Signals <- dplyr::full_join(data_Signals, inputData_QC_ref,
   #                                                                 by = intersect(colnames(data_Signals), colnames(inputData_QC_ref)))
@@ -85,7 +85,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   data.table::setDT(inputData_Series)
   inputData_Series$Sample.Type <- inputData_Series[[Sample.Type]]
 
-  if(!is.na(inputData_BioSamples)){
+  if(!is.null(inputData_BioSamples)){
 
     inputData_BioSamples$Sample.Type <- inputData_BioSamples[[Sample.Type]]
     data.table::setDT(inputData_BioSamples)
@@ -96,7 +96,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     }
 
   }
-  if(!is.na(inputData_QC)){
+  if(!is.null(inputData_QC)){
     inputData_QC$Sample.Type <- inputData_QC[[Sample.Type]]
     data.table::setDT(inputData_QC)
     if(!is.null(TRANSFORM_Y)) {
@@ -119,7 +119,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   data_Signal$Sample.Type = data_Signal[[Sample.Type]]
 
 
-  if(!is.na(inputData_QC)){
+  if(!is.null(inputData_QC)){
     QCs = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
                      x = -c(3 : (length(unique(inputData_QC[[Sample.Type]])) + 2)))
 
@@ -160,7 +160,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
     nrRow <- ifelse(data.table::uniqueN(data_Signal$groupIndices) >= 5, 5, data.table::uniqueN(data_Signal$groupIndices))
-    nCol = 1#data.table::uniqueN(data_Signal[[Col_Batch]])
+    nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
     #npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
 
 
@@ -234,7 +234,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     legend_order <- unique(inputData_Series$Sample.Type)
 
-    if(!is.na(inputData_BioSamples )){
+    if(!is.null(inputData_BioSamples )){
       plotlinearData <-  plotlinearData +
         #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
         ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
@@ -243,7 +243,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     }
     #ifelse(!is.na(Class),get(Class), "black")
 
-    if(!is.na(inputData_QC )){
+    if(!is.null(inputData_QC )){
       legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
 
       plotlinearData <-  plotlinearData +
@@ -304,7 +304,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
          #                              scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
       #} else {
         plotlinearData <-  plotlinearData +
-          ggforce::facet_wrap_paginate(. ~ ID ,
+          ggforce::facet_grid_paginate(ID ~ Batch ,
                                        scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
       #}
     }
@@ -376,7 +376,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-    if(!is.na(inputData_BioSamples ) | !is.na(inputData_QC )){
+    if(!is.null(inputData_BioSamples ) | !is.null(inputData_QC )){
 
       plotlinearData <-  plotlinearData +
         ggplot2::annotate(geom = "text", x = -3.5, y = Inf, label = "QC & Samples", size = 3,vjust = 2, na.rm = TRUE) #+
@@ -404,8 +404,12 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         geom_point() +
         geom_hline(yintercept = 0)
 
+      plotQQplot <- ggplot(data_Signals |> filter(InRange %in% TRUE), aes( sample =  ResidualsInRange,  shape = Batch, color = Batch)) +
+        stat_qq() +
+        stat_qq_line()
+
       plotRes <-  plotRes +
-        ggforce::facet_wrap_paginate(. ~ ID , scales = "free",
+        ggforce::facet_grid_paginate(ID ~ . , scales = "free",
                                      ncol = nCol,
                                      nrow = nrRow,
                                      page = 1 ) +
@@ -423,12 +427,10 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-      plotQQplot <- ggplot(data_Signals |> filter(InRange %in% TRUE), aes( sample =  ResidualsInRange,  shape = Batch, color = Batch)) +
-        stat_qq() +
-        stat_qq_line()
+
 
       plotQQplot <-  plotQQplot +
-        ggforce::facet_wrap_paginate(. ~ ID , scales = "free",
+        ggforce::facet_grid_paginate(ID ~ . , scales = "free",
                                      ncol = nCol,
                                      nrow = nrRow,
                                      page = 1 ) +
@@ -445,14 +447,11 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
                         shape = ggplot2::guide_legend(order = 2))
 
 
-      plotlinearData + plotRes + plotQQplot
+      plotlinearData | (plotRes | plotQQplot)
 
 
 
     }
-
-    library(patchwork)
-
 
 
 
