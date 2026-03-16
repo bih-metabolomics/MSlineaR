@@ -98,8 +98,8 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans, noise){
 #'
 #' @param dats Long format data frame or data table for one metabolite including information about dependent and independent variable.
 #' Further necessary columns are: groupIndices, DilutionPoint (1:x), IDintern, color.
-#' @param y String; Column name of the log transformed independent variable
-#' @param x String; Column name of the log transformed dependent variable
+#' @param y String; Column name of the log transformed dependent variable
+#' @param x String; Column name of the log transformed independent variable
 #'
 #' @return long format data.table with information about trimmed signals
 #' @export
@@ -111,8 +111,13 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans, noise){
 trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X){ # thresh=0
 
   dats$trim <- FALSE
+  dats$flat_slope <- FALSE
+  dats$Plateau <- FALSE
   dats$trim[is.na(dats[[y]])] <- NA # | dats$OutlierFOD %in% TRUE
   dat <- data.table::setorderv(dats,x)[!is.na(get(y))]# & !OutlierFOD %in% TRUE]
+
+
+  dat$flat_slope <- findPlateaus(dats = dat,y = y, x = x)
 
   #browser()
   if (data.table::last(dat[[y]]) != max(dat[[y]])) {
@@ -154,7 +159,18 @@ if(any(dat.reduced.max$trim %in% FALSE)){
     }
 
 
-  } else {dat.reduced.max <- dat[, trim := FALSE]}
+  } else {
+
+    dat.reduced.max <- dat[, trim := FALSE]
+
+  }
+
+  dat.reduced.max <- dat.reduced.max[flat_slope & rev(cumprod(rev(flat_slope))),
+                         ':=' (trim = TRUE,
+                               Plateau = TRUE,
+                               Comment = paste0(Comment, "_trim: high Plateau"))]
+
+
 
   if (dat[[y]][1] != min(dat[[y]])){
 
@@ -193,6 +209,11 @@ if(any(dat.reduced.min$trim %in% FALSE)){
 
   } else {dat.reduced.min <- dat[, trim := FALSE]}
 
+  dat.reduced.min <- dat.reduced.min[flat_slope & cumprod(flat_slope),
+                                     ':=' (trim = TRUE,
+                                           Plateau = TRUE,
+                                           Comment = paste0(Comment, "_trim: low Plateau"))]
+
   tmp <-  dplyr::full_join(x = dat.reduced.min[trim %in% TRUE],
                            y = dat.reduced.max[trim %in% TRUE],
                            by = colnames(dat.reduced.max)[colnames(dat.reduced.max) != "Comment"],
@@ -203,6 +224,8 @@ if(any(dat.reduced.min$trim %in% FALSE)){
 
   dats[IDintern %in% tmp$IDintern , Comment := paste(Comment,tmp$Comment, sep = "_")]
   dats[IDintern %in% tmp$IDintern, trim := ifelse(is.null(tmp$trim), FALSE, tmp$trim)]
+  dats[IDintern %in% tmp$IDintern, flat_slope := ifelse(is.null(tmp$flat_slope), FALSE, tmp$flat_slope)]
+  dats[IDintern %in% tmp$IDintern, Plateau := ifelse(is.null(tmp$Plateau), FALSE, tmp$Plateau)]
   dats$Comment[dats$trim %in% FALSE] <- paste0(dats$Comment[dats$trim %in% FALSE], "_NoTrim")
   dats$color[dats$trim %in% TRUE] <- "grey"
   dats$trim[is.na(dats[[y]])] <- NA
@@ -212,3 +235,43 @@ if(any(dat.reduced.min$trim %in% FALSE)){
 
   return(dats)
 }
+
+
+#' Title
+#'
+#' @param dats Long format data frame or data table for one metabolite including
+#' information about dependent and independent variable. Called from function `TrimmEnds()`
+#' @param y  String; Column name of the log transformed dependent variable
+#' @param x  String; Column name of the log transformed independent variable
+#' @param slope_ratio Integer; factor, describing the allwid difference between
+#'  the calculated slope and the middle slope of the curve. Default 0.5, which means
+#'  if the slopes at the beginning or the end is equal or less than half of the
+#'  slope in the middle, the dilution points are probably in a plateau and will be removed.
+#'
+#' @return vector of booleans
+#' @export
+#'
+#' @examples
+findPlateaus <- function(dats, y = y, x = x, slope_ratio = 0.5){
+
+  dat <- dats
+  # calculate point nearest half max intensity
+  int50 <- DescTools::Closest(x = dat[[y]] ,a = (min(dat[[y]]) + max(dat[[y]]))/2, which = TRUE, na.rm = T)
+  if(length(int50) > 1) int50 <- max(int50)
+  if(int50 == length(dat[[x]])) int50 <- length(dat[[x]]) -1
+  if(int50 == 1) int50 = 2
+
+  #create linear regression line going through int50
+
+  middleSlope <- suppressWarnings(summary(lm(dat[[y]][(int50 - 1) : (int50 + 1)] ~ dat[[x]][(int50 - 1) : (int50 + 1)]))$coefficient[2])
+  allSlopes <- diff(dat[[y]])/diff(dat[[x]])
+
+  plateau <- round(allSlopes,2) <= round(slope_ratio * middleSlope,2)
+
+  if(plateau[1] %in% TRUE) {plateau <-  c(TRUE, plateau)} else {plateau <-  c(FALSE, plateau)}
+  #plateau <- data.frame(DilutionPoint = dat$DilutionPoint, plateau = plateau)
+
+  return(plateau)
+
+
+  }
