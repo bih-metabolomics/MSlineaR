@@ -12,7 +12,8 @@ findLinearRange(
   min_feature = 5,
   real_x,
   slope_tol = 0.15,
-  delta_tol = 0.182
+  delta_tol = 0.182,
+  rho_tol = 0
 )
 }
 \arguments{

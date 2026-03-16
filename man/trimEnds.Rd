@@ -10,9 +10,9 @@ trimEnds(dats, y = parent.frame()$Y, x = parent.frame()$X)
 \item{dats}{Long format data frame or data table for one metabolite including information about dependent and independent variable.
 Further necessary columns are: groupIndices, DilutionPoint (1:x), IDintern, color.}
 
-\item{y}{String; Column name of the log transformed independent variable}
+\item{y}{String; Column name of the log transformed dependent variable}
 
-\item{x}{String; Column name of the log transformed dependent variable}
+\item{x}{String; Column name of the log transformed independent variable}
 }
 \value{
 long format data.table with information about trimmed signals
