@@ -21,7 +21,7 @@ testthat::test_that("function findLinearRange works", {
   testthat::expect_true(all(is.na(datOut1[[1]]$InRange[c(1,2)])))
   testthat::expect_true(datOut1[[2]]$RangeLength == 8)
   testthat::expect_true(datOut1[[2]]$enoughPointsWithinRange)
-  testthat::expect_true(datOut1[[2]]$spearman_rho == 1)
+  testthat::expect_true(datOut1[[2]]$spearman_rho_inRange == 1)
   testthat::expect_true(datOut1[[2]]$Slope_within_Tolerance)
   testthat::expect_true(datOut1[[2]]$Linearity_Criterion_Deviation)
 
