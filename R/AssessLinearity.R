@@ -550,7 +550,7 @@ Yorigin <- "Y"
     dataTrim <- my_fcn(
      # cl,
       nCORE,
-      xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
+      xs = 1 :2,#: data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
       func = trimEnds,
       x = X,

@@ -104,7 +104,6 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans, noise){
 #' @return long format data.table with information about trimmed signals
 #' @export
 #'
-
 #' @import data.table
 #' @import dplyr
 #' @importFrom tidyr unite
@@ -117,7 +116,7 @@ trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X){ # thresh
   dat <- data.table::setorderv(dats,x)[!is.na(get(y))]# & !OutlierFOD %in% TRUE]
 
 
-  dat$flat_slope <- findPlateaus(dats = dat,y = y, x = x)
+  dat$flat_slope <- findPlateaus(dats = dat,y = y, x = x, slope_ratio = 0.5)
 
   #browser()
   if (data.table::last(dat[[y]]) != max(dat[[y]])) {
@@ -247,12 +246,13 @@ if(any(dat.reduced.min$trim %in% FALSE)){
 #'  the calculated slope and the middle slope of the curve. Default 0.5, which means
 #'  if the slopes at the beginning or the end is equal or less than half of the
 #'  slope in the middle, the dilution points are probably in a plateau and will be removed.
+#' @param ...
 #'
 #' @return vector of booleans
 #' @export
 #'
 #' @examples
-findPlateaus <- function(dats, y = y, x = x, slope_ratio = 0.5){
+findPlateaus <- function(dats, y, x , slope_ratio){
 
   dat <- dats
   # calculate point nearest half max intensity
