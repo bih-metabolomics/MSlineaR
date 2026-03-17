@@ -21,7 +21,8 @@ plot_FDS(
   Xcol,
   Ycol,
   Series = "QC dilution Curves",
-  output_dir
+  output_dir,
+  diagnostic = TRUE
 )
 }
 \arguments{

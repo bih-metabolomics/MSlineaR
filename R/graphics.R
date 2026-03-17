@@ -13,6 +13,7 @@
 #' @examples
 #' @importFrom dplyr full_join
 
+
 combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #inputData_Blank#, inputData_QC_ref, inputData_Blank
                         ){
 
@@ -65,6 +66,9 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 #' @import dplyr
 #' @import ggplot2
 #' @importFrom ggforce facet_grid_paginate
+#' @import patchwork
+
+#'
 plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#inputData_Blank,
                      nrFeature = 50,
                      signal_blank_ratio = 5,
@@ -165,10 +169,10 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     metabolite_row <- function(df, show_x = FALSE, show_legend = FALSE, show_title = FALSE){
 
-      x_theme <- if(show_x) theme() else theme(
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank()
+      x_theme <- if(show_x) ggplot2::theme() else ggplot2::theme(
+        axis.title.x = ggplot2::element_blank(),
+        axis.text.x = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank()
       )
 
       legend_theme <- if(show_legend) ggplot2::theme(legend.position = "top") else ggplot2::theme(legend.position = "none")
@@ -318,7 +322,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
          #                              scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
       #} else {
         plotlinearData <-  plotlinearData +
-          facet_grid(ID ~ Batch)
+          ggplot2::facet_grid(ID ~ Batch)
           #ggforce::facet_grid_paginate(ID ~ Batch ,
                                        #scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
       #}
@@ -382,7 +386,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
                                                                             "/nspearman_rho = " , round(spearman_rho, 2)) ,
                            size = 3,
                            hjust = 0,
-                           vjust = 2,
+                           vjust = 2
                            #inherit.aes = FALSE
         ))
 
@@ -420,13 +424,13 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     ####residual diagnostic
     if(diagnostic %in% TRUE){
 
-      plotRes <- ggplot(data_Signals |> filter(InRange %in% TRUE), aes( y = ResidualsInRange, x = `X_transformed(log)`, shape = Batch, color = Batch)) +
-        geom_point() +
-        geom_hline(yintercept = 0)
+      plotRes <- ggplot2::ggplot(data_Signals |> dplyr::filter(InRange %in% TRUE), ggplot2::aes( y = ResidualsInRange, x = `X_transformed(log)`, shape = Batch, color = Batch)) +
+        ggplot2::geom_point() +
+        ggplot2::geom_hline(yintercept = 0)
 
-      plotQQplot <- ggplot(data_Signals |> filter(InRange %in% TRUE), aes( sample =  ResidualsInRange,  shape = Batch, color = Batch)) +
-        stat_qq() +
-        stat_qq_line()
+      plotQQplot <- ggplot2::ggplot(data_Signals |> dplyr::filter(InRange %in% TRUE), ggplot2::aes( sample =  ResidualsInRange,  shape = Batch, color = Batch)) +
+        ggplot2::stat_qq() +
+        ggplot2::stat_qq_line()
 
       plotRes <-  plotRes +
         # ggforce::facet_grid_paginate(ID ~ . , scales = "free",
@@ -447,7 +451,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
                         shape = ggplot2::guide_legend(order = 2)) +
         x_theme +
         legend_theme +
-        guides(color = guide_legend(title = NULL), shape = guide_legend(title = NULL))
+        ggplot2::guides(color = ggplot2::guide_legend(title = NULL), shape = ggplot2::guide_legend(title = NULL))
 
 
 
@@ -473,13 +477,13 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         #legend_theme +
         ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
                         shape = ggplot2::guide_legend(order = 2)) +
-        guides(color = guide_legend(title = NULL), shape = guide_legend(title = NULL)) +
+        ggplot2::guides(color = ggplot2::guide_legend(title = NULL), shape = ggplot2::guide_legend(title = NULL)) +
         ggplot2::theme(legend.position="none")
 
 
 
         (plotlinearData | plotRes | plotQQplot) +
-          plot_layout( widths = c(2,1,1))
+        patchwork::plot_layout( widths = c(2,1,1))
 
 
 
@@ -514,7 +518,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
           metabolite_row(page[[i]], show_x = show_x, show_legend = show_legend, show_title = show_title)
         })
 
-        print(wrap_plots(plots, ncol = 1))
+        print(patchwork::wrap_plots(plots, ncol = 1))
         print(paste0(y, " of ", length(pages)))
         y = y + 1
       }

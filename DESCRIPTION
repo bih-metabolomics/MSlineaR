@@ -30,6 +30,7 @@ Imports:
     purrr,
     dplyr,
     plyr,
+    patchwork,
     DescTools,
     ggplot2,
     ggforce,
