@@ -550,7 +550,7 @@ Yorigin <- "Y"
     dataTrim <- my_fcn(
      # cl,
       nCORE,
-      xs = 1 :2,#: data.table::uniqueN(processingFeature$groupIndices),
+      xs = 1 : data.table::uniqueN(processingFeature$groupIndices),
       inputData = processingFeature,
       func = trimEnds,
       x = X,
@@ -1192,7 +1192,7 @@ Yorigin <- "Y"
                               inputData_BioSamples = if (!is.na(SAMPLE)) output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE) else NULL,
                               inputData_QC = if(!all(is.na(QC))) SampleQC else NULL,
                               COLNAMES = COLNAMES, Xcol = Xraw, Ycol = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
-                              Series = Series, output_dir = IMG_OUTPUT_DIR, outputfileName = paste0(PREFIX,"_CalibrationPlot"),signal_blank_ratio = NOISE
+                              Series = Series, output_dir = IMG_OUTPUT_DIR, outputfileName = paste0(PREFIX,"_CalibrationPlot"),signal_blank_ratio = NOISE,diagnostic = TRUE
   )
 
   logr::put("Scatterplot was created")

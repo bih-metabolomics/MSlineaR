@@ -70,7 +70,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
                      signal_blank_ratio = 5,
                      printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
                      outputfileName = c("Calibrationplot"), TRANSFORM_Y = "log", inverse_y = "exp",
-                     COLNAMES, Xcol, Ycol, Series = "QC dilution Curves", output_dir ){
+                     COLNAMES, Xcol, Ycol, Series = "QC dilution Curves", output_dir,diagnostic = TRUE ){
 
   assertthat::not_empty(inputData_Series)
   # LR_object,statusLinear = c(TRUE, FALSE),
@@ -163,12 +163,25 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
     #npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
 
+    metabolite_row <- function(df, show_x = FALSE, show_legend = FALSE, show_title = FALSE){
+
+      x_theme <- if(show_x) theme() else theme(
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()
+      )
+
+      legend_theme <- if(show_legend) ggplot2::theme(legend.position = "top") else ggplot2::theme(legend.position = "none")
+
+      title_metabolite <- if(show_title) "Dilution curve" else ""
+      title_residual <- if(show_title) "Residual Plot" else ""
+      title_qq <- if(show_title) "QQ Line Plot" else ""
 
 
-    data_Signals <- data_Signal #|> dplyr::arrange(groupIndices)#[groupIndices %in% 1, ]#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
+    data_Signals <- df #|> dplyr::arrange(groupIndices)#[groupIndices %in% 1, ]#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
 
     plotlinearData <-
-      ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(dependent), shape = Batch)) +
+      ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(dependent))) +
       ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type])),colour = "black")
 
     if("signalBlankRatio" %in% colnames(data_Signals)){
@@ -223,6 +236,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     }
 
+
+
     plotlinearData <-  plotlinearData +
       ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
       ggplot2::geom_vline(ggplot2::aes( xintercept = -1, color = "darkgrey"), linetype = "solid", col = "black", na.rm = TRUE)
@@ -237,8 +252,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     if(!is.null(inputData_BioSamples )){
       plotlinearData <-  plotlinearData +
         #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
-                            ggplot2::aes( x = -2, y = get(dependent),  shape = Sample.Type, colour = get(ClassCol)), size = 2, na.rm = TRUE) #+#, shape = 1, col = "purple"
+        ggplot2::geom_boxplot(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
+                            ggplot2::aes( x = -2, y = get(dependent),  shape = Sample.Type, fill = get(ClassCol)), size = 0.5, na.rm = TRUE) #+#, shape = 1, col = "purple"
       legend_order <- c(legend_order, unique(inputData_BioSamples$Sample.Type))
     }
     #ifelse(!is.na(Class),get(Class), "black")
@@ -248,8 +263,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
       plotlinearData <-  plotlinearData +
         ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
-                            ggplot2::aes( x = x, y = get(dependent),  shape = as.factor(Sample.Type),
-                                          color = get(ClassCol)), size = 2, na.rm = TRUE) #+
+                            ggplot2::aes( x = x, y = get(dependent),  shape = as.factor(Sample.Type)), size = 2, na.rm = TRUE) #+
         #ggplot2::scale_shape_manual(values = 1: (nlevels(as.factor(QCs$Sample.Type)) +2), breaks=rev(legend_order))
 
       #+, shape = 5
@@ -304,8 +318,9 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
          #                              scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
       #} else {
         plotlinearData <-  plotlinearData +
-          ggforce::facet_grid_paginate(ID ~ Batch ,
-                                       scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
+          facet_grid(ID ~ Batch)
+          #ggforce::facet_grid_paginate(ID ~ Batch ,
+                                       #scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
       #}
     }
 
@@ -349,7 +364,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     if(printR2 %in% TRUE & any(!is.na(data_Signals$R2))) {
 
-      text_label <- data_Signals[InRange %in% TRUE, .(ID, Batch, R2, y = get(dependent))]
+      text_label <- data_Signals[InRange %in% TRUE, .(ID, Batch, R2, y = get(dependent), spearman_rho_linearRange,spearman_rho)]
       text_label <- text_label |> dplyr::group_by(ID, Batch) |>
         dplyr::mutate(R2 = ifelse(any(!is.na(R2)), R2[!is.na(R2)] , NA),
                       max_y = max(y, na.rm = T)) |>
@@ -362,12 +377,14 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       plotlinearData <- plotlinearData +
         ggplot2::geom_text(data = text_label,
                            #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
-                           ggplot2::aes(x = 0, y = max_y + 5, label = paste(Series,": R2 = ", round(R2,4))),
+                           ggplot2::aes(x = 0, y = max_y + 5, label = paste0("R2 = ", round(R2,4),
+                                                                            "/nspearman_rho_Range = " , round(spearman_rho_linearRange, 2),
+                                                                            "/nspearman_rho = " , round(spearman_rho, 2)) ,
                            size = 3,
-                           hjust = -0.1,
+                           hjust = 0,
                            vjust = 2,
                            #inherit.aes = FALSE
-        )
+        ))
 
 
     }
@@ -393,6 +410,9 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       ggplot2::theme(axis.line=ggplot2::element_line()) +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
       ggplot2::theme(legend.position="top") +
+      ggplot2::ggtitle(title_metabolite) +
+      x_theme +
+      legend_theme +
       ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
                       shape = ggplot2::guide_legend(order = 2))
 
@@ -409,12 +429,13 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         stat_qq_line()
 
       plotRes <-  plotRes +
-        ggforce::facet_grid_paginate(ID ~ . , scales = "free",
-                                     ncol = nCol,
-                                     nrow = nrRow,
-                                     page = 1 ) +
+        # ggforce::facet_grid_paginate(ID ~ . , scales = "free",
+        #                              ncol = nCol,
+        #                              nrow = nrRow,
+        #                              page = 1 ) +
         ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,
                                     breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
+        ggplot2::ggtitle(title_residual) +
         ggplot2::theme_bw() +
         ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
         ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
@@ -423,71 +444,147 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
         ggplot2::theme(legend.position="top") +
         ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
-                        shape = ggplot2::guide_legend(order = 2))
+                        shape = ggplot2::guide_legend(order = 2)) +
+        x_theme +
+        legend_theme +
+        guides(color = guide_legend(title = NULL), shape = guide_legend(title = NULL))
+
 
 
 
 
 
       plotQQplot <-  plotQQplot +
-        ggforce::facet_grid_paginate(ID ~ . , scales = "free",
-                                     ncol = nCol,
-                                     nrow = nrRow,
-                                     page = 1 ) +
+        # ggforce::facet_grid_paginate(ID ~ . , scales = "free",
+        #                              ncol = nCol,
+        #                              nrow = nrRow,
+        #                              page = 1 ) +
         #ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,
       #                              breaks = x,  labels = data_Signals$DilutionPoint) +
+        ggplot2::ggtitle(title_qq) +
         ggplot2::theme_bw() +
         ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
         ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
         ggplot2::theme(panel.background=ggplot2::element_blank()) +
         ggplot2::theme(axis.line=ggplot2::element_line()) +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
-        ggplot2::theme(legend.position="top") +
+
+        x_theme +
+        #legend_theme +
         ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
-                        shape = ggplot2::guide_legend(order = 2))
+                        shape = ggplot2::guide_legend(order = 2)) +
+        guides(color = guide_legend(title = NULL), shape = guide_legend(title = NULL)) +
+        ggplot2::theme(legend.position="none")
 
 
-      plotlinearData | (plotRes | plotQQplot)
+
+        (plotlinearData | plotRes | plotQQplot) +
+          plot_layout( widths = c(2,1,1))
 
 
 
     }
+    }
+
+
+    metabolite_list <- split(data_Signal, data_Signal$ID)
+    #plot_list <- lapply(metabolite_list, metabolite_row)
 
 
 
 
     if(printPDF %in% TRUE){
 
-      #plotObj <- vector("list", npage)
-      if(data.table::uniqueN(data_Signal$Batch) <= 2){
-        pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 9, height = 15)
-        nrRow = 10
-      }else {
-        pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
-        nrRow = 5
-      }
 
-      n <- ggforce::n_pages(plotlinearData)
+      plots_per_page <- 5
+      pages <- split(
+        metabolite_list,
+        ceiling(seq_along(metabolite_list)/plots_per_page)
+      )
 
-      for(i in 1:n) {
+      pdf(file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
+      y = 1
+      for(page in pages){
 
-        if(data.table::uniqueN(data_Signal$Batch) > 1){
-          suppressWarnings(print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
-                                                                               scales = "free", ncol = nCol,nrow = nrRow, page = i )))
-        } else {
-          suppressWarnings( print(plotlinearData + ggforce::facet_grid_paginate(ID ~.,
-                                                                                scales = "free", ncol = nCol,nrow = nrRow, page = i )))
+        n <- length(page)
+        plots <- lapply(seq_along(page), function(i){
+          show_x <- i == n  # nur letzter Plot der Seite bekommt X-Achse
+          show_legend <- i == 1
+          show_title <- i == 1
+          metabolite_row(page[[i]], show_x = show_x, show_legend = show_legend, show_title = show_title)
+        })
 
-        }
-        print(paste0(i, " of ", n))
-
-
-
+        print(wrap_plots(plots, ncol = 1))
+        print(paste0(y, " of ", length(pages)))
+        y = y + 1
       }
 
       dev.off()
 
+
     }
+
+      # plots_per_page <- 5
+      #
+      # pages <- split(
+      #   metabolite_list,
+      #   ceiling(seq_along(metabolite_list) / plots_per_page)
+      # )
+      #
+      # # -------------------------------------------------
+      # # PDF erzeugen
+      # # -------------------------------------------------
+      #
+      # pdf(file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
+      #
+      # for(page in pages){
+      #
+      #   n <- length(page)
+      #   plots <- lapply(seq_along(page), function(i){
+      #     show_x <- i == n  # nur letzter Plot der Seite bekommt X-Achse
+      #     metabolite_row(page[[i]], show_x = show_x)
+      #   })
+      #
+      #   print(wrap_plots(plots, ncol = 1))
+      #   print(paste0(names(page), " of ", length(pages)))
+      # }
+      # # for(p in pages){
+      # #   print(wrap_plots(p, ncol = 1))
+      # #   print(paste0(p, " of ", length(pages)))
+      # # }
+      #
+      # dev.off()
+
+      #plotObj <- vector("list", npage)
+      # if(data.table::uniqueN(data_Signal$Batch) <= 2){
+      #   pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 9, height = 15)
+      #   nrRow = 10
+      # }else {
+      #   pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
+      #   nrRow = 5
+      # }
+      #
+      # n <- ggforce::n_pages(plotlinearData)
+      #
+      # for(i in 1:n) {
+      #
+      #   if(data.table::uniqueN(data_Signal$Batch) > 1){
+      #     suppressWarnings(print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
+      #                                                                          scales = "free", ncol = nCol,nrow = nrRow, page = i )))
+      #   } else {
+      #     suppressWarnings( print(plotlinearData + ggforce::facet_grid_paginate(ID ~.,
+      #                                                                           scales = "free", ncol = nCol,nrow = nrRow, page = i )))
+      #
+      #   }
+      #   print(paste0(i, " of ", n))
+      #
+      #
+      #
+      # }
+
+      #dev.off()
+
+    #}
 
     return(suppressWarnings(print(plotlinearData)))
   }

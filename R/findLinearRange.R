@@ -60,10 +60,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
         groupIndices = unique(data$groupIndices),
         RangeStart = data$DilutionPoint[data$InRange %in%TRUE][1],
-        RangeStartY = data[[y]][data$DilutionPoint %in% RangeStart],
+        RangeStartY = data$Y[data$DilutionPoint %in% RangeStart],
         RangeStartX = data[[real_x]][data$DilutionPoint %in% RangeStart],
         RangeEnd = dplyr::last(data$DilutionPoint[data$InRange %in%TRUE]),
-        RangeEndY = data[[y]][data$DilutionPoint %in% RangeEnd],
+        RangeEndY = data$Y[data$DilutionPoint %in% RangeEnd],
         RangeEndX = data[[real_x]][data$DilutionPoint %in% RangeEnd],
         RangeLength = sum(data$InRange %in%TRUE),
         enoughPointsWithinRange = RangeLength >= min_feature,
@@ -83,7 +83,9 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
       data <- data[, ':=' (
         positiveSlope = c(get(y)[1] < get(y)[2], diff(data[[y]]) > 0),
-        R2 = ifelse(data$InRange %in% TRUE, tmpGroup$R2,NA)
+        R2 = ifelse(data$InRange %in% TRUE, tmpGroup$R2,NA),
+        spearman_rho_linearRange = ifelse(data$InRange %in% TRUE, tmpGroup$spearman_rho_inRange,NA),
+        spearman_rho = tmpGroup$spearman_rho_complete
 
 
 
@@ -129,6 +131,8 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
       data <- data[, ':=' (
         positiveSlope = NA,
         R2 = NA,
+        spearman_rho_linearRange = NA,
+        spearman_rho = tmpGroup$spearman_rho_complete,
         predicted = NA,
         ResidualsInRange = NA,
         delta = NA,
@@ -171,7 +175,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
   ###use residuals
 
   fit_residuals <- residuals(linearModel)
-  dat$Residuals_all = fit_residuals
+  dat$Residuals_weight_HalfmaxY = fit_residuals
 
   lr <- abs(fit_residuals) < max_res
 
