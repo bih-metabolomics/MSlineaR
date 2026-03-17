@@ -428,6 +428,7 @@ Yorigin <- "Y"
     #            --------------------------------------------------------\n")
 
     blanks <-  dataReduced[get(COLNAMES[["Sample_type"]]) %in% BLANK]
+    blanks$Y <- blanks[[COLNAMES[["Y"]]]]
     #Yblank <- COLNAMES[["Y"]]
 
 

@@ -19,8 +19,8 @@
 #' @importFrom stats median
 trimm_signalBlank <- function(dats, blanks, y, y_trans, noise){
 
-  setDT(dats)
-  setDT(blanks)
+  data.table::setDT(dats)
+  data.table::setDT(blanks)
 
   dat <- data.table::copy(dats)
   blank <- data.table::copy(blanks)
