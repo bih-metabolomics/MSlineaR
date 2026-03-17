@@ -163,7 +163,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-    nrRow <- ifelse(data.table::uniqueN(data_Signal$groupIndices) >= 5, 5, data.table::uniqueN(data_Signal$groupIndices))
+    nrRow <- ifelse(data.table::uniqueN(data_Signal$groupIndices) >= 4, 4, data.table::uniqueN(data_Signal$groupIndices))
     nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
     #npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
 
@@ -382,8 +382,8 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         ggplot2::geom_text(data = text_label,
                            #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
                            ggplot2::aes(x = 0, y = max_y + 5, label = paste0("R2 = ", round(R2,4),
-                                                                            "/nspearman_rho_Range = " , round(spearman_rho_linearRange, 2),
-                                                                            "/nspearman_rho = " , round(spearman_rho, 2)) ,
+                                                                            "\nspearman_rho_Range = " , round(spearman_rho_linearRange, 2),
+                                                                            "\nspearman_rho = " , round(spearman_rho, 2)) ,
                            size = 3,
                            hjust = 0,
                            vjust = 2
