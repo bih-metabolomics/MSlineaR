@@ -497,7 +497,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-    if(printPDF %in% TRUE){
+    suppressWarnings( if(printPDF %in% TRUE){
 
 
       plots_per_page <- 5
@@ -525,8 +525,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
       dev.off()
 
-
-    }
+    })
 
       # plots_per_page <- 5
       #
@@ -590,7 +589,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     #}
 
-    return(suppressWarnings(print(plotlinearData)))
+    #return(suppressWarnings(print(plotlinearData)))
   }
 
 
