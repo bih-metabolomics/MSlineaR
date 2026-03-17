@@ -381,12 +381,12 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       plotlinearData <- plotlinearData +
         ggplot2::geom_text(data = text_label,
                            #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
-                           ggplot2::aes(x = 0, y = max_y + 5, label = paste0("R2 = ", round(R2,4),
+                           ggplot2::aes(x = 0, y = max_y + 5, label = paste0("R2 = ", round(R2,2),
                                                                             "\nspearman_rho_Range = " , round(spearman_rho_linearRange, 2),
                                                                             "\nspearman_rho = " , round(spearman_rho, 2)) ,
-                           size = 3,
+                           size = 2,
                            hjust = 0,
-                           vjust = 2
+                           vjust = 1
                            #inherit.aes = FALSE
         ))
 
@@ -483,7 +483,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
         (plotlinearData | plotRes | plotQQplot) +
-        patchwork::plot_layout( widths = c(2,1,1))
+        patchwork::plot_layout( widths = c(3,1,1))
 
 
 
@@ -500,7 +500,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     suppressWarnings( if(printPDF %in% TRUE){
 
 
-      plots_per_page <- 5
+      plots_per_page <- nrRow
       pages <- split(
         metabolite_list,
         ceiling(seq_along(metabolite_list)/plots_per_page)
