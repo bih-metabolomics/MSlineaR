@@ -167,7 +167,31 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
     #npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
 
+    # ---- Levels holen ----
+    class_levels <- unique(na.omit(data_Signal[[ClassCol]]))
+    sample_levels <- c(unique(inputData_BioSamples[[Sample.Type]]),unique(inputData_QC[[Sample.Type]]))
+    batch_levels  <- unique(data_Signal$Batch)
+
+    # ---- Farben / Shapes definieren ----
+    class_colors <- setNames(
+      scales::hue_pal()(length(class_levels)),
+      class_levels
+    )
+
+    sample_shapes <- setNames(
+      c(16,17,15,18,19)[seq_along(sample_levels)],
+      sample_levels
+    )
+
+    batch_fills <- setNames(
+      RColorBrewer::brewer.pal(max(length(batch_levels), 3), "Set1")[1:length(batch_levels)],
+      batch_levels
+    )
+
+
     metabolite_row <- function(df, show_x = FALSE, show_legend = FALSE, show_title = FALSE){
+
+
 
       x_theme <- if(show_x) ggplot2::theme() else ggplot2::theme(
         axis.title.x = ggplot2::element_blank(),
@@ -177,7 +201,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
       legend_theme <- if(show_legend) ggplot2::theme(legend.position = "top") else ggplot2::theme(legend.position = "none")
 
-      title_metabolite <- if(show_title) "Dilution curve" else ""
+      title_metabolite <- if(show_title) "QC & Samples | Dilution curve" else ""
       title_residual <- if(show_title) "Residual Plot" else ""
       title_qq <- if(show_title) "QQ Line Plot" else ""
 
@@ -366,7 +390,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-    if(printR2 %in% TRUE & any(!is.na(data_Signals$R2))) {
+    #if(printR2 %in% TRUE & any(!is.na(data_Signals$R2))) {
 
       text_label <- data_Signals[InRange %in% TRUE, .(ID, Batch, R2, y = get(dependent), spearman_rho_linearRange,spearman_rho)]
       text_label <- text_label |> dplyr::group_by(ID, Batch) |>
@@ -383,28 +407,28 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
                            #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
                            ggplot2::aes(x = 0, y = max_y + 5, label = paste0("R2 = ", round(R2,2),
                                                                             "\nspearman_rho_Range = " , round(spearman_rho_linearRange, 2),
-                                                                            "\nspearman_rho = " , round(spearman_rho, 2)) ,
-                           size = 2,
+                                                                            "\nspearman_rho = " , round(spearman_rho, 2))) ,
+                           size = 4,
                            hjust = 0,
                            vjust = 1
                            #inherit.aes = FALSE
-        ))
+        )
 
 
-    }
+    #}
 
 
 
 
-
-    if(!is.null(inputData_BioSamples ) | !is.null(inputData_QC )){
-
-      plotlinearData <-  plotlinearData +
-        ggplot2::annotate(geom = "text", x = -3.5, y = Inf, label = "QC & Samples", size = 3,vjust = 2, na.rm = TRUE) #+
-      #ggplot2::scale_color_manual(name = "In linear Range:",
-      #                   values = c("FALSE" = "red", "TRUE" = "purple")) +
-      #ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3,4,7,8), breaks=rev(legend_order))
-    }
+#
+#     if(!is.null(inputData_BioSamples ) | !is.null(inputData_QC )){
+#
+#       plotlinearData <-  plotlinearData +
+#         ggplot2::annotate(geom = "text", x = 0, hjust = 2, y = Inf, label = "QC & Samples", size = 3,vjust = 2, na.rm = TRUE) #+
+#       #ggplot2::scale_color_manual(name = "In linear Range:",
+#       #                   values = c("FALSE" = "red", "TRUE" = "purple")) +
+#       #ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3,4,7,8), breaks=rev(legend_order))
+#     }
 
     plotlinearData <-  plotlinearData +
       ggplot2::theme_bw() +
@@ -413,23 +437,27 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       ggplot2::theme(panel.background=ggplot2::element_blank()) +
       ggplot2::theme(axis.line=ggplot2::element_line()) +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
-      ggplot2::theme(legend.position="top") +
+      #ggplot2::theme(legend.position="top") +
       ggplot2::ggtitle(title_metabolite) +
       x_theme +
-      legend_theme +
-      ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
-                      shape = ggplot2::guide_legend(order = 2))
+      #legend_theme +
+      ggplot2::theme(legend.position="none") +
+      ggplot2::scale_color_manual(values = class_colors) +
+      ggplot2::scale_shape_manual(values = sample_shapes) #+
+      #ggplot2::scale_fill_manual(values = batch_fills)
+      #ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
+       #               shape = ggplot2::guide_legend(order = 2))
 
 
     ####residual diagnostic
     if(diagnostic %in% TRUE){
 
-      plotRes <- ggplot2::ggplot(data_Signals |> dplyr::filter(InRange %in% TRUE), ggplot2::aes( y = ResidualsInRange, x = `X_transformed(log)`, shape = Batch, color = Batch)) +
-        ggplot2::geom_point() +
+      plotRes <- ggplot2::ggplot(data_Signals |> dplyr::filter(InRange %in% TRUE), ggplot2::aes( y = ResidualsInRange, x = `X_transformed(log)`, fill = Batch)) +
+        ggplot2::geom_point(shape = 22) +
         ggplot2::geom_hline(yintercept = 0)
 
-      plotQQplot <- ggplot2::ggplot(data_Signals |> dplyr::filter(InRange %in% TRUE), ggplot2::aes( sample =  ResidualsInRange,  shape = Batch, color = Batch)) +
-        ggplot2::stat_qq() +
+      plotQQplot <- ggplot2::ggplot(data_Signals |> dplyr::filter(InRange %in% TRUE), ggplot2::aes( sample =  ResidualsInRange,  fill = Batch)) +
+        ggplot2::stat_qq(shape = 22) +
         ggplot2::stat_qq_line()
 
       plotRes <-  plotRes +
@@ -447,11 +475,15 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         ggplot2::theme(axis.line=ggplot2::element_line()) +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
         ggplot2::theme(legend.position="top") +
-        ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
-                        shape = ggplot2::guide_legend(order = 2)) +
+        #ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
+        #                shape = ggplot2::guide_legend(order = 2)) +
         x_theme +
-        legend_theme +
-        ggplot2::guides(color = ggplot2::guide_legend(title = NULL), shape = ggplot2::guide_legend(title = NULL))
+        ggplot2::theme(legend.position="none") +
+        #ggplot2::scale_color_manual(values = class_colors) +
+        #ggplot2::scale_shape_manual(values = sample_shapes) +
+        ggplot2::scale_fill_manual(values = batch_fills)
+        #legend_theme +
+        #ggplot2::guides(color = ggplot2::guide_legend(title = NULL), shape = ggplot2::guide_legend(title = NULL))
 
 
 
@@ -475,10 +507,13 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
         x_theme +
         #legend_theme +
-        ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
-                        shape = ggplot2::guide_legend(order = 2)) +
-        ggplot2::guides(color = ggplot2::guide_legend(title = NULL), shape = ggplot2::guide_legend(title = NULL)) +
-        ggplot2::theme(legend.position="none")
+        #ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
+        #                shape = ggplot2::guide_legend(order = 2)) +
+        #ggplot2::guides(color = ggplot2::guide_legend(title = NULL), shape = ggplot2::guide_legend(title = NULL)) +
+        ggplot2::theme(legend.position="none") +
+        #ggplot2::scale_color_manual(values = class_colors) +
+        #ggplot2::scale_shape_manual(values = sample_shapes) +
+        ggplot2::scale_fill_manual(values = batch_fills)
 
 
 
@@ -490,7 +525,99 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     }
     }
 
+    legend_plot <- ggplot2::ggplot() +
 
+      ggplot2::geom_point(
+        data = data.frame(Class = class_levels),
+        ggplot2::aes(x = 1, y = 1, color = Class),
+        size = 3
+      ) +
+
+      ggplot2::geom_boxplot(
+        data = data.frame(Sample.Type = unique(inputData_BioSamples$Sample.Type)),
+        ggplot2::aes(x = 2, y = 1, shape = Sample.Type),
+        #size = 3,
+        width = 0.2
+      ) +
+
+
+      ggplot2::geom_point(
+        data = data.frame(Sample.Type = unique(inputData_QC$Sample.Type)),
+        ggplot2::aes(x = 3, y = 1, shape = Sample.Type),
+        size = 3,
+        color = "black"
+      ) +
+
+      ggplot2::geom_point(
+        data = data.frame(Batch = batch_levels),
+        ggplot2::aes(x = 4, y = 1, fill = Batch),
+        shape = 22,
+        size = 3
+      ) +
+
+      scale_color_manual(name = "Class:", values = class_colors) +
+      scale_shape_manual(name = "Sample Type:", values = sample_shapes) +
+      scale_fill_manual(name = "Batch:", values = batch_fills) +
+
+      guides(
+        shape = guide_legend(order = 1),
+        color = guide_legend(order = 2),
+        fill  = guide_legend(order = 3)
+      ) +
+
+      theme_void() +
+      theme(
+        legend.position = "top",
+        legend.box = "horizontal",
+        legend.direction = "horizontal",
+        legend.spacing.x = unit(1, "cm"),
+        legend.title = element_text(face = "bold"),
+        plot.margin = margin(0,0,0,0)
+      ) +
+      ggplot2::coord_cartesian(xlim = c(0, 0.5), ylim = c(0, 0.5), clip = "off")
+
+    # legend_plot <- ggplot2::ggplot(data_Signal,
+    #                                ggplot2::aes(
+    #                                  x = 1, y = 1,
+    #                                  color = get(ClassCol),
+    #                                  shape = Sample.Type
+    #                                )
+    # ) +
+    #   ggplot2::geom_point(alpha = 0) +
+    #
+    #   # Batch-Legende (separat)
+    #   ggplot2::geom_point(
+    #     ggplot2::aes(x = 1, y = 1, fill = factor(Batch)),
+    #     shape = 22,
+    #     alpha = 0,
+    #     inherit.aes = FALSE
+    #   ) +
+    #   ggplot2::scale_shape_discrete(name = "Sample Type") +
+    #   ggplot2::scale_color_discrete(name = "Class") +
+    #   ggplot2::scale_fill_discrete(name = "Batch") +
+    #
+    #   ggplot2::guides(
+    #     shape = ggplot2::guide_legend(
+    #       order = 1,
+    #       override.aes = list(alpha = 1, size = 3)
+    #     ),
+    #     color = ggplot2::guide_legend(
+    #       order = 2,
+    #       override.aes = list(alpha = 1, size = 3)
+    #     ),
+    #     fill = ggplot2::guide_legend(
+    #       order = 3,
+    #       override.aes = list(alpha = 1, size = 3)
+    #     )
+    #   ) +
+    #
+    #   ggplot2::theme_void() +
+    #   ggplot2::theme(
+    #     legend.position = "top",
+    #     legend.box = "horizontal",
+    #     legend.direction = "vertical"
+    #   )
+    #
     metabolite_list <- split(data_Signal, data_Signal$ID)
     #plot_list <- lapply(metabolite_list, metabolite_row)
 
@@ -513,12 +640,14 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         n <- length(page)
         plots <- lapply(seq_along(page), function(i){
           show_x <- i == n  # nur letzter Plot der Seite bekommt X-Achse
-          show_legend <- i == 1
+          #show_legend <- i == 1
           show_title <- i == 1
           metabolite_row(page[[i]], show_x = show_x, show_legend = show_legend, show_title = show_title)
         })
 
-        print(patchwork::wrap_plots(plots, ncol = 1))
+        print(legend_plot /
+                patchwork::wrap_plots(plots, ncol = 1) +
+                patchwork::plot_layout(heights = c(1, 10)))
         print(paste0(y, " of ", length(pages)))
         y = y + 1
       }
