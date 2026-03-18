@@ -642,7 +642,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
           show_x <- i == n  # nur letzter Plot der Seite bekommt X-Achse
           #show_legend <- i == 1
           show_title <- i == 1
-          metabolite_row(page[[i]], show_x = show_x, show_legend = show_legend, show_title = show_title)
+          metabolite_row(page[[i]], show_x = show_x, show_legend = FALSE, show_title = show_title)
         })
 
         print(legend_plot /
