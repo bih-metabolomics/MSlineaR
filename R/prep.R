@@ -164,10 +164,10 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)) if(!as.integer(get(INVERSE_Y)(get(TRANSFORM_Y)(10))) == 10) rlang::abort( "Argument 'inverse_Y' must be the reverse function of Argument 'transform_Y'")
 
 
-  if(!is.na(SAMPLE) & !SAMPLE %in% dat[[COLNAMES[["Sample_type"]]]]) rlang::abort("Argument 'sampleType_sample' was not found in column 'column_sampleType'")
+  if(!all(is.na(SAMPLE)) & !SAMPLE %in% dat[[COLNAMES[["Sample_type"]]]]) rlang::abort("Argument 'sampleType_sample' was not found in column 'column_sampleType'")
   #if(!is.null(SAMPLE)) if(!any(colnames(dat) %in% Y_SAMPLE))rlang::abort("Column 'column_Y_sample' was not found in input data.")
 
-  if(!is.na(QC)) if(!all( QC %in% dat[[COLNAMES[["Sample_type"]]]])) rlang::abort("Argument 'sampleType_QC' was not found in column 'column_sampleType'")
+  if(!all(is.na(QC))) if(!all( QC %in% dat[[COLNAMES[["Sample_type"]]]])) rlang::abort("Argument 'sampleType_QC' was not found in column 'column_sampleType'")
   #if(!is.numeric(DILUTION_FACTOR)) rlang::abort("Argument 'dilution_factor' needs to be from type numeric.")
   if(!is.logical(BATCH_HARMONIZATION) | is.na(BATCH_HARMONIZATION)) rlang::abort("Argument 'Batch_harmonization' needs to be from type logical")
   if(!is.null(NOISE)) if(!is.numeric(NOISE) | NOISE < 1) rlang::abort("Argument 'signal_blank_ration' needs to be from type integer and greater than 0.")
