@@ -177,7 +177,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
   fit_residuals <- residuals(linearModel)
   dat$Residuals_weight_HalfmaxY = fit_residuals
 
-  lr <- abs(fit_residuals) < max_res
+  lr <- abs(fit_residuals) < max_res * sd(fit_residuals)
 
   consNDX <- rle(lr)
   consNDX$position <- cumsum(consNDX$length)

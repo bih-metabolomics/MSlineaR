@@ -107,7 +107,7 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans, noise){
 #' @import data.table
 #' @import dplyr
 #' @importFrom tidyr unite
-trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X){ # thresh=0
+trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, SLOPE_RATIO = 0.5){ # thresh=0
 
   dats$trim <- FALSE
   dats$flat_slope <- FALSE
@@ -141,7 +141,7 @@ trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X){ # thresh
   # }
 
 
-  dat$flat_slope <- findPlateaus(dats = dat,y = y, x = x, slope_ratio = 0.5)
+  dat$flat_slope <- findPlateaus(dats = dat,y = y, x = x, slope_ratio = SLOPE_RATIO)
 
   #browser()
   if (data.table::last(dat[[y]]) != max(dat[[y]])) {
