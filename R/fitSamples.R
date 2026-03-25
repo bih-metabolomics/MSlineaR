@@ -77,12 +77,19 @@ getConc <- function(dats, datCal, y, INVERSE_Y, NAME_Standard, COL_expConc){
   dat <- dat[datCal, on = intersect(colnames(dat), colnames(datCal))]
 
   #y = b0 + b1*x
-  dat[, ConcentrationLR := (get(y) - Intercept)/slope, by = .I]
 
   if(!is.null(INVERSE_Y) ){
-    dat$ConcentrationLR <- sapply(paste0(INVERSE_Y,"(",dat$ConcentrationLR,")"),function(i) eval(parse(text = i)))
+
+    dat[, ConcentrationLR := exp((get(y) - Intercept - sigma^2/2)/slope), by = .I]
+
+    #dat$ConcentrationLR <- sapply(paste0(INVERSE_Y,"(",dat$ConcentrationLR,")"),function(i) eval(parse(text = i)))
+  } else{
+
+    dat[, ConcentrationLR := (get(y) - Intercept)/slope, by = .I]
+
+
   }
-  dat[, ConcentrationLR := ConcentrationLR/(3/min(as.numeric(get(COL_expConc))[Sample.Type %in% NAME_Standard], na.rm = TRUE)), by = Compound]
+  dat[, ConcentrationLR := ConcentrationLR * 1/3 * min(as.numeric(get(COL_expConc))[Sample.Type %in% NAME_Standard], na.rm = TRUE), by = Compound]
   #dat$ConcentrationLR <- dat$ConcentrationLR/(3/dat$xfactor
 
 

@@ -176,9 +176,9 @@ MS_AssessLinearity <- function(
   TYPE = analysisType
   DAT_F = inputData_feature
   DAT_S = inputData_sample
-  QC =  ifelse(is.null(sampleType_QC), NA,sampleType_QC)
-  BLANK = ifelse(is.null(sampleType_blank), NA, sampleType_blank)
-  SAMPLE = ifelse(is.null(sampleType_sample), NA, sampleType_sample)
+  QC =  if(is.null(sampleType_QC)) NA else sampleType_QC
+  BLANK = if(is.null(sampleType_blank)) NA else sampleType_blank
+  SAMPLE = if(is.null(sampleType_sample)) NA else sampleType_sample
   SAMPLE_ID = column_sampleID
   FEATURE_ID = column_featureID
   CALIBRANTS = sampleType_serial
@@ -892,7 +892,7 @@ Yorigin <- "Y"
 
   #### biological samples ####
 
-  if(!is.na(SAMPLE) & GET_LR_STATUS %in% TRUE){ #CAL_CONC %in% TRUE |
+  if(!(all(is.na(SAMPLE))) & GET_LR_STATUS %in% TRUE){ #CAL_CONC %in% TRUE |
 
     logr::sep("prepare biological samples")
   # rlang::inform("
@@ -951,7 +951,7 @@ Yorigin <- "Y"
 
   #### QC samples ####
 
-  if(!is.na(QC)){
+  if(!all(is.na(QC))){
 
     logr::sep("check QC samples")
     # rlang::inform("
