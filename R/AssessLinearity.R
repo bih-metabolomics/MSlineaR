@@ -151,7 +151,7 @@ MS_AssessLinearity <- function(
     min_feature = 6,
     LR_sd_res_factor = 3,
     R2_min = 0.9,
-    rho_tol = 0,
+    rho_tolerance = 0,
     delta_tolerance = 0.182,
     slope_tolerance = 0.2,
 
