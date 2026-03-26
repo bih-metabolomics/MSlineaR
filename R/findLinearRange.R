@@ -35,7 +35,7 @@
 #' @importFrom DescTools Closest
 #' @importFrom stats fitted lm residuals
 
-findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_res = 3, min_feature = 5, real_x, slope_tol = 0.15, delta_tol = 0.182, rho_tol = 0 ){
+findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_res = 3, min_feature = 5, real_x, slope_tol = 0.2, delta_tol = 0.182, rho_tol = 0 ){
 
   create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x, min_feature = min_feature){
 

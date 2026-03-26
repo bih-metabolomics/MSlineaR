@@ -151,6 +151,9 @@ MS_AssessLinearity <- function(
     min_feature = 6,
     LR_sd_res_factor = 3,
     R2_min = 0.9,
+    rho_tol = 0,
+    delta_tolerance = 0.182,
+    slope_tolerance = 0.2,
 
     Batch_harmonization = c(TRUE, FALSE)[1],
 
@@ -210,6 +213,9 @@ MS_AssessLinearity <- function(
   #SOD_R2_MIN = SOD_R2_min
   MIN_FEATURE = min_feature
   LR_SD_RES_FACTOR = LR_sd_res_factor
+  SLOPE_TOLERANCE = slope_tol
+  DELTA_TOLERANCE = delta_tolerance
+  RHO_TOLERANZ = rho_tolerance
   R2_MIN = R2_min
   BATCH_HARMONIZATION = Batch_harmonization
   #CAL_CONC = calculate_concentration
@@ -770,9 +776,9 @@ Yorigin <- "Y"
     real_x = COLNAMES[["X"]],
     min_feature = MIN_FEATURE,
     max_res = LR_SD_RES_FACTOR,
-    slope_tol = 0.15,
-    delta_tol = 0.182,
-    rho_tol = 0
+    slope_tol = SLOPE_TOLERANCE,
+    delta_tol = DELTA_TOLERANCE,
+    rho_tol = RHO_TOLERANZ
 
   )
 
