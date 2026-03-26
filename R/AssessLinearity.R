@@ -213,7 +213,7 @@ MS_AssessLinearity <- function(
   #SOD_R2_MIN = SOD_R2_min
   MIN_FEATURE = min_feature
   LR_SD_RES_FACTOR = LR_sd_res_factor
-  SLOPE_TOLERANCE = slope_tol
+  SLOPE_TOLERANCE = slope_tolerance
   DELTA_TOLERANCE = delta_tolerance
   RHO_TOLERANZ = rho_tolerance
   R2_MIN = R2_min
