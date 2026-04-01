@@ -151,7 +151,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
   }
 
 
-
+  dats$ResLR <- FALSE
 
   dat <- data.table::copy(dats)
   data.table::setorder(dat,DilutionPoint)
@@ -165,21 +165,38 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
 
   #create linear regression line going through int50
-  we <- rep(1, length(dat[[x]]))
-  we[(int50 - 1) : (int50 + 1)] <- 1000
+  #we <- rep(1, length(dat[[x]]))
+  #we[(int50 - 1) : (int50 + 1)] <- 1000
 
 
-  linearModel <- lm(dat[[y]] ~ dat[[x]] , weights = we)
-  #quadratic <- lm(dat[[y]] ~ poly(dat[[x]], 2, raw = TRUE))
+  FIN = FALSE
 
-  fit <- fitted(linearModel)
+  while(FIN == FALSE) {
 
-  ###use residuals
+    we = rep(1, length(dat[[x]]))
 
-  fit_residuals <- residuals(linearModel)
-  dat$Residuals_weight_HalfmaxY = fit_residuals
+    linearModel <- lm(dat[[y]] ~ dat[[x]] , weights = we)
+    #quadratic <- lm(dat[[y]] ~ poly(dat[[x]], 2, raw = TRUE))
 
-  lr <- abs(fit_residuals) < max_res * sd(fit_residuals)
+    fit <- fitted(linearModel)
+
+    ###use residuals
+
+    fit_residuals <- residuals(linearModel)
+    dat$Residuals_weight_HalfmaxY = fit_residuals
+
+    lr <- abs(fit_residuals) < max_res * sd(fit_residuals)
+
+    if(all(lr) %in% TRUE) {
+      FIN = TRUE
+      dat$ResLR <- TRUE
+
+    } else {
+      dat <- dat[lr,]
+    }
+
+  }
+
 
   consNDX <- rle(lr)
   consNDX$position <- cumsum(consNDX$length)
