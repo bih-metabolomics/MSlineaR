@@ -182,10 +182,10 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
     ###use residuals
 
-    fit_residuals <- residuals(linearModel)
+    fit_residuals <- rstudent(linearModel)
     dat$Residuals_weight_HalfmaxY = fit_residuals
 
-    lr <- abs(fit_residuals) < max_res * sd(fit_residuals)
+    lr <- abs(fit_residuals) < max_res #* sd(fit_residuals)
 
     if(all(lr) %in% TRUE) {
       FIN = TRUE
