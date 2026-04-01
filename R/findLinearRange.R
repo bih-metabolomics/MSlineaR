@@ -191,9 +191,11 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
       FIN = TRUE
       dat$ResLR <- TRUE
 
-    } else {
-      dat <- dat[lr,]
-    }
+    } else if (all(lr) %in% FALSE) {
+      FIN = TRUE
+      } else {
+        dat <- dat[lr,]
+      }
 
   }
 
