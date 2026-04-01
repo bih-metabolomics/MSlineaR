@@ -182,23 +182,33 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
     ###use residuals
 
-    fit_residuals <- rstudent(linearModel)
-    dat$Residuals_weight_HalfmaxY = fit_residuals
+    n <- length(linearModel$fitted.values)
+    p <- length(coef(linearModel))
 
-    lr <- abs(fit_residuals) < max_res #* sd(fit_residuals)
 
-    if(all(lr) %in% TRUE) {
+    threshold_cook <- 4 / (n - p - 1)
+
+
+    fit_residuals <- round(rstudent(linearModel),1)
+    cook <- round(cooks.distance(linearModel),2)
+
+    lr <- !((abs(fit_residuals) > max_res & cook > threshold_cook))
+
+    #dat$Residuals_weight_HalfmaxY = fit_residuals
+
+    #lr <- abs(fit_residuals) < max_res
+
+    if(all(lr %in% TRUE)) {
       FIN = TRUE
       dat$ResLR <- TRUE
 
-    } else if (all(lr) %in% FALSE) {
+    } else if (all(lr %in% FALSE)) {
       FIN = TRUE
-      } else {
-        dat <- dat[lr,]
-      }
+    } else {
+      dat <- dat[lr,]
+    }
 
   }
-
 
   consNDX <- rle(lr)
   consNDX$position <- cumsum(consNDX$length)
