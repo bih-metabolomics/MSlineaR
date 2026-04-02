@@ -392,7 +392,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     #if(printR2 %in% TRUE & any(!is.na(data_Signals$R2))) {
 
-      text_label <- data_Signals[InRange %in% TRUE, .(ID, Batch, R2, y = get(dependent), spearman_rho_linearRange,spearman_rho)]
+      text_label <- data_Signals[InRange %in% TRUE, .(ID, Batch, R2, y = get(dependent), spearman_rho_linearRange,spearman_rho, deltaMax_relative)]
       text_label <- text_label |> dplyr::group_by(ID, Batch) |>
         dplyr::mutate(R2 = ifelse(any(!is.na(R2)), R2[!is.na(R2)] , NA),
                       max_y = max(y, na.rm = T)) |>
@@ -407,7 +407,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
                            #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
                            ggplot2::aes(x = 0, y = max_y + 5, label = paste0("R2 = ", round(R2,2),
                                                                             "\nspearman_rho_Range = " , round(spearman_rho_linearRange, 2),
-                                                                            "\nspearman_rho = " , round(spearman_rho, 2))) ,
+                                                                            "\maxDeviation = ", round(deltaMax_relative,2))) ,
                            size = 4,
                            hjust = 0,
                            vjust = 1
