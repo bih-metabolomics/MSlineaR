@@ -35,7 +35,7 @@
 #' @importFrom DescTools Closest
 #' @importFrom stats fitted lm residuals
 
-findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_res = 3, min_feature = 5, real_x, slope_tol = 0.2, delta_tol = 0.182, rho_tol = 0 ){
+findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_res = 3, min_feature = 5, real_x, slope_tol = 0.2, delta_tol = 20, rho_tol = 0 ){
 
   create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x, min_feature = min_feature){
 
@@ -297,7 +297,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
   dat[[linearY]][is.na(dat[, get(y)]) | dat$InRange %in% FALSE | is.na(dat$InRange)] <- NA
 
   tmpGroup$Slope_within_Tolerance = abs(tmpGroup$slope - 1) <= slope_tol
-  tmpGroup$Linearity_Criterion_Deviation = tmpGroup$deltaMax <= delta_tol
+  tmpGroup$Linearity_Criterion_Deviation = abs(tmpGroup$deltaMax_relative) <= delta_tol
   tmpGroup$Monotonicity_inRange =  abs(1 - round(tmpGroup$spearman_rho_inRange,2)) <= rho_tol
   tmpGroup$Monotonicity_complete = abs(1 - round(tmpGroup$spearman_rho_complete,2)) <= rho_tol
 

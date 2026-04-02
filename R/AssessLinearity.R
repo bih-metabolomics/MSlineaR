@@ -152,7 +152,7 @@ MS_AssessLinearity <- function(
     LR_sd_res_factor = 3,
     R2_min = 0.9,
     rho_tolerance = 0,
-    delta_tolerance = 0.182,
+    delta_tolerance = 20,
     slope_tolerance = 0.2,
 
     Batch_harmonization = c(TRUE, FALSE)[1],
