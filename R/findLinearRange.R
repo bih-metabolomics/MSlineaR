@@ -86,7 +86,8 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
         positiveSlope = c(get(y)[1] < get(y)[2], diff(data[[y]]) > 0),
         R2 = ifelse(data$InRange %in% TRUE, tmpGroup$R2,NA),
         spearman_rho_linearRange = ifelse(data$InRange %in% TRUE, tmpGroup$spearman_rho_inRange,NA),
-        spearman_rho = tmpGroup$spearman_rho_complete
+        spearman_rho = tmpGroup$spearman_rho_complete,
+        deltaMax_relative = tmpGroup$deltaMax_relative
 
 
 
@@ -138,7 +139,8 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
         predicted = NA,
         ResidualsInRange = NA,
         delta = NA,
-        delta_percent = NA
+        delta_percent = NA,
+        deltaMax_relative = NA
 
       )]
 
