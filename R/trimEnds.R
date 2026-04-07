@@ -116,29 +116,29 @@ trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, SLOPE_RAT
   dat <- data.table::setorderv(dats,x)[!is.na(get(y))]# & !OutlierFOD %in% TRUE]
 
 
-  # findPlateaus <- function(dats, y, x , slope_ratio){
-  #
-  #   dat <- dats
-  #   # calculate point nearest half max intensity
-  #   int50 <- DescTools::Closest(x = dat[[y]] ,a = (min(dat[[y]]) + max(dat[[y]]))/2, which = TRUE, na.rm = T)
-  #   if(length(int50) > 1) int50 <- max(int50)
-  #   if(int50 == length(dat[[x]])) int50 <- length(dat[[x]]) -1
-  #   if(int50 == 1) int50 = 2
-  #
-  #   #create linear regression line going through int50
-  #
-  #   middleSlope <- suppressWarnings(summary(lm(dat[[y]][(int50 - 1) : (int50 + 1)] ~ dat[[x]][(int50 - 1) : (int50 + 1)]))$coefficient[2])
-  #   allSlopes <- diff(dat[[y]])/diff(dat[[x]])
-  #
-  #   plateau <- round(allSlopes,2) <= round(slope_ratio * middleSlope,2)
-  #
-  #   if(plateau[1] %in% TRUE) {plateau <-  c(TRUE, plateau)} else {plateau <-  c(FALSE, plateau)}
-  #   #plateau <- data.frame(DilutionPoint = dat$DilutionPoint, plateau = plateau)
-  #
-  #   return(plateau)
-  #
-  #
-  # }
+  findPlateaus <- function(dats, y, x , slope_ratio){
+
+    dat <- dats
+    # calculate point nearest half max intensity
+    int50 <- DescTools::Closest(x = dat[[y]] ,a = (min(dat[[y]]) + max(dat[[y]]))/2, which = TRUE, na.rm = T)
+    if(length(int50) > 1) int50 <- max(int50)
+    if(int50 == length(dat[[x]])) int50 <- length(dat[[x]]) -1
+    if(int50 == 1) int50 = 2
+
+    #create linear regression line going through int50
+
+    middleSlope <- suppressWarnings(summary(lm(dat[[y]][(int50 - 1) : (int50 + 1)] ~ dat[[x]][(int50 - 1) : (int50 + 1)]))$coefficient[2])
+    allSlopes <- diff(dat[[y]])/diff(dat[[x]])
+
+    plateau <- round(allSlopes,2) <= round(slope_ratio * middleSlope,2)
+
+    if(plateau[1] %in% TRUE) {plateau <-  c(TRUE, plateau)} else {plateau <-  c(FALSE, plateau)}
+    #plateau <- data.frame(DilutionPoint = dat$DilutionPoint, plateau = plateau)
+
+    return(plateau)
+
+
+  }
 
 
   dat$flat_slope <- findPlateaus(dats = dat,y = y, x = x, slope_ratio = SLOPE_RATIO)
@@ -240,9 +240,12 @@ if(any(dat.reduced.min$trim %in% FALSE)){
 
   tmp <-  dplyr::full_join(x = dat.reduced.min[trim %in% TRUE],
                            y = dat.reduced.max[trim %in% TRUE],
-                           by = colnames(dat.reduced.max)[colnames(dat.reduced.max) != "Comment"],
+                           by = colnames(dat.reduced.max)[!(colnames(dat.reduced.max) %in% c("Comment", "flat_slope", "Plateau"))],
                            suffix = c(".x", ".y")) |>
-    tidyr::unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE, sep = " / ")
+    tidyr::unite(Comment, c(Comment.x,Comment.y), remove = TRUE, na.rm = TRUE, sep = " / ") |>
+    dplyr::mutate(Plateau = ifelse(as.logical(Plateau.x) + as.logical(Plateau.y) >=1,TRUE, FALSE)) |>
+    dplyr::mutate(flat_slope =  ifelse(as.logical(flat_slope.x) + as.logical(flat_slope.y) >=1, TRUE, FALSE))
+
   data.table::setorder(tmp,DilutionPoint)
   data.table::setorder(dats,DilutionPoint)
 
