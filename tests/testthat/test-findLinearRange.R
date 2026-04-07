@@ -16,7 +16,7 @@ testthat::test_that("function findLinearRange works", {
                                             DilutionPoint = 1:10,
                                             color = c("grey", "grey" , rep("black",8))))
 
-  datOut1 <- findLinearRange(dat1,  x., y., max_res = 2, min_feature = 5, real_x = "X", slope_tol = 0.15, delta_tol = 0.182 )
+  datOut1 <- findLinearRange(dat1,  x., y., max_res = 2, min_feature = 5, real_x = "X", slope_tol = 0.15, delta_tol = 20 )
 
   testthat::expect_true(all(is.na(datOut1[[1]]$InRange[c(1,2)])))
   testthat::expect_true(datOut1[[2]]$RangeLength == 8)

@@ -50,8 +50,13 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
       spearman_rho <- cor(data[[x]][data$InRange %in% TRUE], data[[y]][data$InRange %in% TRUE], method = "spearman")
       spearman_rho_all <- cor(data[[x]], data[[y]], method = "spearman")
 
+      y_obs <- exp(model$model[[1]])
+      y_pred <- exp(predict(model))
+
+      rel_error <- abs((y_obs - y_pred) / y_obs)
+
       Deviation <- data[[y]][data$InRange %in% TRUE] - fit
-      Deviation_perc <- (exp(Deviation) -1)*100
+      Deviation_perc <- abs(1 - exp(-Deviation))*100
 
 
 
