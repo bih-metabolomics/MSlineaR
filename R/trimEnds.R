@@ -130,9 +130,16 @@ trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, SLOPE_RAT
     middleSlope <- suppressWarnings(summary(lm(dat[[y]][(int50 - 1) : (int50 + 1)] ~ dat[[x]][(int50 - 1) : (int50 + 1)]))$coefficient[2])
     allSlopes <- diff(dat[[y]])/diff(dat[[x]])
 
-    plateau <- round(allSlopes,2) <= round(slope_ratio * middleSlope,2)
+    allSlopes_a <- c(allSlopes, dplyr::last(allSlopes))
+    allSlopes_b <- c(dplyr::first(allSlopes), allSlopes)
 
-    if(plateau[1] %in% TRUE) {plateau <-  c(TRUE, plateau)} else {plateau <-  c(FALSE, plateau)}
+
+    plateau_a <- round(allSlopes_a,2) <= round(slope_ratio * middleSlope,2)
+    plateau_b <- round(allSlopes_b,2) <= round(slope_ratio * middleSlope,2)
+
+    plateau <- (plateau_a + plateau_b) == 2
+
+    #if(plateau[1] %in% TRUE) {plateau <-  c(TRUE, plateau)} else {plateau <-  c(FALSE, plateau)}
     #plateau <- data.frame(DilutionPoint = dat$DilutionPoint, plateau = plateau)
 
     return(plateau)
@@ -293,9 +300,16 @@ findPlateaus <- function(dats, y, x , slope_ratio){
   middleSlope <- suppressWarnings(summary(lm(dat[[y]][(int50 - 1) : (int50 + 1)] ~ dat[[x]][(int50 - 1) : (int50 + 1)]))$coefficient[2])
   allSlopes <- diff(dat[[y]])/diff(dat[[x]])
 
-  plateau <- round(allSlopes,2) <= round(slope_ratio * middleSlope,2)
+  allSlopes_a <- c(allSlopes, dplyr::last(allSlopes))
+  allSlopes_b <- c(dplyr::first(allSlopes), allSlopes)
 
-  if(plateau[1] %in% TRUE) {plateau <-  c(TRUE, plateau)} else {plateau <-  c(FALSE, plateau)}
+
+  plateau_a <- round(allSlopes_a,2) <= round(slope_ratio * middleSlope,2)
+  plateau_b <- round(allSlopes_b,2) <= round(slope_ratio * middleSlope,2)
+
+  plateau <- (plateau_a + plateau_b) == 2
+
+  #if(plateau[1] %in% TRUE) {plateau <-  c(TRUE, plateau)} else {plateau <-  c(FALSE, plateau)}
   #plateau <- data.frame(DilutionPoint = dat$DilutionPoint, plateau = plateau)
 
   return(plateau)
