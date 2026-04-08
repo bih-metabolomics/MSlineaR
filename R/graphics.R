@@ -123,9 +123,15 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
   data_Signal$Sample.Type = data_Signal[[Sample.Type]]
 
 
-  if(!is.null(inputData_QC)){
+  if(!is.null(inputData_QC)) {
+    if(is.null(inputData_BioSamples)){
     QCs = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
                      x = -c(3 : (length(unique(inputData_QC[[Sample.Type]])) + 2)))
+    } else{
+
+      QCs = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
+                       x = -c((length(unique(inputData_BioSamples[[ClassCol]])) + 2) : (length(unique(inputData_QC[[Sample.Type]])) + 1 + length(unique(inputData_BioSamples[[ClassCol]])))))
+    }
 
 
 
@@ -281,11 +287,11 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       plotlinearData <-  plotlinearData +
         #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
         ggplot2::geom_boxplot(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
-                            ggplot2::aes( x = -2, y = get(dependent),  shape = Sample.Type, fill = get(ClassCol)),
+                            ggplot2::aes( x = -(as.numeric(as.factor(get(ClassCol))) + 1), y = get(dependent),  shape = Sample.Type, fill = get(ClassCol)),
                             size = 0.5,
                             width = 0.6,
-                            position = position_dodge2(width = 1, preserve = "single"),
-                            padding = 0.2,
+                            #position = position_dodge2(width = 1, preserve = "single"),
+                            #padding = 0.2,
                             na.rm = TRUE) #+#, shape = 1, col = "purple"
       legend_order <- c(legend_order, unique(inputData_BioSamples$Sample.Type))
     }
