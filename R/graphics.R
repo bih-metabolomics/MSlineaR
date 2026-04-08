@@ -281,7 +281,12 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       plotlinearData <-  plotlinearData +
         #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
         ggplot2::geom_boxplot(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
-                            ggplot2::aes( x = -2, y = get(dependent),  shape = Sample.Type, fill = get(ClassCol)), size = 0.5, na.rm = TRUE) #+#, shape = 1, col = "purple"
+                            ggplot2::aes( x = -2, y = get(dependent),  shape = Sample.Type, fill = get(ClassCol)),
+                            size = 0.5,
+                            width = 0.6,
+                            position = position_dodge2(width = 1, preserve = "single"),
+                            padding = 0.2,
+                            na.rm = TRUE) #+#, shape = 1, col = "purple"
       legend_order <- c(legend_order, unique(inputData_BioSamples$Sample.Type))
     }
     #ifelse(!is.na(Class),get(Class), "black")
