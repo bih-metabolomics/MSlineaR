@@ -287,9 +287,10 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       plotlinearData <-  plotlinearData +
         #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
         ggplot2::geom_boxplot(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
-                            ggplot2::aes( x = -(as.numeric(as.factor(get(ClassCol))) + 1), y = get(dependent),  shape = Sample.Type, fill = get(ClassCol)),
-                            size = 0.5,
+                            ggplot2::aes( x = -(as.numeric(as.factor(get(ClassCol))) + 1), y = get(dependent),  shape = Sample.Type, fill = get(ClassCol), col = get(ClassCol)),
+                            size = 0.1,
                             width = 0.6,
+                            median.colour = "black",
                             #position = position_dodge2(width = 1, preserve = "single"),
                             #padding = 0.2,
                             na.rm = TRUE) #+#, shape = 1, col = "purple"
@@ -302,7 +303,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
       plotlinearData <-  plotlinearData +
         ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
-                            ggplot2::aes( x = x, y = get(dependent),  shape = as.factor(Sample.Type)), size = 2, na.rm = TRUE) #+
+                            ggplot2::aes( x = x, y = get(dependent),  shape = as.factor(Sample.Type)), size = 1, na.rm = TRUE) #+
         #ggplot2::scale_shape_manual(values = 1: (nlevels(as.factor(QCs$Sample.Type)) +2), breaks=rev(legend_order))
 
       #+, shape = 5
@@ -416,7 +417,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       plotlinearData <- plotlinearData +
         ggplot2::geom_text(data = text_label,
                            #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
-                           ggplot2::aes(x = 0, y = max_y + 5, label = paste0("R2 = ", round(R2,2),
+                           ggplot2::aes(x = min(QCs$x), y = max_y + 5, label = paste0("R2 = ", round(R2,2),
                                                                             "\nspearman_rho_Range = " , round(spearman_rho_linearRange, 2),
                                                                             "\nmaxDeviation = ", round(deltaMax_relative,2))) ,
                            size = 4,
