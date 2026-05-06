@@ -81,9 +81,9 @@ Many peakpicking software, e.g. xcms, provide the data in wide format. The data 
 library(tidyr)
 library(dplyr)
 
-feature_tlb_wide <- MSlineaR::Feature_tlb_wide
+feature_tbl_wide <- MSlineaR::Feature_tbl_wide
 
-feature_tbl_long <- feature_tlb_wide |> 
+feature_tbl_long <- feature_tbl_wide |> 
 pivot_longer(cols = c("Compound_01" : "Compound_34"),, names_to = "Compound", values_to = "Area")
 ```
 
