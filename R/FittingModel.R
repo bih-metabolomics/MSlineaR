@@ -49,6 +49,8 @@ chooseModel <- function(dats,
 
   if ("logistic" %in% model) {
     logistic <- drc::drm(get(outlierY) ~ get(x), fct = drc::L.3(), data = dat)
+    logisticRMSE <- Metrics::rmse(dat[[outlierY]], predict(logistic))
+
     if(any(abs(residuals(logistic, typeRes = "standard")) > STDRES) ){ #& abs(sd(residuals(logistic))) > SDRES_MIN
       if(abs(sd(residuals(logistic))) > SDRES_MIN){
       datOutLog <- dat
@@ -96,7 +98,7 @@ chooseModel <- function(dats,
       logistic1.dat <- dat
     }
 
-    logistic1RMSE <- Metrics::rmse(logistic1$data$`get(outlierY)`, predict(logistic1))
+    logistic1RMSE <- logisticRMSE #Metrics::rmse(logistic1$data$`get(outlierY)`, predict(logistic1))
 
     #cor.logistic <- cor(dat[[tidyselect::all_of(y)]], predict(logistic))
   } else{
@@ -106,7 +108,9 @@ chooseModel <- function(dats,
 
   if ("linear" %in% model) {
     linear <- lm(get(outlierY) ~ get(x), data = dat)
+    linearRMSE <- Metrics::rmse(dat[[outlierY]], predict(linear))
     abs_std_residuals <- abs(rstandard(linear))
+
     if(any(abs_std_residuals > STDRES) ){ #& abs(sd(residuals(linear))) > SDRES_MIN
       if(abs(sd(residuals(linear))) > SDRES_MIN){
         datOutLin <- dat
@@ -156,7 +160,7 @@ chooseModel <- function(dats,
       linear1 <- linear
       linear1.dat <- dat
     }
-    linear1RMSE <- Metrics::rmse(linear1$model$`get(outlierY)`, predict(linear1))
+    linear1RMSE <- linearRMSE #Metrics::rmse(linear1$model$`get(outlierY)`, predict(linear1))
 
     #cor.linear <- cor(dat[[tidyselect::all_of(y)]], predict(linear))
   } else{
@@ -167,6 +171,8 @@ chooseModel <- function(dats,
 
   if ("quadratic" %in% model) {
     quadratic <- lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = dat)
+    quadraticRMSE <- Metrics::rmse(dat[[outlierY]], predict(quadratic))
+
     if(any(abs(rstandard(quadratic)) > STDRES) ){ #& abs(sd(residuals(quadratic))) > SDRES_MIN
       if(abs(sd(residuals(quadratic))) > SDRES_MIN){
         datOutQuad <- dat
@@ -217,7 +223,7 @@ chooseModel <- function(dats,
       quadratic1.dat <- dat
     }
 
-    quadratic1RMSE <- Metrics::rmse(quadratic1$model$`get(outlierY)`, predict(quadratic1))
+    quadratic1RMSE <- quadraticRMSE #Metrics::rmse(quadratic1$model$`get(outlierY)`, predict(quadratic1))
 
     #cor.quadratic <- cor(dat[[tidyselect::all_of(y)]], predict(quadratic))
   } else{
@@ -225,12 +231,14 @@ chooseModel <- function(dats,
     quadratic1RMSE <- NA
   }
 
-  # select Model by using RMSE
+  # select Model by using BIC
  # logistic1RMSE <- Metrics::rmse(logistic1$data$`get(tidyselect::all_of(y))`, predict(logistic1))
  # linear1RMSE <- Metrics::rmse(linear1$model$`get(tidyselect::all_of(y))`, predict(linear1))
  # quadratic1RMSE <- Metrics::rmse(quadratic1$model$`get(tidyselect::all_of(y))`, predict(quadratic1))
+BIC_models <- BIC(logistic, linear, quadratic)
 
-  ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2) %in% min(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2),na.rm = TRUE))]
+ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(BIC_models$BIC,2) %in% min(round(BIC_models$BIC,2),na.rm = TRUE))]
+#  ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2) %in% min(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2),na.rm = TRUE))]
   if ("linear1" %in% ModelName) {ModelName = "linear1"} else if (all(c("logistic1", "quadratic1") %in% ModelName)) {ModelName = "logistic1"}  # if same correlation
 
   datName <- paste0(ModelName,".dat")
@@ -266,7 +274,7 @@ chooseModel <- function(dats,
 
   Model <- ModelName
 
-  Model = list("fit" = fitted(get(Model)), "coefficients" = coef(get(Model)), "std.residuals" = residuals(get(Model))/sd(residuals(get(Model))), "RMSE" = c(c("logistic" = logistic1RMSE, "linear" = linear1RMSE, "quadratic" = quadratic1RMSE)))
+  Model = list("fit" = fitted(get(Model)), "coefficients" = coef(get(Model)), "std.residuals" = residuals(get(Model))/sd(residuals(get(Model))), "BIC" = BIC_models)
 
 
 

@@ -80,14 +80,14 @@ testthat::test_that("function chooseModel works",{
     STDRES = STDRES.,
     abbr = abbr.)[[1]]$model.name, "linear")
 
-  testthat::expect_equal(which(!chooseModel(
-    dats = dat1,
-    y = y.,
-    x = x.,
-    model =  "linear",
-    SDRES_MIN = SDRES_MIN.,
-    STDRES = STDRES.,
-    abbr = abbr.)[[1]]$model$RMSE %in% NA), 2)
+  # testthat::expect_equal(which(!chooseModel(
+  #   dats = dat1,
+  #   y = y.,
+  #   x = x.,
+  #   model =  "linear",
+  #   SDRES_MIN = SDRES_MIN.,
+  #   STDRES = STDRES.,
+  #   abbr = abbr.)[[1]]$model$RMSE %in% NA), 2)
 
   testthat::expect_equal(chooseModel(
     dats = dat2,
@@ -123,7 +123,7 @@ testthat::test_that("function chooseModel works",{
     model =  model.,
     SDRES_MIN = SDRES_MIN.,
     STDRES = STDRES.,
-    abbr = abbr.)[[1]]$model.name, "linear")
+    abbr = abbr.)[[1]]$model.name, "quadratic")
 
   testthat::expect_true(chooseModel(
     dats = dat5,
@@ -168,7 +168,7 @@ testthat::test_that("function chooseModel works",{
     model =  model.,
     SDRES_MIN = SDRES_MIN.,
     STDRES = STDRES.,
-    abbr = abbr.)[[1]]$model.name, "logistic")
+    abbr = abbr.)[[1]]$model.name, "linear")
 
   testthat::expect_true(chooseModel(
     dats = dat7,

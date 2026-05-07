@@ -40,8 +40,8 @@ testthat::test_that("function findLinearRange works", {
 
   datOut2 <- findLinearRange(dat2,  x., y., max_res = 3, min_feature = 5, real_x =  "X", slope_tol = 0.15, delta_tol = 20 )
 
-  testthat::expect_false(all(datOut2[[1]]$positiveSlope[c(1,2,10)]))
-  testthat::expect_true(datOut2[[2]]$RangeLength == 8)
+  testthat::expect_true(all(is.na(datOut2[[1]]$positiveSlope[c(1,2,10)])))
+  testthat::expect_true(datOut2[[2]]$RangeLength == 7)
   testthat::expect_true(datOut2[[2]]$enoughPointsWithinRange)
   testthat::expect_false(datOut2[[2]]$Slope_within_Tolerance)
   testthat::expect_true(datOut2[[2]]$Linearity_Criterion_Deviation)
