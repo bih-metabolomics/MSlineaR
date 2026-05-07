@@ -42,28 +42,6 @@ To get the latest development version from `MSlineaR` from [GitHub](https://gith
 # install.packages("devtools")
 devtools::install_github("bih-metabolomics/MSlineaR")
 ```
-
-As long as `MSlineaR` is not a public package, you need to have access to my repository and additionally you need to create a personal access token in github. Ask me if you have trouble installing the package.
-
-Install `MSlineaR` by running the following commands in R:
-
-```         
-if (!requireNamespace("usethis")) install.packages("usethis")
-  
-# set config
-# add github user name and email address, which you are using for github
-usethis::use_git_config(user.name = "USERNAME", user.email = "EMAIL")
-
-#Go to the GitHub page to generate token (only needed the first time).
-usethis::create_github_token()
-
-#paste your PAT into pop-up that follows...
-credentials::set_github_pat()
-
-# install.packages("devtools")
-devtools::install_github("bih-metabolomics/MSlineaR")
-```
-
 ## Input Data Tables
 
 An example dataset is given at the bottom of this file.
@@ -103,9 +81,9 @@ Many peakpicking software, e.g. xcms, provide the data in wide format. The data 
 library(tidyr)
 library(dplyr)
 
-feature_tlb_wide <- MSlineaR::Feature_tlb_wide
+feature_tbl_wide <- MSlineaR::Feature_tbl_wide
 
-feature_tbl_long <- feature_tlb_wide |> 
+feature_tbl_long <- feature_tbl_wide |> 
 pivot_longer(cols = c("Compound_01" : "Compound_34"),, names_to = "Compound", values_to = "Area")
 ```
 
