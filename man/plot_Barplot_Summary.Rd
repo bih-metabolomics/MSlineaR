@@ -2,7 +2,7 @@
 % Please edit documentation in R/graphics.R
 \name{plot_Barplot_Summary}
 \alias{plot_Barplot_Summary}
-\title{Title}
+\title{Summary bar plot of feature-level quality and filtering status across dilution series}
 \usage{
 plot_Barplot_Summary(
   inputData_Series,
@@ -17,8 +17,29 @@ plot_Barplot_Summary(
 )
 }
 \arguments{
-\item{outputfileName}{}
+\item{inputData_Series}{Data frame containing series-level intensity and annotation data.}
+
+\item{printPDF}{Logical; if TRUE, the plot is saved as a PDF file.}
+
+\item{GroupIndices}{Character or vector; optional filtering of group indices ("all" for no filtering).}
+
+\item{Feature}{Character or vector; optional selection of features ("all" for no filtering).}
+
+\item{outputfileName}{Character; name of the output PDF file (without extension).}
+
+\item{COLNAMES}{Named list defining column mappings (e.g. Feature_ID, Batch).}
+
+\item{X}{Column name used as x-axis variable (e.g. dilution index).}
+
+\item{Y}{Column name used as y-axis variable (e.g. signal intensity).}
+
+\item{output_dir}{Directory where the PDF file will be saved.}
+}
+\value{
+A ggplot object representing the summary bar plot.
 }
 \description{
-Title
+This function generates a stacked bar plot summarizing different feature filtering
+categories (e.g. missing values, blanks, outliers, linear range classification)
+across dilution points and batches. Optionally, the plot can be exported as a PDF.
 }

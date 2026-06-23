@@ -2,13 +2,57 @@
 % Please edit documentation in R/prep.R
 \name{my_fcn}
 \alias{my_fcn}
-\title{Title}
+\title{Parallel execution helper for feature-wise analysis}
 \usage{
 my_fcn(nCORE, xs, func, inputData, ...)
 }
 \arguments{
-\item{...}{}
+\item{nCORE}{Integer. Number of CPU cores to use for parallel processing.}
+
+\item{xs}{Integer vector. Indices of feature groups to be processed.
+Each element corresponds to one unique value of \code{groupIndices}.}
+
+\item{func}{Function. User-defined function applied to each subset of data.
+The function must accept a data.table as its first argument.}
+
+\item{inputData}{A data.frame or data.table containing at least the column
+\code{groupIndices}, which defines feature-wise grouping.}
+
+\item{...}{Additional arguments passed to \code{func}.}
+}
+\value{
+A list of results, where each element corresponds to the output of \code{func}
+applied to one subset of \code{inputData} defined by \code{groupIndices}.
 }
 \description{
-Title
+This function provides a parallelised wrapper to apply a user-defined
+function to groups of metabolomics features (defined by \code{groupIndices}).
+
+It is primarily used to accelerate computationally intensive steps
+in the MSlineaR workflow, such as model fitting and linearity assessment
+across large feature sets.
 }
+\details{
+The function splits the input dataset into subsets based on unique
+feature-group identifiers (\code{groupIndices}) and distributes these subsets
+across multiple CPU cores using a PSOCK cluster.
+
+A progress bar is displayed during execution.
+
+Each subset is processed independently using the user-supplied function
+\code{func}.
+}
+\examples{
+\dontrun{
+result <- my_fcn(
+  nCORE = 4,
+  xs = 1:10,
+  func = function(dt) {
+    mean(dt$Y, na.rm = TRUE)
+  },
+  inputData = dat
+)
+}
+
+}
+\keyword{internal}

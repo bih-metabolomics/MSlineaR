@@ -2,7 +2,7 @@
 % Please edit documentation in R/prep.R
 \name{checkData}
 \alias{checkData}
-\title{Prepare raw data}
+\title{Validate and standardise raw metabolomics input data}
 \usage{
 checkData(
   dat,
@@ -38,26 +38,128 @@ checkData(
 )
 }
 \arguments{
-\item{dat}{}
+\item{dat}{A data.table or data.frame containing raw feature intensity data.}
+
+\item{MIN_FEATURE}{Integer. Minimum number of features required in the dataset.}
+
+\item{TYPE}{Character. Type of analysis: either \code{"untargeted"} or \code{"targeted"}.}
+
+\item{QC}{Character vector defining QC sample types.}
+
+\item{BLANK}{Character vector defining blank sample types.}
+
+\item{SAMPLE}{Character vector defining biological sample types.}
+
+\item{CALIBRANTS}{Character vector defining calibration or dilution series samples.}
+
+\item{COLNAMES}{Named list defining required column mappings (e.g. Sample_ID,
+Feature_ID, X, Y, Batch, Injection_order, Sample_type, Class).}
+
+\item{TRANSFORM}{Logical. Whether transformation of X/Y values should be applied.}
+
+\item{TRANSFORM_X}{Character. Name of transformation function applied to X (e.g. "log10").}
+
+\item{INVERSE_X}{Character. Inverse transformation function for X.}
+
+\item{TRANSFORM_Y}{Character. Name of transformation function applied to Y.}
+
+\item{INVERSE_Y}{Character. Inverse transformation function for Y.}
+
+\item{FOD}{Logical. Enable first outlier detection.}
+
+\item{FOD_MODEL}{Character vector specifying models used for first outlier detection
+(allowed: "linear", "logistic", "quadratic").}
+
+\item{FOD_SDRES_MIN}{Numeric. Minimum standardised residual threshold for FOD.}
+
+\item{FOD_STDRES_MAX}{Numeric. Maximum standardised residual threshold for FOD.}
+
+\item{TRIMM}{Logical. Enable trimming of non-linear regions.}
+
+\item{SOD}{Logical. Enable second outlier detection.}
+
+\item{SOD_MODEL}{Character vector specifying models used for second outlier detection.}
+
+\item{SOD_SDRES_MIN}{Numeric. Minimum residual threshold for SOD.}
+
+\item{SOD_STDRES_MAX}{Numeric. Maximum residual threshold for SOD.}
+
+\item{LR_SD_RES_FACTOR}{Numeric. Scaling factor for defining linear range boundaries.}
+
+\item{R2_MIN}{Numeric (0–1). Minimum R² required for acceptance of a linear range.}
+
+\item{BATCH_HARMONIZATION}{Logical. If TRUE, features must pass criteria in all batches.}
+
+\item{GET_LR_STATUS}{Logical. If TRUE, returns sample-level linearity classification.}
+
+\item{nCORE}{Integer. Number of CPU cores for parallel processing.}
+
+\item{GET_OUTPUT}{Logical. If TRUE, additional diagnostic outputs are returned.}
+
+\item{IMG_OUTPUT_DIR}{Character. Directory for saving diagnostic plots.}
+
+\item{QC_REF}{Character vector defining reference QC samples (if applicable).}
+
+\item{SAMPLE_ID}{Character. Column name containing sample identifiers.}
 }
 \value{
-Data frame with columns:
+A validated and standardised data.table with harmonised column structure,
+including:
 \itemize{
-\item IDintern,
-\item ID,
-\item IntensityNorm,
-\item DP,
-\item Comment,
-\item pch,
-\item color,
-\item ConcentrationRaw,
-\item IntensityRaw,
-\item ConcentrationLog,
-\item IntensityLog,
-\item IntensityRaw
-\item DilutionPoint
+\item IDintern – unique sample-feature-batch identifier
+\item groupIndices – feature-batch grouping index
+\item Feature_ID – feature identifier
+\item Sample_ID – sample identifier
+\item Sample_type – sample annotation
+\item Class – sample class label
+\item Batch – batch identifier
+\item Injection_order – acquisition order
+\item X – concentration / dilution variable
+\item Y – intensity variable
 }
 }
 \description{
-Prepare raw data
+This function performs extensive validation and standardisation of raw
+mass spectrometry feature tables prior to downstream analysis in MSlineaR.
+
+It ensures that required columns are present, data types are correct,
+sample annotations are consistent, and all key parameters meet the
+requirements of the linearity assessment workflow.
 }
+\details{
+The function checks:
+\itemize{
+\item Minimum number of features and required columns
+\item Presence and consistency of sample annotations
+\item Correct data types for numeric and categorical variables
+\item Validity of model and preprocessing parameters
+\item Consistency of transformation functions (if used)
+}
+
+In addition, the function:
+\itemize{
+\item Converts key identifiers to appropriate data types
+\item Creates a unique internal identifier (\code{IDintern})
+\item Defines feature grouping variables (\code{groupIndices})
+\item Ensures correct ordering of samples for downstream modelling
+}
+
+This function should always be called before \code{prepareData()} or any
+downstream MSlineaR analysis steps.
+}
+\examples{
+\dontrun{
+dat_checked <- checkData(dat, MIN_FEATURE = 100, TYPE = "untargeted",
+                         QC = c("QC"), BLANK = c("blank"),
+                         CALIBRANTS = c("cal1","cal2"),
+                         COLNAMES = list(Sample_ID="Sample",
+                                         Feature_ID="Feature",
+                                         X="Concentration",
+                                         Y="Intensity",
+                                         Batch="Batch",
+                                         Injection_order="Order",
+                                         Sample_type="Type",
+                                         Class="Class"))
+}
+}
+\keyword{internal}

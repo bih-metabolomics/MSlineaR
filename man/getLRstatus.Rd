@@ -2,23 +2,62 @@
 % Please edit documentation in R/fitSamples.R
 \name{getLRstatus}
 \alias{getLRstatus}
-\title{Title}
+\title{Determine linear range status for measured samples}
 \usage{
 getLRstatus(dats, datCal, y)
 }
 \arguments{
-\item{dats}{data table with information about the biological samples.
-Required columns are IDintern, y, groupIndices.It is necessary
-that the columns in dats and datCal have the same column names and that the
-column groupIndices is compatible between samples and dilution/concentration curve data.}
+\item{dats}{Data table containing biological sample information.
+Must include at least:
+\itemize{
+\item IDintern (unique sample identifier)
+\item groupIndices (link to calibration curve)
+\item y (measured response variable)
+}}
 
-\item{datCal}{data table with dilution/concentration curve information of the linearity.
-Required columns are groupIndices, Intercept and slope. It is necessary
-that the columns in dats and datCal have the same column names and that the
-column groupIndices is compatible between samples and dilution/concentration curve data.}
+\item{datCal}{Data table containing calibration curve metadata.
+Must include:
+\itemize{
+\item groupIndices (matching key to \code{dats})
+\item RangeStartY (lower linear range boundary)
+\item RangeEndY (upper linear range boundary)
+\item aboveR2 (quality flag for regression model)
+\item LRFlag (optional precomputed linear-range flag)
+}}
 
-\item{y}{}
+\item{y}{Character. Name of response variable column in \code{dats}
+(typically measured intensity or signal).}
+}
+\value{
+Data table identical to \code{dats} with additional columns:
+\itemize{
+\item Status_LR: classification of linear range status
+("BLOL", "ULOL", TRUE/FALSE)
+\item LRFlag: inherited calibration flag
+\item RangeStartY: lower boundary of linear range
+\item RangeEndY: upper boundary of linear range
+}
 }
 \description{
-Title
+Assigns each biological sample a linear-range status based on calibration
+curve boundaries derived from dilution/concentration experiments.
+
+For each sample intensity (\code{y}), the function checks whether it lies:
+\itemize{
+\item within the calibrated linear range
+\item below the lower limit of linearity (BLOL)
+\item above the upper limit of linearity (ULOL)
+}
+
+Additionally, samples failing the R² quality criterion (\code{aboveR2 == FALSE})
+are flagged as not reliable for linear range interpretation.
+}
+\details{
+The function performs a join between sample and calibration tables via
+\code{groupIndices}. Samples outside the linear range are classified as:
+\itemize{
+\item BLOL: below lower limit of linearity
+\item ULOL: above upper limit of linearity
+}
+If calibration quality (\code{aboveR2}) is insufficient, the status is set to FALSE.
 }

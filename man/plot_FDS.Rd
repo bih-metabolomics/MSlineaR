@@ -2,7 +2,7 @@
 % Please edit documentation in R/graphics.R
 \name{plot_FDS}
 \alias{plot_FDS}
-\title{Title}
+\title{Feature dilution series (FDS) diagnostic and calibration plotting}
 \usage{
 plot_FDS(
   inputData_Series,
@@ -26,8 +26,58 @@ plot_FDS(
 )
 }
 \arguments{
-\item{outputfileName}{}
+\item{inputData_Series}{Data frame containing series dilution measurements and annotations.}
+
+\item{inputData_BioSamples}{Optional data frame of biological sample measurements.}
+
+\item{inputData_QC}{Optional data frame of QC sample measurements.}
+
+\item{nrFeature}{Maximum number of features to include in the plot.}
+
+\item{signal_blank_ratio}{Numeric; multiplier for blank signal threshold visualization.}
+
+\item{printPDF}{Logical; if TRUE, plots are exported as a PDF file.}
+
+\item{GroupIndices}{Character or vector; subset of group indices to plot ("all" for no filtering).}
+
+\item{Feature}{Character or vector; subset of features to plot ("all" for no filtering).}
+
+\item{printR2}{Logical; if TRUE, R² and related statistics are displayed.}
+
+\item{outputfileName}{Character; name of the output PDF file (without extension).}
+
+\item{TRANSFORM_Y}{Function name used to transform y-values (e.g. "log", "exp").}
+
+\item{inverse_y}{Function name used for inverse transformation of y-values.}
+
+\item{COLNAMES}{Named list defining required column mappings (e.g. Feature_ID, Batch, Class, Sample_type).}
+
+\item{Xcol}{Column name used as independent variable.}
+
+\item{Ycol}{Column name used as dependent variable.}
+
+\item{Series}{Optional label for the QC dilution series.}
+
+\item{output_dir}{Directory where output PDF files are saved.}
+
+\item{diagnostic}{Logical; if TRUE, residual and QQ diagnostic plots are generated.}
+}
+\value{
+A patchwork ggplot object containing the dilution series visualization and optional diagnostics.
 }
 \description{
-Title
+This function generates detailed diagnostic plots for feature dilution series (FDS)
+experiments. It visualizes dilution curves, linear range behavior, QC and biological
+sample distributions, outlier annotations, and optional diagnostic plots (residuals
+and QQ plots). The function can optionally export multi-page PDF reports.
+}
+\details{
+Key features:
+\itemize{
+\item Visualization of dilution-dependent signal behavior per feature
+\item Highlighting of linear range, outliers, and QC performance
+\item Support for biological samples and QC overlays
+\item Optional diagnostic plots (residuals and QQ plots)
+\item Automatic faceting by feature and batch
+}
 }

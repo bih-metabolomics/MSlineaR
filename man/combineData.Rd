@@ -2,13 +2,24 @@
 % Please edit documentation in R/graphics.R
 \name{combineData}
 \alias{combineData}
-\title{Title}
+\title{Combine multiple omics signal tables into a single dataset}
 \usage{
 combineData(inputData_Series, inputData_BioSamples, inputData_QC)
 }
 \arguments{
-\item{...}{}
+\item{inputData_Series}{Data frame containing primary series-level measurements.}
+
+\item{inputData_BioSamples}{Optional data frame containing biological sample data.}
+
+\item{inputData_QC}{Optional data frame containing quality control (QC) sample data.}
+
+\item{...}{Additional arguments (currently unused).}
+}
+\value{
+A merged data frame containing all input datasets combined by shared columns.
 }
 \description{
-Title
+This function merges different input data tables (series data, biological samples,
+and QC samples) into a single unified data frame using common column intersections.
+The merging is performed using full joins to retain all available observations.
 }

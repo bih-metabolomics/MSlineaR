@@ -1,18 +1,67 @@
-#' Signal/Noise using Blank samples
+#' Remove signals below a blank-derived noise threshold
 #'
 #' @description
-#' `trimm_signalBlank ()` removes all signals which are lower than x times of the median from all blank samples
+#' Filters signals based on their signal-to-blank ratio by comparing feature
+#' intensities against the median intensity observed in blank samples.
 #'
+#' Signals with intensities less than or equal to a user-defined multiple of
+#' the median blank intensity are considered indistinguishable from analytical
+#' background noise and are excluded from further linearity assessment.
 #'
-#' @param dats data table with information about dilution/concentration curve and blank samples
-#' @param blanks name of blank sample in column Sample.Type
-#' @param y untransformed dependent variable (area)
-#' @param noise Integer, indicating how higher the samples need to be compared to the median of the blanks
-#' @param y_trans log-transformed dependent variable
+#' @details
+#' For each feature-specific dilution or concentration series, the median
+#' intensity of the corresponding blank samples is calculated.
 #'
-#' @return data.table with information about flagged signals
-#' @export
+#' Signals are flagged when:
 #'
+#' \deqn{
+#' Signal \le MedianBlank \times noise
+#' }
+#'
+#' Flagged observations are:
+#' \itemize{
+#'   \item Annotated in the `Comment` column
+#'   \item Assigned the colour `"grey"`
+#'   \item Excluded from subsequent analysis by setting `Y_sb` to `NA`
+#' }
+#'
+#' If no blank intensity is available, all observations are retained and
+#' annotated with `"noBlank"`.
+#'
+#' An additional continuity check is performed to remove isolated signal
+#' segments separated from the main dilution-response trend after blank
+#' filtering.
+#'
+#' @param dats A data.table containing a single feature-specific dilution or
+#' concentration series.
+#'
+#' @param blanks A data.table containing blank measurements corresponding to
+#' the same feature.
+#'
+#' @param y Character. Column name of the untransformed intensity variable.
+#'
+#' @param y_trans Character. Column name of the transformed intensity variable
+#' used for downstream modelling.
+#'
+#' @param noise Numeric. Signal-to-blank threshold factor. Signals must exceed
+#' `noise × median(blank)` to be retained.
+#'
+#' @return A data.table containing:
+#' \describe{
+#'   \item{signalBlankRatio}{Logical indicator of whether the signal failed
+#'   the signal-to-blank criterion.}
+#'
+#'   \item{medBlank}{Median blank intensity used for filtering.}
+#'
+#'   \item{Y_sb}{Filtered response variable used for subsequent analysis.}
+#' }
+#'
+#' @references
+#' Signal-to-blank filtering is commonly applied in untargeted metabolomics
+#' to remove analytical background signals and improve data quality before
+#' statistical analysis.
+#'
+#' @keywords internal
 
 #' @import data.table
 #' @import dplyr
@@ -88,21 +137,76 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans, noise){
 
 
 
-#' Trim unstable ends from dilution /concentration curve
+#' Remove non-linear boundaries and plateau regions from dilution-response curves
 #'
 #' @description
-#' ` trimEnds ()` checks if the first point is the minimum and the last point is
-#'  the maximum of the dilution/concentration curve. If both is the case no trimming
-#'  is performed. Otherwise the ends will be removed until the last point of the
-#'  new range is the highest and the first point is lowest respectively.
+#' Identifies and removes non-linear regions at the lower and upper boundaries
+#' of dilution or concentration series.
 #'
-#' @param dats Long format data frame or data table for one metabolite including information about dependent and independent variable.
-#' Further necessary columns are: groupIndices, DilutionPoint (1:x), IDintern, color.
-#' @param y String; Column name of the log transformed dependent variable
-#' @param x String; Column name of the log transformed independent variable
+#' The function iteratively trims observations until the remaining curve
+#' exhibits the expected monotonic behaviour, where the lowest concentration
+#' corresponds to the lowest response and the highest concentration corresponds
+#' to the highest response.
 #'
-#' @return long format data.table with information about trimmed signals
-#' @export
+#' Additionally, plateau regions indicative of detector saturation or signal
+#' compression are identified and removed using local slope analysis.
+#'
+#' @details
+#' Non-linear behaviour frequently occurs at the extremes of the analytical
+#' dynamic range due to:
+#'
+#' \itemize{
+#'   \item Detector saturation at high concentrations
+#'   \item Background noise at low concentrations
+#'   \item Ion suppression effects
+#'   \item Peak integration artefacts
+#' }
+#'
+#' The trimming procedure consists of:
+#'
+#' \enumerate{
+#'   \item Identification of upper non-linear regions.
+#'   \item Identification of lower non-linear regions.
+#'   \item Detection of plateau regions using local slope analysis.
+#'   \item Annotation and exclusion of affected observations.
+#' }
+#'
+#' Plateau detection is performed using the helper function
+#' \code{findPlateaus()}.
+#'
+#' Observations identified as non-linear are excluded from downstream
+#' modelling by setting `Y_trim` to `NA`.
+#'
+#' @param dats A data.table containing a single feature-specific dilution or
+#' concentration series.
+#'
+#' @param y Character. Column name of the response variable used for trimming.
+#'
+#' @param x Character. Column name of the concentration or dilution variable.
+#'
+#' @param SLOPE_RATIO Numeric. Threshold used for plateau detection.
+#' Slopes smaller than `SLOPE_RATIO × middleSlope` are considered part of a
+#' plateau region. Default is `0.5`.
+#'
+#' @return A data.table containing:
+#' \describe{
+#'   \item{trim}{Logical indicator identifying trimmed observations.}
+#'
+#'   \item{flat_slope}{Logical indicator identifying regions with reduced slope.}
+#'
+#'   \item{Plateau}{Logical indicator identifying plateau regions.}
+#'
+#'   \item{Y_trim}{Response variable after trimming. Removed observations are
+#'   set to `NA`.}
+#' }
+#'
+#' @section Rationale:
+#' Removing non-linear boundaries allows identification of the largest
+#' feature-specific interval exhibiting approximately proportional
+#' dilution-response behaviour, which is subsequently used for linearity
+#' assessment.
+#'
+#' @keywords internal
 #'
 #' @import data.table
 #' @import dplyr
@@ -114,39 +218,6 @@ trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, SLOPE_RAT
   dats$Plateau <- FALSE
   dats$trim[is.na(dats[[y]])] <- NA # | dats$OutlierFOD %in% TRUE
   dat <- data.table::setorderv(dats,x)[!is.na(get(y))]# & !OutlierFOD %in% TRUE]
-
-
-  findPlateaus <- function(dats, y, x , slope_ratio){
-
-    dat <- dats
-    # calculate point nearest half max intensity
-    int50 <- DescTools::Closest(x = dat[[y]] ,a = (min(dat[[y]]) + max(dat[[y]]))/2, which = TRUE, na.rm = T)
-    if(length(int50) > 1) int50 <- max(int50)
-    if(int50 == length(dat[[x]])) int50 <- length(dat[[x]]) -1
-    if(int50 == 1) int50 = 2
-
-    #create linear regression line going through int50
-
-    middleSlope <- suppressWarnings(summary(lm(dat[[y]][(int50 - 1) : (int50 + 1)] ~ dat[[x]][(int50 - 1) : (int50 + 1)]))$coefficient[2])
-    allSlopes <- diff(dat[[y]])/diff(dat[[x]])
-
-    allSlopes_a <- c(allSlopes, dplyr::last(allSlopes))
-    allSlopes_b <- c(dplyr::first(allSlopes), allSlopes)
-
-
-    plateau_a <- round(allSlopes_a,2) <= round(slope_ratio * middleSlope,2)
-    plateau_b <- round(allSlopes_b,2) <= round(slope_ratio * middleSlope,2)
-
-    plateau <- (plateau_a + plateau_b) == 2
-
-    #if(plateau[1] %in% TRUE) {plateau <-  c(TRUE, plateau)} else {plateau <-  c(FALSE, plateau)}
-    #plateau <- data.frame(DilutionPoint = dat$DilutionPoint, plateau = plateau)
-
-    return(plateau)
-
-
-  }
-
 
   dat$flat_slope <- findPlateaus(dats = dat,y = y, x = x, slope_ratio = SLOPE_RATIO)
 
@@ -272,20 +343,51 @@ if(any(dat.reduced.min$trim %in% FALSE)){
 
 
 
-#' Detect plateaus on upper and lower end of curve by using slope
+#' Detect plateau regions using local slope analysis
 #'
-#' @param dats Long format data frame or data table for one metabolite including
-#' information about dependent and independent variable. Called from function `TrimmEnds()`
-#' @param y  String; Column name of the log transformed dependent variable
-#' @param x  String; Column name of the log transformed independent variable
-#' @param slope_ratio Integer; factor, describing the allowed difference between
-#'  the calculated slope and the middle slope of the curve. Default 0.5, which means
-#'  if the slopes at the beginning or the end is equal or less than half of the
-#'  slope in the middle, the dilution points are probably in a plateau and will be removed.
-#' @return vector of booleans
-#' @export
+#' @description
+#' Identifies regions at the lower or upper end of a dilution-response curve
+#' where the response changes more slowly than expected relative to the central
+#' portion of the curve.
 #'
-#' @examples
+#' Such regions are characteristic of detector saturation, signal compression,
+#' or background noise and may indicate that observations lie outside the
+#' useful analytical range.
+#'
+#' @details
+#' The function:
+#'
+#' \enumerate{
+#'   \item Determines the observation closest to half-maximal response.
+#'   \item Estimates a local slope around this midpoint.
+#'   \item Calculates slopes between all neighbouring observations.
+#'   \item Compares local slopes against the midpoint slope.
+#'   \item Flags observations where slopes fall below the specified fraction
+#'   of the midpoint slope.
+#' }
+#'
+#' An observation is classified as belonging to a plateau only if both
+#' neighbouring slopes satisfy the plateau criterion.
+#'
+#' @param dats A data.table containing a single feature-specific dilution or
+#' concentration series.
+#'
+#' @param y Character. Column name of the response variable.
+#'
+#' @param x Character. Column name of the concentration or dilution variable.
+#'
+#' @param slope_ratio Numeric. Fraction of the midpoint slope used as the
+#' plateau threshold. Default is `0.5`.
+#'
+#' @return A logical vector with one value per observation indicating whether
+#' the observation belongs to a plateau region.
+#'
+#' @section Interpretation:
+#' A value of `TRUE` indicates that the local slope surrounding the
+#' observation is substantially reduced relative to the central slope of the
+#' curve and therefore may lie outside the useful analytical range.
+#'
+#' @keywords internal
 findPlateaus <- function(dats, y, x , slope_ratio){
 
   dat <- dats

@@ -2,8 +2,7 @@
 % Please edit documentation in R/prep.R
 \name{prepareData}
 \alias{prepareData}
-\title{Title
-normalizing, centralizing, log transforming}
+\title{Transform and structure data for linearity modelling}
 \usage{
 prepareData(
   dat,
@@ -15,9 +14,56 @@ prepareData(
 )
 }
 \arguments{
-\item{dat}{}
+\item{dat}{A validated data.table returned by \code{checkData()}.}
+
+\item{TRANSFORM}{Logical. Whether transformations should be applied.}
+
+\item{TRANSFORM_X}{Character. Name of function used to transform X values.}
+
+\item{TRANSFORM_Y}{Character. Name of function used to transform Y values.}
+
+\item{COLNAMES}{Named list of column mappings used in the original dataset.}
+
+\item{TYPE}{Character. Type of analysis ("targeted" or "untargeted").}
+}
+\value{
+A processed data.table containing:
+\itemize{
+\item Standardised identifiers (IDintern, Feature_ID, Sample_ID)
+\item Processed concentration and intensity values (X, Y)
+\item Optional transformed variables (X_trans, Y_trans)
+\item Plotting metadata (DilutionPoint, pch, color)
+}
 }
 \description{
-Title
-normalizing, centralizing, log transforming
+This function prepares validated metabolomics data for downstream
+linearity assessment by standardising column names, generating
+internal identifiers, ordering observations, and optionally applying
+mathematical transformations to concentration and intensity values.
 }
+\details{
+The function assumes that the input data has already been validated
+using \code{checkData()}.
+
+Processing steps include:
+\itemize{
+\item Renaming of columns according to MSlineaR internal format
+\item Generation of dilution ordering index
+\item Creation of plotting metadata (e.g. point shape and colour)
+\item Feature-wise scaling of X values
+\item Optional transformation of X and Y variables
+}
+
+Transformations (if enabled) are applied using user-defined functions
+(e.g. log10, sqrt), and infinite values are automatically replaced with NA.
+}
+\examples{
+\dontrun{
+dat_processed <- prepareData(dat_checked,
+                             TRANSFORM = TRUE,
+                             TRANSFORM_X = "log10",
+                             TRANSFORM_Y = "log10")
+}
+
+}
+\keyword{internal}

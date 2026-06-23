@@ -2,24 +2,71 @@
 % Please edit documentation in R/trimEnds.R
 \name{trimm_signalBlank}
 \alias{trimm_signalBlank}
-\title{Signal/Noise using Blank samples}
+\title{Remove signals below a blank-derived noise threshold}
 \usage{
 trimm_signalBlank(dats, blanks, y, y_trans, noise)
 }
 \arguments{
-\item{dats}{data table with information about dilution/concentration curve and blank samples}
+\item{dats}{A data.table containing a single feature-specific dilution or
+concentration series.}
 
-\item{blanks}{name of blank sample in column Sample.Type}
+\item{blanks}{A data.table containing blank measurements corresponding to
+the same feature.}
 
-\item{y}{untransformed dependent variable (area)}
+\item{y}{Character. Column name of the untransformed intensity variable.}
 
-\item{y_trans}{log-transformed dependent variable}
+\item{y_trans}{Character. Column name of the transformed intensity variable
+used for downstream modelling.}
 
-\item{noise}{Integer, indicating how higher the samples need to be compared to the median of the blanks}
+\item{noise}{Numeric. Signal-to-blank threshold factor. Signals must exceed
+\verb{noise × median(blank)} to be retained.}
 }
 \value{
-data.table with information about flagged signals
+A data.table containing:
+\describe{
+\item{signalBlankRatio}{Logical indicator of whether the signal failed
+the signal-to-blank criterion.}
+
+\item{medBlank}{Median blank intensity used for filtering.}
+
+\item{Y_sb}{Filtered response variable used for subsequent analysis.}
+}
 }
 \description{
-\code{trimm_signalBlank ()} removes all signals which are lower than x times of the median from all blank samples
+Filters signals based on their signal-to-blank ratio by comparing feature
+intensities against the median intensity observed in blank samples.
+
+Signals with intensities less than or equal to a user-defined multiple of
+the median blank intensity are considered indistinguishable from analytical
+background noise and are excluded from further linearity assessment.
 }
+\details{
+For each feature-specific dilution or concentration series, the median
+intensity of the corresponding blank samples is calculated.
+
+Signals are flagged when:
+
+\deqn{
+Signal \le MedianBlank \times noise
+}
+
+Flagged observations are:
+\itemize{
+\item Annotated in the \code{Comment} column
+\item Assigned the colour \code{"grey"}
+\item Excluded from subsequent analysis by setting \code{Y_sb} to \code{NA}
+}
+
+If no blank intensity is available, all observations are retained and
+annotated with \code{"noBlank"}.
+
+An additional continuity check is performed to remove isolated signal
+segments separated from the main dilution-response trend after blank
+filtering.
+}
+\references{
+Signal-to-blank filtering is commonly applied in untargeted metabolomics
+to remove analytical background signals and improve data quality before
+statistical analysis.
+}
+\keyword{internal}

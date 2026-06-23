@@ -1,23 +1,48 @@
-#' Title
+#' Filter biological data based on linear behavior
 #'
-#' @param inputData
-#' @param Compound_ID
-#' @param Sample_ID
-#' @param col_Batch
-#' @param col_Class
-#' @param Y
-#' @param outputformat
-#' @param PATH
-#' @param filter.type
-#' @param filter.calc
-#' @param filter.calc.x.Batch
-#' @param filter.calc.x.Class
-#' @param filter.percent
+#' @description
+#' `MS_filterSamples()` filters compounds/features based on their linear response
+#' behavior across batches and/or classes. Different filtering strategies can be
+#' applied depending on batch structure, class structure, and percentage thresholds.
 #'
-#' @return
+#' @param inputData Data frame or data.table containing the input measurements.
+#' @param Compound_ID Column name identifying compounds/features.
+#' @param Sample_ID Column name identifying samples.
+#' @param col_Batch Column name for batch grouping.
+#' @param col_Class Column name for class/grouping.
+#' @param Y Name of the response/intensity column.
+#' @param outputformat Output format: "none", "wide", "long", or "both".
+#' @param PATH Output directory for writing Excel files.
+#' @param filter.type Type of filtering strategy: "Batch", "Class", or "Batch_Class".
+#' @param filter.calc Filtering logic:
+#'   - "all": all conditions must pass threshold
+#'   - "at least one": at least one condition must pass threshold
+#'   - "at least x": at least x conditions must pass threshold
+#'   - "linear or 2 levels different": combined logic for class-based filtering
+#' @param filter.calc.x.Batch Threshold count for batch-based filtering (used with "at least x").
+#' @param filter.calc.x.Class Threshold count for class-based filtering (if applicable).
+#' @param filter.percent Percentage threshold for filtering (0–100).
+#'
+#' @return A list containing:
+#'   \item{filteredData}{Filtered dataset}
+#'   \item{summaryData}{Summary statistics used for filtering}
+#'
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' MS_filterSamples(inputData = dat,
+#'                  Compound_ID = "Compound",
+#'                  Sample_ID = "Sample",
+#'                  col_Batch = "Batch",
+#'                  col_Class = "Class",
+#'                  Y = "Intensity",
+#'                  filter.type = "Batch",
+#'                  filter.calc = "all",
+#'                  filter.percent = 80,
+#'                  PATH = tempdir())
+#' }
+#'
 #' @import data.table
 #' @import dplyr
 #' @importFrom tidyr drop_na

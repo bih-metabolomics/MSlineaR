@@ -1,21 +1,59 @@
-#' Title
+#' Determine linear range status for measured samples
 #'
-#' @param dats data table with information about the biological samples.
-#' Required columns are IDintern, y, groupIndices.It is necessary
-#' that the columns in dats and datCal have the same column names and that the
-#' column groupIndices is compatible between samples and dilution/concentration curve data.
-#' @param datCal data table with dilution/concentration curve information of the linearity.
-#' Required columns are groupIndices, Intercept and slope. It is necessary
-#' that the columns in dats and datCal have the same column names and that the
-#' column groupIndices is compatible between samples and dilution/concentration curve data.
-#' @param y
+#' @description
+#' Assigns each biological sample a linear-range status based on calibration
+#' curve boundaries derived from dilution/concentration experiments.
+#'
+#' For each sample intensity (`y`), the function checks whether it lies:
+#' - within the calibrated linear range
+#' - below the lower limit of linearity (BLOL)
+#' - above the upper limit of linearity (ULOL)
+#'
+#' Additionally, samples failing the R² quality criterion (`aboveR2 == FALSE`)
+#' are flagged as not reliable for linear range interpretation.
+#'
+#' @param dats Data table containing biological sample information.
+#' Must include at least:
+#' \itemize{
+#'   \item IDintern (unique sample identifier)
+#'   \item groupIndices (link to calibration curve)
+#'   \item y (measured response variable)
+#' }
+#'
+#' @param datCal Data table containing calibration curve metadata.
+#' Must include:
+#' \itemize{
+#'   \item groupIndices (matching key to `dats`)
+#'   \item RangeStartY (lower linear range boundary)
+#'   \item RangeEndY (upper linear range boundary)
+#'   \item aboveR2 (quality flag for regression model)
+#'   \item LRFlag (optional precomputed linear-range flag)
+#' }
+#'
+#' @param y Character. Name of response variable column in `dats`
+#' (typically measured intensity or signal).
 #'
 #' @return
-#' @export
+#' Data table identical to `dats` with additional columns:
+#' \itemize{
+#'   \item Status_LR: classification of linear range status
+#'     ("BLOL", "ULOL", TRUE/FALSE)
+#'   \item LRFlag: inherited calibration flag
+#'   \item RangeStartY: lower boundary of linear range
+#'   \item RangeEndY: upper boundary of linear range
+#' }
 #'
-#' @examples
+#' @details
+#' The function performs a join between sample and calibration tables via
+#' `groupIndices`. Samples outside the linear range are classified as:
+#' \itemize{
+#'   \item BLOL: below lower limit of linearity
+#'   \item ULOL: above upper limit of linearity
+#' }
+#' If calibration quality (`aboveR2`) is insufficient, the status is set to FALSE.
+#'
 #' @import data.table
-#' @importFrom plyr .
+#' @export
 getLRstatus <- function(dats, datCal, y){
 
   data.table::setDT(dats)
@@ -47,25 +85,63 @@ getLRstatus <- function(dats, datCal, y){
 
 
 
-
-#' Title
+#' Estimate concentrations from calibration curve parameters
 #'
-#' @param dats data table with information about the biological samples.
-#' Required columns are IDintern, y, groupIndices.It is necessary
-#' that the columns in dats and datCal have the same column names and that the
-#' column groupIndices is compatible between samples and dilution/concentration curve data.
-#' @param datCal data table with dilution/concentration curve information of the linearity.
-#' Required columns are groupIndices, Intercept and slope. It is necessary
-#' that the columns in dats and datCal have the same column names and that the
-#' column groupIndices is compatible between samples and dilution/concentration curve data.
-#' @param y
-#' @param INVERSE_Y
+#' @description
+#' Back-calculates sample concentrations using calibration curve parameters
+#' (linear regression: y = intercept + slope * x).
+#'
+#' Depending on whether log-transformation is assumed (`INVERSE_Y`),
+#' concentrations are either:
+#' - back-transformed from log-space, or
+#' - directly calculated in linear space.
+#'
+#' Finally, concentrations are scaled relative to a reference standard.
+#'
+#' @param dats Data table containing biological samples.
+#' Must include:
+#' \itemize{
+#'   \item groupIndices (link to calibration curve)
+#'   \item IDintern (sample identifier)
+#' }
+#'
+#' @param datCal Data table with calibration parameters.
+#' Must include:
+#' \itemize{
+#'   \item groupIndices
+#'   \item Intercept (regression intercept)
+#'   \item slope (regression slope)
+#'   \item sigma (residual standard deviation, if log model is used)
+#'   \item Compound (feature identifier)
+#' }
+#'
+#' @param y Character. Name of response variable used in calibration model.
+#'
+#' @param INVERSE_Y Logical or NULL.
+#' If not NULL, assumes log-normal model and applies exponential back-transformation.
+#'
+#' @param NAME_Standard Character vector defining standard samples used for scaling.
+#'
+#' @param COL_expConc Character. Column name containing expected concentrations.
 #'
 #' @return
-#' @export
+#' Data table with added column:
+#' \itemize{
+#'   \item ConcentrationLR: back-calculated and scaled concentration estimate
+#' }
 #'
-#' @examples
+#' @details
+#' Model assumptions:
+#' \itemize{
+#'   \item Linear model: y = intercept + slope * x
+#'   \item Log model: x estimated via exponential back-transformation
+#' }
+#'
+#' Final concentration is scaled using the minimum expected standard concentration:
+#' \deqn{C_{scaled} = C \cdot \frac{1}{3} \cdot C_{min, standard}}
+#'
 #' @importFrom data.table setDT
+#' @export
 getConc <- function(dats, datCal, y, INVERSE_Y, NAME_Standard, COL_expConc){
 
   setDT(dats)

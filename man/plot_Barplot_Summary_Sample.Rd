@@ -2,7 +2,7 @@
 % Please edit documentation in R/graphics.R
 \name{plot_Barplot_Summary_Sample}
 \alias{plot_Barplot_Summary_Sample}
-\title{Title}
+\title{Summary bar plot of signal quality per sample}
 \usage{
 plot_Barplot_Summary_Sample(
   inputData_Samples,
@@ -20,8 +20,36 @@ plot_Barplot_Summary_Sample(
 )
 }
 \arguments{
-\item{Y}{}
+\item{inputData_Samples}{Data frame containing sample-level annotation and signal data.}
+
+\item{printPDF}{Logical; if TRUE, the plot is saved as a PDF file.}
+
+\item{GroupIndices}{Character or vector; optional filtering of group indices ("all" for no filtering).}
+
+\item{Feature}{Character or vector; optional selection of features ("all" for no filtering).}
+
+\item{outputfileName}{Character; name of the output PDF file (without extension).}
+
+\item{COLNAMES}{Named list defining column mappings (e.g. Feature_ID, Batch, Sample_type, Sample_ID, Class).}
+
+\item{X}{Column name used as x-axis variable.}
+
+\item{Y}{Column name used as y-axis variable.}
+
+\item{output_dir}{Directory where the PDF file will be saved.}
+
+\item{group}{Primary grouping variable used for faceting (default: "Sample.Type").}
+
+\item{group2}{Optional secondary grouping variable; if NULL, defaults to \code{group}.}
+
+\item{ordered}{Column name used to define plotting order of samples.}
+}
+\value{
+A ggplot object of the sample summary bar plot.
 }
 \description{
-Title
+This function generates a stacked bar plot showing the proportion and counts
+of different signal quality categories (e.g. linear range status, missing values,
+out-of-linear-range signals) per sample. The results can be grouped by sample type
+and optionally a second grouping variable, and exported as a multi-page PDF.
 }

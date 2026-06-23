@@ -2,7 +2,7 @@
 % Please edit documentation in R/FilterData.R
 \name{MS_filterSamples}
 \alias{MS_filterSamples}
-\title{Title}
+\title{Filter biological data based on linear behavior}
 \usage{
 MS_filterSamples(
   inputData,
@@ -21,8 +21,60 @@ MS_filterSamples(
 )
 }
 \arguments{
-\item{filter.percent}{}
+\item{inputData}{Data frame or data.table containing the input measurements.}
+
+\item{Compound_ID}{Column name identifying compounds/features.}
+
+\item{Sample_ID}{Column name identifying samples.}
+
+\item{col_Batch}{Column name for batch grouping.}
+
+\item{col_Class}{Column name for class/grouping.}
+
+\item{Y}{Name of the response/intensity column.}
+
+\item{outputformat}{Output format: "none", "wide", "long", or "both".}
+
+\item{PATH}{Output directory for writing Excel files.}
+
+\item{filter.type}{Type of filtering strategy: "Batch", "Class", or "Batch_Class".}
+
+\item{filter.calc}{Filtering logic:
+\itemize{
+\item "all": all conditions must pass threshold
+\item "at least one": at least one condition must pass threshold
+\item "at least x": at least x conditions must pass threshold
+\item "linear or 2 levels different": combined logic for class-based filtering
+}}
+
+\item{filter.calc.x.Batch}{Threshold count for batch-based filtering (used with "at least x").}
+
+\item{filter.calc.x.Class}{Threshold count for class-based filtering (if applicable).}
+
+\item{filter.percent}{Percentage threshold for filtering (0–100).}
+}
+\value{
+A list containing:
+\item{filteredData}{Filtered dataset}
+\item{summaryData}{Summary statistics used for filtering}
 }
 \description{
-Title
+\code{MS_filterSamples()} filters compounds/features based on their linear response
+behavior across batches and/or classes. Different filtering strategies can be
+applied depending on batch structure, class structure, and percentage thresholds.
+}
+\examples{
+\dontrun{
+MS_filterSamples(inputData = dat,
+                 Compound_ID = "Compound",
+                 Sample_ID = "Sample",
+                 col_Batch = "Batch",
+                 col_Class = "Class",
+                 Y = "Intensity",
+                 filter.type = "Batch",
+                 filter.calc = "all",
+                 filter.percent = 80,
+                 PATH = tempdir())
+}
+
 }

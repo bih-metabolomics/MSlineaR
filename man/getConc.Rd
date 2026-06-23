@@ -2,23 +2,63 @@
 % Please edit documentation in R/fitSamples.R
 \name{getConc}
 \alias{getConc}
-\title{Title}
+\title{Estimate concentrations from calibration curve parameters}
 \usage{
 getConc(dats, datCal, y, INVERSE_Y, NAME_Standard, COL_expConc)
 }
 \arguments{
-\item{dats}{data table with information about the biological samples.
-Required columns are IDintern, y, groupIndices.It is necessary
-that the columns in dats and datCal have the same column names and that the
-column groupIndices is compatible between samples and dilution/concentration curve data.}
+\item{dats}{Data table containing biological samples.
+Must include:
+\itemize{
+\item groupIndices (link to calibration curve)
+\item IDintern (sample identifier)
+}}
 
-\item{datCal}{data table with dilution/concentration curve information of the linearity.
-Required columns are groupIndices, Intercept and slope. It is necessary
-that the columns in dats and datCal have the same column names and that the
-column groupIndices is compatible between samples and dilution/concentration curve data.}
+\item{datCal}{Data table with calibration parameters.
+Must include:
+\itemize{
+\item groupIndices
+\item Intercept (regression intercept)
+\item slope (regression slope)
+\item sigma (residual standard deviation, if log model is used)
+\item Compound (feature identifier)
+}}
 
-\item{INVERSE_Y}{}
+\item{y}{Character. Name of response variable used in calibration model.}
+
+\item{INVERSE_Y}{Logical or NULL.
+If not NULL, assumes log-normal model and applies exponential back-transformation.}
+
+\item{NAME_Standard}{Character vector defining standard samples used for scaling.}
+
+\item{COL_expConc}{Character. Column name containing expected concentrations.}
+}
+\value{
+Data table with added column:
+\itemize{
+\item ConcentrationLR: back-calculated and scaled concentration estimate
+}
 }
 \description{
-Title
+Back-calculates sample concentrations using calibration curve parameters
+(linear regression: y = intercept + slope * x).
+
+Depending on whether log-transformation is assumed (\code{INVERSE_Y}),
+concentrations are either:
+\itemize{
+\item back-transformed from log-space, or
+\item directly calculated in linear space.
+}
+
+Finally, concentrations are scaled relative to a reference standard.
+}
+\details{
+Model assumptions:
+\itemize{
+\item Linear model: y = intercept + slope * x
+\item Log model: x estimated via exponential back-transformation
+}
+
+Final concentration is scaled using the minimum expected standard concentration:
+\deqn{C_{scaled} = C \cdot \frac{1}{3} \cdot C_{min, standard}}
 }

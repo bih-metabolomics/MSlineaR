@@ -2,24 +2,79 @@
 % Please edit documentation in R/trimEnds.R
 \name{trimEnds}
 \alias{trimEnds}
-\title{Trim unstable ends from dilution /concentration curve}
+\title{Remove non-linear boundaries and plateau regions from dilution-response curves}
 \usage{
-trimEnds(dats, y = parent.frame()$Y, x = parent.frame()$X)
+trimEnds(dats, y = parent.frame()$Y, x = parent.frame()$X, SLOPE_RATIO = 0.5)
 }
 \arguments{
-\item{dats}{Long format data frame or data table for one metabolite including information about dependent and independent variable.
-Further necessary columns are: groupIndices, DilutionPoint (1:x), IDintern, color.}
+\item{dats}{A data.table containing a single feature-specific dilution or
+concentration series.}
 
-\item{y}{String; Column name of the log transformed dependent variable}
+\item{y}{Character. Column name of the response variable used for trimming.}
 
-\item{x}{String; Column name of the log transformed independent variable}
+\item{x}{Character. Column name of the concentration or dilution variable.}
+
+\item{SLOPE_RATIO}{Numeric. Threshold used for plateau detection.
+Slopes smaller than \verb{SLOPE_RATIO × middleSlope} are considered part of a
+plateau region. Default is \code{0.5}.}
 }
 \value{
-long format data.table with information about trimmed signals
+A data.table containing:
+\describe{
+\item{trim}{Logical indicator identifying trimmed observations.}
+
+\item{flat_slope}{Logical indicator identifying regions with reduced slope.}
+
+\item{Plateau}{Logical indicator identifying plateau regions.}
+
+\item{Y_trim}{Response variable after trimming. Removed observations are
+set to \code{NA}.}
+}
 }
 \description{
-\code{ trimEnds ()} checks if the first point is the minimum and the last point is
-the maximum of the dilution/concentration curve. If both is the case no trimming
-is performed. Otherwise the ends will be removed until the last point of the
-new range is the highest and the first point is lowest respectively.
+Identifies and removes non-linear regions at the lower and upper boundaries
+of dilution or concentration series.
+
+The function iteratively trims observations until the remaining curve
+exhibits the expected monotonic behaviour, where the lowest concentration
+corresponds to the lowest response and the highest concentration corresponds
+to the highest response.
+
+Additionally, plateau regions indicative of detector saturation or signal
+compression are identified and removed using local slope analysis.
 }
+\details{
+Non-linear behaviour frequently occurs at the extremes of the analytical
+dynamic range due to:
+
+\itemize{
+\item Detector saturation at high concentrations
+\item Background noise at low concentrations
+\item Ion suppression effects
+\item Peak integration artefacts
+}
+
+The trimming procedure consists of:
+
+\enumerate{
+\item Identification of upper non-linear regions.
+\item Identification of lower non-linear regions.
+\item Detection of plateau regions using local slope analysis.
+\item Annotation and exclusion of affected observations.
+}
+
+Plateau detection is performed using the helper function
+\code{findPlateaus()}.
+
+Observations identified as non-linear are excluded from downstream
+modelling by setting \code{Y_trim} to \code{NA}.
+}
+\section{Rationale}{
+
+Removing non-linear boundaries allows identification of the largest
+feature-specific interval exhibiting approximately proportional
+dilution-response behaviour, which is subsequently used for linearity
+assessment.
+}
+
+\keyword{internal}

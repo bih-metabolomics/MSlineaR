@@ -2,26 +2,54 @@
 % Please edit documentation in R/trimEnds.R
 \name{findPlateaus}
 \alias{findPlateaus}
-\title{Detect plateaus on upper and lower end of curve by using slope}
+\title{Detect plateau regions using local slope analysis}
 \usage{
 findPlateaus(dats, y, x, slope_ratio)
 }
 \arguments{
-\item{dats}{Long format data frame or data table for one metabolite including
-information about dependent and independent variable. Called from function \code{TrimmEnds()}}
+\item{dats}{A data.table containing a single feature-specific dilution or
+concentration series.}
 
-\item{y}{String; Column name of the log transformed dependent variable}
+\item{y}{Character. Column name of the response variable.}
 
-\item{x}{String; Column name of the log transformed independent variable}
+\item{x}{Character. Column name of the concentration or dilution variable.}
 
-\item{slope_ratio}{Integer; factor, describing the allowed difference between
-the calculated slope and the middle slope of the curve. Default 0.5, which means
-if the slopes at the beginning or the end is equal or less than half of the
-slope in the middle, the dilution points are probably in a plateau and will be removed.}
+\item{slope_ratio}{Numeric. Fraction of the midpoint slope used as the
+plateau threshold. Default is \code{0.5}.}
 }
 \value{
-vector of booleans
+A logical vector with one value per observation indicating whether
+the observation belongs to a plateau region.
 }
 \description{
-Detect plateaus on upper and lower end of curve by using slope
+Identifies regions at the lower or upper end of a dilution-response curve
+where the response changes more slowly than expected relative to the central
+portion of the curve.
+
+Such regions are characteristic of detector saturation, signal compression,
+or background noise and may indicate that observations lie outside the
+useful analytical range.
 }
+\details{
+The function:
+
+\enumerate{
+\item Determines the observation closest to half-maximal response.
+\item Estimates a local slope around this midpoint.
+\item Calculates slopes between all neighbouring observations.
+\item Compares local slopes against the midpoint slope.
+\item Flags observations where slopes fall below the specified fraction
+of the midpoint slope.
+}
+
+An observation is classified as belonging to a plateau only if both
+neighbouring slopes satisfy the plateau criterion.
+}
+\section{Interpretation}{
+
+A value of \code{TRUE} indicates that the local slope surrounding the
+observation is substantially reduced relative to the central slope of the
+curve and therefore may lie outside the useful analytical range.
+}
+
+\keyword{internal}

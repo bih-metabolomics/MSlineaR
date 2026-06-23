@@ -1,58 +1,129 @@
-#' Prepare raw data
+#' Validate and standardise raw metabolomics input data
 #'
-#' @param MIN_FEATURE
-#' @param TYPE
-#' @param QC
-#' @param QC_REF
-#' @param BLANK
-#' @param SAMPLE
-#' @param SAMPLE_ID
-#' @param CALIBRANTS
-#' @param COLNAMES
-#' @param Y_SAMPLE
-#' @param TRANSFORM
-#' @param TRANSFORM_X
-#' @param INVERSE_X
-#' @param TRANSFORM_Y
-#' @param INVERSE_Y
-#' @param FOD
-#' @param FOD_MODEL
-#' @param FOD_SDRES_MIN
-#' @param FOD_STDRES_MAX
-#' @param TRIMM
-#' @param SOD
-#' @param SOD_MODEL
-#' @param SOD_SDRES_MIN
-#' @param SOD_STDRES_MAX
-#' @param LR_SD_RES_FACTOR
-#' @param R2_MIN
-#' @param BATCH_HARMONIZATION
-#' @param CAL_CONC
-#' @param GET_LR_STATUS
-#' @param nCORE
-#' @param GET_OUTPUT
-#' @param PREFIX
-#' @param OUTPUT_DIR
-#' @param dat
+#' @description
+#' This function performs extensive validation and standardisation of raw
+#' mass spectrometry feature tables prior to downstream analysis in MSlineaR.
 #'
-#' @return Data frame with columns:
-#' - IDintern,
-#' - ID,
-#' - IntensityNorm,
-#' - DP,
-#' - Comment,
-#' - pch,
-#' - color,
-#' - ConcentrationRaw,
-#' - IntensityRaw,
-#' - ConcentrationLog,
-#' - IntensityLog,
-#' - IntensityRaw
-#' - DilutionPoint
+#' It ensures that required columns are present, data types are correct,
+#' sample annotations are consistent, and all key parameters meet the
+#' requirements of the linearity assessment workflow.
 #'
-#' @export
+#' @details
+#' The function checks:
+#' \itemize{
+#'   \item Minimum number of features and required columns
+#'   \item Presence and consistency of sample annotations
+#'   \item Correct data types for numeric and categorical variables
+#'   \item Validity of model and preprocessing parameters
+#'   \item Consistency of transformation functions (if used)
+#' }
+#'
+#' In addition, the function:
+#' \itemize{
+#'   \item Converts key identifiers to appropriate data types
+#'   \item Creates a unique internal identifier (`IDintern`)
+#'   \item Defines feature grouping variables (`groupIndices`)
+#'   \item Ensures correct ordering of samples for downstream modelling
+#' }
+#'
+#' This function should always be called before \code{prepareData()} or any
+#' downstream MSlineaR analysis steps.
+#'
+#' @param dat A data.table or data.frame containing raw feature intensity data.
+#'
+#' @param MIN_FEATURE Integer. Minimum number of features required in the dataset.
+#'
+#' @param TYPE Character. Type of analysis: either \code{"untargeted"} or \code{"targeted"}.
+#'
+#' @param QC Character vector defining QC sample types.
+#'
+#' @param QC_REF Character vector defining reference QC samples (if applicable).
+#'
+#' @param BLANK Character vector defining blank sample types.
+#'
+#' @param SAMPLE Character vector defining biological sample types.
+#'
+#' @param SAMPLE_ID Character. Column name containing sample identifiers.
+#'
+#' @param CALIBRANTS Character vector defining calibration or dilution series samples.
+#'
+#' @param COLNAMES Named list defining required column mappings (e.g. Sample_ID,
+#' Feature_ID, X, Y, Batch, Injection_order, Sample_type, Class).
+#'
+#' @param TRANSFORM Logical. Whether transformation of X/Y values should be applied.
+#'
+#' @param TRANSFORM_X Character. Name of transformation function applied to X (e.g. "log10").
+#'
+#' @param INVERSE_X Character. Inverse transformation function for X.
+#'
+#' @param TRANSFORM_Y Character. Name of transformation function applied to Y.
+#'
+#' @param INVERSE_Y Character. Inverse transformation function for Y.
+#'
+#' @param FOD Logical. Enable first outlier detection.
+#'
+#' @param FOD_MODEL Character vector specifying models used for first outlier detection
+#' (allowed: "linear", "logistic", "quadratic").
+#'
+#' @param FOD_SDRES_MIN Numeric. Minimum standardised residual threshold for FOD.
+#'
+#' @param FOD_STDRES_MAX Numeric. Maximum standardised residual threshold for FOD.
+#'
+#' @param TRIMM Logical. Enable trimming of non-linear regions.
+#'
+#' @param SOD Logical. Enable second outlier detection.
+#'
+#' @param SOD_MODEL Character vector specifying models used for second outlier detection.
+#'
+#' @param SOD_SDRES_MIN Numeric. Minimum residual threshold for SOD.
+#'
+#' @param SOD_STDRES_MAX Numeric. Maximum residual threshold for SOD.
+#'
+#' @param LR_SD_RES_FACTOR Numeric. Scaling factor for defining linear range boundaries.
+#'
+#' @param R2_MIN Numeric (0–1). Minimum R² required for acceptance of a linear range.
+#'
+#' @param BATCH_HARMONIZATION Logical. If TRUE, features must pass criteria in all batches.
+#'
+#' @param GET_LR_STATUS Logical. If TRUE, returns sample-level linearity classification.
+#'
+#' @param nCORE Integer. Number of CPU cores for parallel processing.
+#'
+#' @param GET_OUTPUT Logical. If TRUE, additional diagnostic outputs are returned.
+#'
+#' @param IMG_OUTPUT_DIR Character. Directory for saving diagnostic plots.
+#'
+#' @return A validated and standardised data.table with harmonised column structure,
+#' including:
+#' \itemize{
+#'   \item IDintern – unique sample-feature-batch identifier
+#'   \item groupIndices – feature-batch grouping index
+#'   \item Feature_ID – feature identifier
+#'   \item Sample_ID – sample identifier
+#'   \item Sample_type – sample annotation
+#'   \item Class – sample class label
+#'   \item Batch – batch identifier
+#'   \item Injection_order – acquisition order
+#'   \item X – concentration / dilution variable
+#'   \item Y – intensity variable
+#' }
 #'
 #' @examples
+#' \dontrun{
+#' dat_checked <- checkData(dat, MIN_FEATURE = 100, TYPE = "untargeted",
+#'                          QC = c("QC"), BLANK = c("blank"),
+#'                          CALIBRANTS = c("cal1","cal2"),
+#'                          COLNAMES = list(Sample_ID="Sample",
+#'                                          Feature_ID="Feature",
+#'                                          X="Concentration",
+#'                                          Y="Intensity",
+#'                                          Batch="Batch",
+#'                                          Injection_order="Order",
+#'                                          Sample_type="Type",
+#'                                          Class="Class"))
+#' }
+#' @keywords internal
+#'
 #' @import data.table
 #' @importFrom rlang abort
 checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = parent.frame()$TYPE, QC = parent.frame()$QC,
@@ -183,14 +254,61 @@ is.wholenumber <-
   function(x, tol = .Machine$double.eps^0.5)  abs(x - round(x)) < tol
 
 
-#' Title
-#'normalizing, centralizing, log transforming
-#' @param dat
+
+#' Transform and structure data for linearity modelling
 #'
-#' @return
-#' @export
+#' @description
+#' This function prepares validated metabolomics data for downstream
+#' linearity assessment by standardising column names, generating
+#' internal identifiers, ordering observations, and optionally applying
+#' mathematical transformations to concentration and intensity values.
+#'
+#' @details
+#' The function assumes that the input data has already been validated
+#' using \code{checkData()}.
+#'
+#' Processing steps include:
+#' \itemize{
+#'   \item Renaming of columns according to MSlineaR internal format
+#'   \item Generation of dilution ordering index
+#'   \item Creation of plotting metadata (e.g. point shape and colour)
+#'   \item Feature-wise scaling of X values
+#'   \item Optional transformation of X and Y variables
+#' }
+#'
+#' Transformations (if enabled) are applied using user-defined functions
+#' (e.g. log10, sqrt), and infinite values are automatically replaced with NA.
+#'
+#' @param dat A validated data.table returned by \code{checkData()}.
+#'
+#' @param TRANSFORM Logical. Whether transformations should be applied.
+#'
+#' @param TRANSFORM_X Character. Name of function used to transform X values.
+#'
+#' @param TRANSFORM_Y Character. Name of function used to transform Y values.
+#'
+#' @param COLNAMES Named list of column mappings used in the original dataset.
+#'
+#' @param TYPE Character. Type of analysis ("targeted" or "untargeted").
+#'
+#' @return A processed data.table containing:
+#' \itemize{
+#'   \item Standardised identifiers (IDintern, Feature_ID, Sample_ID)
+#'   \item Processed concentration and intensity values (X, Y)
+#'   \item Optional transformed variables (X_trans, Y_trans)
+#'   \item Plotting metadata (DilutionPoint, pch, color)
+#' }
 #'
 #' @examples
+#' \dontrun{
+#' dat_processed <- prepareData(dat_checked,
+#'                              TRANSFORM = TRUE,
+#'                              TRANSFORM_X = "log10",
+#'                              TRANSFORM_Y = "log10")
+#' }
+#'
+#' @keywords internal
+#'
 #' @import data.table
 #' @importFrom rlang abort
 prepareData <- function(dat,
@@ -243,30 +361,62 @@ prepareData <- function(dat,
 
 
 
-# if(nCORE > 1){
-
-
-# handlers(global = TRUE)
-#' Title
+#' Parallel execution helper for feature-wise analysis
 #'
-#' @param xs
-#' @param func
-#' @param inputData
-#' @param ...
+#' @description
+#' This function provides a parallelised wrapper to apply a user-defined
+#' function to groups of metabolomics features (defined by `groupIndices`).
+#'
+#' It is primarily used to accelerate computationally intensive steps
+#' in the MSlineaR workflow, such as model fitting and linearity assessment
+#' across large feature sets.
+#'
+#' @details
+#' The function splits the input dataset into subsets based on unique
+#' feature-group identifiers (`groupIndices`) and distributes these subsets
+#' across multiple CPU cores using a PSOCK cluster.
+#'
+#' A progress bar is displayed during execution.
+#'
+#' Each subset is processed independently using the user-supplied function
+#' `func`.
+#'
+#' @param nCORE Integer. Number of CPU cores to use for parallel processing.
+#'
+#' @param xs Integer vector. Indices of feature groups to be processed.
+#' Each element corresponds to one unique value of `groupIndices`.
+#'
+#' @param func Function. User-defined function applied to each subset of data.
+#' The function must accept a data.table as its first argument.
+#'
+#' @param inputData A data.frame or data.table containing at least the column
+#' `groupIndices`, which defines feature-wise grouping.
+#'
+#' @param ... Additional arguments passed to `func`.
 #'
 #' @return
-#' @import foreach
-#' @export
+#' A list of results, where each element corresponds to the output of `func`
+#' applied to one subset of `inputData` defined by `groupIndices`.
 #'
 #' @examples
+#' \dontrun{
+#' result <- my_fcn(
+#'   nCORE = 4,
+#'   xs = 1:10,
+#'   func = function(dt) {
+#'     mean(dt$Y, na.rm = TRUE)
+#'   },
+#'   inputData = dat
+#' )
+#' }
 #'
-
+#' @import data.table
 #' @importFrom utils setTxtProgressBar txtProgressBar
 #' @importFrom parallel makePSOCKcluster stopCluster
 #' @importFrom doSNOW registerDoSNOW
 #' @importFrom foreach foreach
-#' @import data.table
-#'
+#' @keywords internal
+
 my_fcn <- function(nCORE, xs, func, inputData, ...) {
   #parallel::clusterExport(cl, exportObjects)
   cl <- parallel::makePSOCKcluster(nCORE)
@@ -287,45 +437,3 @@ my_fcn <- function(nCORE, xs, func, inputData, ...) {
   return(y)
   }
 
-# my_fcn6 <- function(xs, func, inputData, ...) {
-#   #parallel::clusterExport(cl, exportObjects)
-#   #cl <- parallel::makeCluster(getOption("cl.cores", nCORE))
-#   #on.exit(parallel::stopCluster(cl))
-#   #doSNOW::registerDoSNOW(cl)
-# #  pb <- progressr::progressor(along = xs)
-# #  progress <- function(i)  pb(sprintf("x=%g", i))
-#  # opts <- list(progress=progress)
-#   y <- foreach::foreach(i = xs) %do% {func(data.table::setDT(inputData)[inputData$groupIndices %in% unique(inputData$groupIndices)[i]], ...)}
-#   #parallel::stopCluster(cl)
-#   #return(y)
-# }
-
-
-
-
-# my_fcn <- function(xs, func, inputData, ...) {
-#   p <- progressr::progressor(along = xs)
-#   y <- furrr::future_map(xs, function(i) {
-#     p(sprintf("x=%g", i))
-#     func(data.table::setDT(inputData)[inputData$groupIndices %in% unique(inputData$groupIndices)[i]], ...)
-#     # groupInd <- unique(inputData$groupIndices)[x]
-#     # inputData = filter(inputData, groupIndices %in% groupInd)
-#     # inputData[groupIndices %in% x, func(.SD, ...)]
-#     # func(inputData, ...)
-#   }, .progress = F)
-# }
-
-# } else{
-
-# my_fcn2 <- function(xs, func, inputData, ...) {
-#   p <- progressr::progressor(along = xs)
-#   y <- map(xs, function(i) {
-#     p(sprintf("x=%g", i))
-#     # inputData[groupIndices %in% x, func(.SD, ...)]
-#     func(data.table::setDT(inputData)[groupIndices %in% unique(groupIndices)[i]], ...)
-#     # groupInd <- unique(inputData$groupIndices)[x]
-#     # inputData = filter(inputData, groupIndices %in% groupInd)
-#     # func(inputData, ...)
-#   })
-# }
-# # }

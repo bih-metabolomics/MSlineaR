@@ -1,30 +1,107 @@
-#' Flag Outliers
+#' Detect and remove outliers using model-based regression fitting
 #'
-#'@description
-#'Because the structure of the data is unclear, a 2-step approach is used to
-#'identify outliers.
-#'1.)	For each model (linear, quadratic, logarithmic) outliers will be examined
-#'using standardized residuals. An outlier is defined as absolute standardized
-#'residuals >= 2 (can be changed by user). That results in two data sets per model,
-#'one including all data and one where the outlier was excluded.
-#'2.)	After that the root mean square error (RMSE) is calculated for both data sets
-#'and compared. The data set resulting in the lowest RMSE will retain.
-#'After completing this for all three regression models, the RMSE of the best fit
-#'per model will be compared and the outliers from the model showing the lowest RMSE
-#'will be removed from the data
+#' @description
+#' `chooseModel()` identifies potential outliers within a dilution or
+#' concentration series using a model-based approach.
 #'
+#' Three regression models can be evaluated:
 #'
-#' @param dats data table after trimming step
-#' @param y log transformed dependent variable (area)
-#' @param x log transformed independent variable (Dilution)
-#' @param model Which regression model should be used? Currently the user can choose between "logistic", "linear" and "quadratic". Default are all three.
-#' @param SDRES_MIN Integer, minimum value for standard deviation of residuals.
-#' If model has a lower  standard deviation of residuals, the potential outlier will only be flagged if it has a negative slope too.
-#' @param STDRES Integer, threshold value for standardized residuals. Signals which have a higher value are flagged as outliers.
-#' @param abbr Which step it is ? First outlier detection ("FOD") or second one ("SOD")
+#' * Linear
+#' * Quadratic
+#' * Three-parameter logistic
 #'
-#' @return data.table with signals flagged as outliers.
+#' For each selected model:
+#'
+#' 1. The model is fitted to the complete series.
+#' 2. Standardized residuals are calculated.
+#' 3. Signals exceeding the specified residual threshold (`STDRES`) are
+#'    considered potential outliers.
+#' 4. A second model is fitted after excluding the potential outliers.
+#' 5. The original and outlier-filtered models are compared.
+#'
+#' The final model is selected based on the lowest Bayesian Information
+#' Criterion (BIC). Outliers identified by the selected model are flagged and
+#' excluded from subsequent processing steps.
+#'
+#' To avoid excessive outlier removal in nearly perfect dilution series,
+#' optional safeguards based on residual standard deviation (`SDRES_MIN`) and
+#' local slope direction are applied.
+#'
+#' @param dats Data table containing a single dilution or concentration series
+#'   after preprocessing and trimming.
+#' @param y Character string specifying the column containing the transformed
+#'   response variable (e.g. log-transformed signal intensity).
+#' @param x Character string specifying the column containing the transformed
+#'   dilution or concentration values.
+#' @param model Character vector defining which regression models should be
+#'   evaluated. Supported values are:
+#'   \describe{
+#'     \item{"linear"}{Simple linear regression}
+#'     \item{"quadratic"}{Second-order polynomial regression}
+#'     \item{"logistic"}{Three-parameter logistic regression}
+#'   }
+#' @param SDRES_MIN Numeric value specifying the minimum residual standard
+#'   deviation required before residual-based outlier removal is performed.
+#'   This prevents removal of points in nearly noise-free curves.
+#' @param STDRES Numeric threshold for standardized residuals. Data points with
+#'   absolute standardized residuals greater than this value are considered
+#'   potential outliers.
+#' @param abbr Character string used to label the outlier detection step
+#'   (typically `"FOD"` for first outlier detection or `"SOD"` for second
+#'   outlier detection).
+#'
+#' @return
+#' A named list containing one entry per dilution/concentration series.
+#' Each entry contains:
+#'
+#' \describe{
+#'   \item{model.name}{Selected regression model.}
+#'   \item{model}{Model summary information including fitted values,
+#'   coefficients, standardized residuals and BIC values.}
+#'   \item{dat}{Input data with additional columns indicating detected
+#'   outliers and filtered response values.}
+#' }
+#'
+#' Additional columns added to `dat` include:
+#'
+#' \describe{
+#'   \item{OutlierFOD / OutlierSOD}{Logical indicator for detected outliers.}
+#'   \item{Y_FOD / Y_SOD}{Response variable after removing detected outliers.}
+#'   \item{Comment}{Annotation describing outlier status.}
+#'   \item{color}{Visual status indicator used internally for plotting.}
+#' }
+#'
+#' @details
+#' The function evaluates whether removing potential outliers improves model
+#' performance. Rather than relying solely on residual thresholds, the final
+#' decision is based on model quality. This reduces the risk of incorrectly
+#' removing biologically meaningful observations.
+#'
+#' When multiple models perform similarly, preference is given to linear
+#' models, followed by logistic models.
+#'
+#' @references
+#' Bayesian Information Criterion (BIC):
+#' Schwarz G. (1978) Estimating the Dimension of a Model.
+#' The Annals of Statistics 6(2):461-464.
+#'
+#' @seealso
+#' \code{\link{trimEnds}}
+#'
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' result <- chooseModel(
+#'   dats = feature_data,
+#'   y = "Y_trim",
+#'   x = "X_trans",
+#'   model = c("linear", "quadratic", "logistic"),
+#'   STDRES = 2,
+#'   SDRES_MIN = 0.1,
+#'   abbr = "FOD"
+#' )
+#' }
 #' @import data.table
 #' @importFrom drc drm L.3
 #' @importFrom Metrics rmse

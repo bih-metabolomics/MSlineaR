@@ -2,15 +2,62 @@
 % Please edit documentation in R/countMinimumValues.R
 \name{countMinimumValue}
 \alias{countMinimumValue}
-\title{Title}
+\title{Evaluate minimum signal count within each dilution series}
 \usage{
 countMinimumValue(DAT, MIN_FEATURE = parent.frame()$MIN_FEATURE, step, y)
 }
 \arguments{
-\item{MIN_FEATURE}{minimum number of features within a dilution or concentration series to be considered as linear range}
+\item{DAT}{A data.table containing feature-wise dilution or concentration
+series.}
 
-\item{Y}{}
+\item{MIN_FEATURE}{Integer. Minimum number of non-missing observations
+required for a series to be considered suitable for linearity assessment.}
+
+\item{step}{Integer. Processing step identifier used to create
+step-specific output column names.}
+
+\item{y}{Character. Name of the response variable to evaluate
+(e.g. \code{"Y"} or \code{"Y_trans"}).}
+}
+\value{
+A list containing:
+\describe{
+\item{filteredData}{Updated input data table with annotations and excluded observations.}
+
+\item{summaryData}{Summary table containing the number of valid observations per feature-series and the corresponding pass/fail classification.}
+}
 }
 \description{
-Title
+Checks whether each feature-specific dilution or concentration series
+contains a sufficient number of valid (non-missing) observations for
+downstream modelling.
+
+Feature-series containing fewer than \code{MIN_FEATURE} observations are
+flagged, excluded from subsequent analysis, and annotated accordingly.
 }
+\details{
+For each feature-batch combination (\code{groupIndices}), the number of
+non-missing values in the specified response variable is counted.
+
+Series failing the minimum requirement are:
+\itemize{
+\item Marked as \code{"notEnoughPeaks"} in the \code{Comment} column
+\item Assigned the colour \code{"grey"}
+\item Excluded from further processing by setting the selected
+response variable to \code{NA}
+}
+
+Series meeting the criterion are labelled \code{"EnoughPeaks"}.
+}
+\examples{
+\dontrun{
+res <- countMinimumValue(
+  DAT = dat,
+  MIN_FEATURE = 6,
+  step = 1,
+  y = "Y"
+)
+}
+
+}
+\keyword{internal}

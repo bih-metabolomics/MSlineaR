@@ -1,16 +1,18 @@
 
-
-#' Title
+#' Combine multiple omics signal tables into a single dataset
 #'
-#' @param inputData_Series
-#' @param inputData_BioSamples
-#' @param inputData_QC
-#' @param ...
+#' This function merges different input data tables (series data, biological samples,
+#' and QC samples) into a single unified data frame using common column intersections.
+#' The merging is performed using full joins to retain all available observations.
 #'
-#' @return
+#' @param inputData_Series Data frame containing primary series-level measurements.
+#' @param inputData_BioSamples Optional data frame containing biological sample data.
+#' @param inputData_QC Optional data frame containing quality control (QC) sample data.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A merged data frame containing all input datasets combined by shared columns.
 #' @export
 #'
-#' @examples
 #' @importFrom dplyr full_join
 
 
@@ -38,26 +40,42 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 
 
 
-
-#' Title
+#' Feature dilution series (FDS) diagnostic and calibration plotting
 #'
-#' @param printPDF
-#' @param inputData_Series
-#' @param inputData_BioSamples
-#' @param inputData_QC
-#' @param inputData_QC_ref
-#' @param nrRow
-#' @param nrFeature
-#' @param GroupIndices
-#' @param Feature
-#' @param printR2
-#' @param ...
-#' @param outputfileName
+#' This function generates detailed diagnostic plots for feature dilution series (FDS)
+#' experiments. It visualizes dilution curves, linear range behavior, QC and biological
+#' sample distributions, outlier annotations, and optional diagnostic plots (residuals
+#' and QQ plots). The function can optionally export multi-page PDF reports.
 #'
-#' @return
+#' Key features:
+#' - Visualization of dilution-dependent signal behavior per feature
+#' - Highlighting of linear range, outliers, and QC performance
+#' - Support for biological samples and QC overlays
+#' - Optional diagnostic plots (residuals and QQ plots)
+#' - Automatic faceting by feature and batch
+#'
+#' @param inputData_Series Data frame containing series dilution measurements and annotations.
+#' @param inputData_BioSamples Optional data frame of biological sample measurements.
+#' @param inputData_QC Optional data frame of QC sample measurements.
+#' @param nrFeature Maximum number of features to include in the plot.
+#' @param signal_blank_ratio Numeric; multiplier for blank signal threshold visualization.
+#' @param printPDF Logical; if TRUE, plots are exported as a PDF file.
+#' @param GroupIndices Character or vector; subset of group indices to plot ("all" for no filtering).
+#' @param Feature Character or vector; subset of features to plot ("all" for no filtering).
+#' @param printR2 Logical; if TRUE, R² and related statistics are displayed.
+#' @param outputfileName Character; name of the output PDF file (without extension).
+#' @param TRANSFORM_Y Function name used to transform y-values (e.g. "log", "exp").
+#' @param inverse_y Function name used for inverse transformation of y-values.
+#' @param COLNAMES Named list defining required column mappings (e.g. Feature_ID, Batch, Class, Sample_type).
+#' @param Xcol Column name used as independent variable.
+#' @param Ycol Column name used as dependent variable.
+#' @param Series Optional label for the QC dilution series.
+#' @param output_dir Directory where output PDF files are saved.
+#' @param diagnostic Logical; if TRUE, residual and QQ diagnostic plots are generated.
+#'
+#' @return A patchwork ggplot object containing the dilution series visualization and optional diagnostics.
 #' @export
 #'
-#' @examples
 #' @importFrom grDevices dev.off pdf
 #' @importFrom plyr .
 #' @importFrom stats na.omit
@@ -67,692 +85,227 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 #' @import ggplot2
 #' @importFrom ggforce facet_grid_paginate
 #' @import patchwork
-
-#'
-plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#inputData_Blank,
+plot_FDS <- function(inputData_Series,
+                     inputData_BioSamples,
+                     inputData_QC,
                      nrFeature = 50,
                      signal_blank_ratio = 5,
-                     printPDF = TRUE, GroupIndices = "all",  Feature = "all", printR2 = TRUE,
-                     outputfileName = c("Calibrationplot"), TRANSFORM_Y = "log", inverse_y = "exp",
-                     COLNAMES, Xcol, Ycol, Series = "QC dilution Curves", output_dir,diagnostic = TRUE ){
+                     printPDF = TRUE,
+                     GroupIndices = "all",
+                     Feature = "all",
+                     printR2 = TRUE,
+                     outputfileName = c("Calibrationplot"),
+                     TRANSFORM_Y = "log",
+                     inverse_y = "exp",
+                     COLNAMES,
+                     Xcol,
+                     Ycol,
+                     Series = "QC dilution Curves",
+                     output_dir,
+                     diagnostic = TRUE ){
 
+  # ----------------------------
+  # Input Validation
+  # ----------------------------
   assertthat::not_empty(inputData_Series)
-  # LR_object,statusLinear = c(TRUE, FALSE),
 
-  ID <-  COLNAMES[["Feature_ID"]]
-  Col_Batch <-  COLNAMES[["Batch"]]
-  indipendent <- Xcol
+  # Spaltenzuordnung aus Mapping
+  ID <- COLNAMES[["Feature_ID"]]
+  Col_Batch <- COLNAMES[["Batch"]]
+  independent <- Xcol
   dependent <- Ycol
   ClassCol <- COLNAMES[["Class"]]
   Sample.Type <- COLNAMES[["Sample_type"]]
 
+  # ----------------------------
+  # Converting in data.table
+  # ----------------------------
   data.table::setDT(inputData_Series)
   inputData_Series$Sample.Type <- inputData_Series[[Sample.Type]]
 
+  # ----------------------------
+  # prepare BioSamples
+  # ----------------------------
   if(!is.null(inputData_BioSamples)){
-
     inputData_BioSamples$Sample.Type <- inputData_BioSamples[[Sample.Type]]
     data.table::setDT(inputData_BioSamples)
-    if(!is.null(TRANSFORM_Y)) {
-      inputData_BioSamples$Sample_area <- get(TRANSFORM_Y)(inputData_BioSamples[[COLNAMES[["Y"]]]])
-      data.table::setnames(inputData_BioSamples, old = "Sample_area",new = dependent)
-      inputData_BioSamples <- inputData_BioSamples |> dplyr::select(which(!duplicated(names(inputData_BioSamples))))
-    }
 
+    # Y-Transformation
+    if(!is.null(TRANSFORM_Y)){
+      inputData_BioSamples$Sample_area <-
+        get(TRANSFORM_Y)(inputData_BioSamples[[COLNAMES[["Y"]]]])
+
+      data.table::setnames(inputData_BioSamples,
+                           old = "Sample_area",
+                           new = dependent)
+
+      inputData_BioSamples <- inputData_BioSamples |>
+        dplyr::select(which(!duplicated(names(inputData_BioSamples))))
+    }
   }
+
+  # ----------------------------
+  # prepare QC Data
+  # ----------------------------
   if(!is.null(inputData_QC)){
     inputData_QC$Sample.Type <- inputData_QC[[Sample.Type]]
     data.table::setDT(inputData_QC)
-    if(!is.null(TRANSFORM_Y)) {
-      inputData_QC$Sample_area <- get(TRANSFORM_Y)(inputData_QC[[COLNAMES[["Y"]]]])
-      data.table::setnames(inputData_QC, old = "Sample_area",new = dependent)
-      inputData_QC <- inputData_QC |> dplyr::select(which(!duplicated(names(inputData_QC))))
-
-    }
-
-  }
-  #data.table::setDT(inputData_Blank)
-
-
-
-
-  data_Signal <- combineData(inputData_Series, inputData_BioSamples, inputData_QC)# inputData_Blank)#, inputData_QC_ref, inputData_Blank)
-  data_Signal$ID = data_Signal[[ID]]
-  data_Signal$Batch = data_Signal[[Col_Batch]]
- #data_Signal$ID <- paste(data_Signal$ID, data_Signal$Batch, sep = "_")
-  data_Signal$Sample.Type = data_Signal[[Sample.Type]]
-
-
-  if(!is.null(inputData_QC)) {
-    if(is.null(inputData_BioSamples)){
-    QCs = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
-                     x = -c(3 : (length(unique(inputData_QC[[Sample.Type]])) + 2)))
-    } else{
-
-      QCs = data.frame(Sample.Type = unique(inputData_QC[[Sample.Type]]),
-                       x = -c((length(unique(inputData_BioSamples[[ClassCol]])) + 2) : (length(unique(inputData_QC[[Sample.Type]])) + 1 + length(unique(inputData_BioSamples[[ClassCol]])))))
-    }
-
-
-
-
-
-    data_Signal <- dplyr::full_join(QCs, data_Signal, by = "Sample.Type")
-
-  } else {data_Signal$x = 0}
-
-  data.table::setorderv(data_Signal, c(ID, Col_Batch))
-  data.table::setDT(data_Signal)
-
-  if(any(GroupIndices != "all" & GroupIndices != "")) data_Signal <- data_Signal[groupIndices %in% GroupIndices]
-  if(any(Feature != "all" & Feature != "")) data_Signal <- data_Signal[get(ID) %in% Feature]
-  if(any(Feature %in% "all") & any(GroupIndices %in% "all") & data.table::uniqueN(data_Signal[[ID]]) > nrFeature){
-
-    if(data.table::uniqueN(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]) > nrFeature/2) {
-      randomIDsTRUE <- sample(unique(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]), nrFeature/2, replace = F)
-      randomIDs2 <- sample(setdiff(unique(data_Signal[[ID]]), randomIDsTRUE), nrFeature/2, replace = F)
-      randomIDs <- c(randomIDsTRUE, randomIDs2)
-      data_Signal <- data_Signal[ID %in% randomIDs]
-    } else if(data.table::uniqueN(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]) < nrFeature/2){
-      randomIDsTRUE <- unique(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE])
-      randomIDs2 <- sample(setdiff(unique(data_Signal[[ID]]), randomIDsTRUE), nrFeature -length(randomIDsTRUE), replace = F)
-      randomIDs <- c(randomIDsTRUE, randomIDs2)
-      data_Signal <- data_Signal[ID %in% randomIDs]
-    }
-  }else if(any(Feature %in% "all") & any(GroupIndices %in% "all") & data.table::uniqueN(data_Signal[[ID]]) <= nrFeature){
-    nrFeature = data.table::uniqueN(data_Signal[[ID]])
-
-  }
-
-
-
-
-
-
-    nrRow <- ifelse(data.table::uniqueN(data_Signal$groupIndices) >= 4, 4, data.table::uniqueN(data_Signal$groupIndices))
-    nCol = data.table::uniqueN(data_Signal[[Col_Batch]])
-    #npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
-
-    # ---- Levels holen ----
-    class_levels <- unique(na.omit(data_Signal[[ClassCol]]))
-    sample_levels <- c(unique(inputData_BioSamples[[Sample.Type]]),unique(inputData_QC[[Sample.Type]]))
-    batch_levels  <- unique(data_Signal$Batch)
-
-    # ---- Farben / Shapes definieren ----
-    class_colors <- setNames(
-      scales::hue_pal()(length(class_levels)),
-      class_levels
-    )
-
-    sample_shapes <- setNames(
-      c(16,17,15,18,19)[seq_along(sample_levels)],
-      sample_levels
-    )
-
-    batch_fills <- setNames(
-      RColorBrewer::brewer.pal(max(length(batch_levels), 3), "Set1")[1:length(batch_levels)],
-      batch_levels
-    )
-
-
-    metabolite_row <- function(df, show_x = FALSE, show_legend = FALSE, show_title = FALSE){
-
-
-
-      x_theme <- if(show_x) ggplot2::theme() else ggplot2::theme(
-        axis.title.x = ggplot2::element_blank(),
-        axis.text.x = ggplot2::element_blank(),
-        axis.ticks.x = ggplot2::element_blank()
-      )
-
-      legend_theme <- if(show_legend) ggplot2::theme(legend.position = "top") else ggplot2::theme(legend.position = "none")
-
-      title_metabolite <- if(show_title) "QC & Samples | Dilution curve" else ""
-      title_residual <- if(show_title) "Residual Plot" else ""
-      title_qq <- if(show_title) "QQ Line Plot" else ""
-
-
-    data_Signals <- df #|> dplyr::arrange(groupIndices)#[groupIndices %in% 1, ]#[get(ID) %in% unique(data_Signal[[ID]])[(nrRow * (page -1) +1) : (nrRow * page)]]
-
-    plotlinearData <-
-      ggplot2:: ggplot(data = data_Signals, mapping = ggplot2::aes(x = get(indipendent), y = get(dependent))) +
-      ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type])),colour = "black")
-
-    if("signalBlankRatio" %in% colnames(data_Signals)){
-      plotlinearData <-  plotlinearData +
-        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) &
-                                            signalBlankRatio %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
-    }
-    if("OutlierFOD" %in% colnames(data_Signals)){
-      plotlinearData <-  plotlinearData +
-        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierFOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "red")
-    }
-
-    if("trim" %in% colnames(data_Signals)){
-      plotlinearData <-  plotlinearData +
-        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trim %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
-    }
-
-    if("OutlierSOD" %in% colnames(data_Signals)){
-      plotlinearData <-  plotlinearData +
-        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & OutlierSOD %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "red")
-    }
-
-    if("trimPos" %in% colnames(data_Signals)){
-      plotlinearData <-  plotlinearData +
-        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & trimPos %in% TRUE), ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "grey")
-    }
-
-    if("InRange" %in% colnames(data_Signals)){
-
-      Xinterstart = data_Signals[[indipendent]][data_Signals$RangeStart ]
-      Xinterend = data_Signals[[indipendent]][data_Signals$RangeEnd ]
-
-
-      if(!is.null(TRANSFORM_Y)){
-        Yinterstart = get(TRANSFORM_Y)(data_Signals$RangeStartY)
-        Yinterend = get(TRANSFORM_Y)(data_Signals$RangeEndY)
-      } else{
-        Yinterstart =  data_Signals$RangeStartY
-        Yinterend = data_Signals$RangeEndY
-      }
-
-
-      plotlinearData <-  plotlinearData +
-        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & InRange %in% TRUE),
-                            ggplot2::aes(x = get(indipendent), y = get(dependent)), colour = "seagreen") +
-        ggplot2::geom_line(data = subset(data_Signals, Sample.Type %in% unique(inputData_Series[, Sample.Type]) & InRange %in% TRUE),
-                           ggplot2::aes(x = get(indipendent), y = predicted ), col = "orange", na.rm = TRUE) +
-        #ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
-        #ggplot2::geom_vline(data = data_Signals,ggplot2::aes( xintercept = Xinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
-        ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterstart), col = "darkgrey", linetype = "dotted", na.rm = TRUE) +
-        ggplot2::geom_hline(data = data_Signals,ggplot2::aes( yintercept = Yinterend), col = "darkgrey", linetype = "dotted", na.rm = TRUE)
-
-    }
-
-
-
-    plotlinearData <-  plotlinearData +
-      ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-      ggplot2::geom_vline(ggplot2::aes( xintercept = -1, color = "darkgrey"), linetype = "solid", col = "black", na.rm = TRUE)
-
-    # if(!is.na(inputData_BioSamples) | !is.null(inputData_QC)| !is.null(inputData_QCref) | !is.null(inputData_Blank)){
-    #   nrQC <- sum(!is.null(inputData_BioSamples),!is.null(inputData_QC),!is.null(inputData_QCref), !is.null(inputData_Blank))
-    #
-    # }
-
-    legend_order <- unique(inputData_Series$Sample.Type)
-
-    if(!is.null(inputData_BioSamples )){
-      plotlinearData <-  plotlinearData +
-        #ggplot2::scale_x_continuous(limits = c(-4, NA) ,breaks = data_Signals$DilutionPoint,  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-        ggplot2::geom_boxplot(data = subset(data_Signals, Sample.Type %in% unique(inputData_BioSamples[, Sample.Type]) ),
-                            ggplot2::aes( x = -(as.numeric(as.factor(get(ClassCol))) + 1), y = get(dependent),  shape = Sample.Type, fill = get(ClassCol), col = get(ClassCol)),
-                            size = 0.1,
-                            width = 0.6,
-                            median.colour = "black",
-                            #position = position_dodge2(width = 1, preserve = "single"),
-                            #padding = 0.2,
-                            na.rm = TRUE) #+#, shape = 1, col = "purple"
-      legend_order <- c(legend_order, unique(inputData_BioSamples$Sample.Type))
-    }
-    #ifelse(!is.na(Class),get(Class), "black")
-
-    if(!is.null(inputData_QC )){
-      legend_order <- c(legend_order, unique(inputData_QC$Sample.Type))
-
-      plotlinearData <-  plotlinearData +
-        ggplot2::geom_point(data = subset(data_Signals, Sample.Type %in% QCs$Sample.Type),
-                            ggplot2::aes( x = x, y = get(dependent),  shape = as.factor(Sample.Type)), size = 1, na.rm = TRUE) #+
-        #ggplot2::scale_shape_manual(values = 1: (nlevels(as.factor(QCs$Sample.Type)) +2), breaks=rev(legend_order))
-
-      #+, shape = 5
-
-    }
-
 
     if(!is.null(TRANSFORM_Y)){
-      plotlinearData <- plotlinearData +
-        ggplot2:: scale_y_continuous(name = "Area", labels = function(l) {trans = scales::scientific(get(inverse_y)(l)); paste0(TRANSFORM_Y,"(", trans, ")")})#{paste0(TRANSFORM_Y,"(", scales::scientific(get(inverse_y)(l), ")"))})
-      #labels = scales::trans_format(get(inverse_y)),
-      #limits = c(NA, ggplot2::layer_scales(plotlinearData)$y$get_limits()[2] + 1 ))
-      if("signalBlankRatio" %in% colnames(data_Signals)){
+      inputData_QC$Sample_area <-
+        get(TRANSFORM_Y)(inputData_QC[[COLNAMES[["Y"]]]])
 
-        plotlinearData <- plotlinearData +
-          ggplot2::geom_hline(ggplot2::aes(yintercept = get(TRANSFORM_Y)(medBlank*signal_blank_ratio)), color = "grey", linewidth = 0.5)
-        #   ggplot2::geom_hline(yintercept = get(TRANSFORM_Y)(unique(na.omit(data_Signals$medBlank))*signal_blank_ratio), color = "black") +
-        #   ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = get(TRANSFORM_Y)(data_Signals$medBlank*signal_blank_ratio)+0.2,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
-      }
+      data.table::setnames(inputData_QC,
+                           old = "Sample_area",
+                           new = dependent)
 
-    } else{
-
-      plotlinearData <- plotlinearData +
-        ggplot2:: scale_y_continuous(name = "Area", labels = scales::scientific_format())
-
-      if("signalBlankRatio" %in% colnames(data_Signals)){
-
-        plotlinearData <- plotlinearData +
-          ggplot2::geom_hline(ggplot2::aes(yintercept = medBlank*signal_blank_ratio), color = "grey", linewidth = 0.5)
-        #   ggplot2::geom_hline(yintercept = get(TRANSFORM_Y)(unique(na.omit(data_Signals$medBlank))*signal_blank_ratio), color = "black") +
-        #   ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = get(TRANSFORM_Y)(data_Signals$medBlank*signal_blank_ratio)+0.2,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
-      }
-
-      # if("signalBlankRatio" %in% colnames(data_Signals)){
-      #
-      #   plotlinearData <- plotlinearData +
-      #     ggplot2::geom_hline(yintercept = unique(na.omit(data_Signals$medBlank))*signal_blank_ratio, color = "black") +
-      #     ggplot2::annotate(x = max(data_Signals[[indipendent]], na.rm = T)/2 +2, y = data_Signals$medBlank*signal_blank_ratio+200,geom = "text", label = paste(signal_blank_ratio," x median blank", size = 8, color = "black"))
-
-
-
+      inputData_QC <- inputData_QC |>
+        dplyr::select(which(!duplicated(names(inputData_QC))))
     }
-
-
-
-
-    if(length(GroupIndices) > 1 | any(GroupIndices %in% "all") | length(Feature) > 1 | any(Feature %in% "all" )){
-
-      #if(data.table::uniqueN(data_Signals[[Col_Batch]]) > 1){
-       # plotlinearData <-  plotlinearData  +
-        #  ggforce::facet_grid_paginate(ID ~ Batch ,
-         #                              scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
-      #} else {
-        plotlinearData <-  plotlinearData +
-          ggplot2::facet_grid(ID ~ Batch)
-          #ggforce::facet_grid_paginate(ID ~ Batch ,
-                                       #scales = "free", ncol = nCol,nrow = nrRow, page = 1 )
-      #}
-    }
-
-
-    if("signalBlankRatio" %in% colnames(data_Signals)){
-
-      blankmedian <- data.frame(
-        data_Signals |> dplyr::select(groupIndices, ID, Batch) |> unique()
-      )
-
-
-      blankmedian$label <- paste(signal_blank_ratio," x median blank")
-      blankmedian$xtext <- data_Signals |>
-        dplyr::group_by(groupIndices) |>
-        dplyr::reframe(.groups = "drop", xblank = max(get(indipendent), na.rm = T)/2 + 2) |>
-        dplyr::select(xblank) |>
-        unlist(use.names = F)
-      blankmedian <- data_Signals |>
-        dplyr::group_by(groupIndices) |>
-        dplyr::reframe(.groups = "drop",ytext = na.omit(medBlank*signal_blank_ratio)) |>
-        unique() |>
-        dplyr::ungroup() |>
-        dplyr::right_join(blankmedian, by = "groupIndices")
-      #dplyr::select(yblank) |>
-      #unlist(use.names = F)
-
-
-      if(!is.null(TRANSFORM_Y)){
-
-        plotlinearData <- plotlinearData +
-
-          ggplot2::geom_text(data = blankmedian, mapping = ggplot2::aes(x = xtext, y = get(TRANSFORM_Y)(ytext) + 0.5, label = label),size = 2) #+
-      } else{
-        ggplot2::geom_text(data = blankmedian, mapping = ggplot2::aes(x = xtext, y = ytext + 50, label = label),size = 2) #+
-      }
-
-
-    }
-
-
-
-    #if(printR2 %in% TRUE & any(!is.na(data_Signals$R2))) {
-
-      text_label <- data_Signals[InRange %in% TRUE, .(ID, Batch, R2, y = get(dependent), spearman_rho_linearRange,spearman_rho, deltaMax_relative)]
-      text_label <- text_label |> dplyr::group_by(ID, Batch) |>
-        dplyr::mutate(R2 = ifelse(any(!is.na(R2)), R2[!is.na(R2)] , NA),
-                      max_y = max(y, na.rm = T)) |>
-        dplyr::select(-y) |>
-        unique()
-
-
-
-
-      plotlinearData <- plotlinearData +
-        ggplot2::geom_text(data = text_label,
-                           #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
-                           ggplot2::aes(x = min(QCs$x), y = max_y + 5, label = paste0("R2 = ", round(R2,2),
-                                                                            "\nspearman_rho_Range = " , round(spearman_rho_linearRange, 2),
-                                                                            "\nmaxDeviation = ", round(deltaMax_relative,2))) ,
-                           size = 2,
-                           hjust = 0,
-                           vjust = 1
-                           #inherit.aes = FALSE
-        )
-
-
-    #}
-
-
-
-
-#
-#     if(!is.null(inputData_BioSamples ) | !is.null(inputData_QC )){
-#
-#       plotlinearData <-  plotlinearData +
-#         ggplot2::annotate(geom = "text", x = 0, hjust = 2, y = Inf, label = "QC & Samples", size = 3,vjust = 2, na.rm = TRUE) #+
-#       #ggplot2::scale_color_manual(name = "In linear Range:",
-#       #                   values = c("FALSE" = "red", "TRUE" = "purple")) +
-#       #ggplot2::scale_shape_manual(values = c(0, 2, 5, 1, 6, 9, 3,4,7,8), breaks=rev(legend_order))
-#     }
-
-    plotlinearData <-  plotlinearData +
-      ggplot2::theme_bw() +
-      ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
-      ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
-      ggplot2::theme(panel.background=ggplot2::element_blank()) +
-      ggplot2::theme(axis.line=ggplot2::element_line()) +
-      ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
-      #ggplot2::theme(legend.position="top") +
-      ggplot2::ggtitle(title_metabolite) +
-      x_theme +
-      #legend_theme +
-      ggplot2::theme(legend.position="none") +
-      ggplot2::scale_color_manual(values = class_colors) +
-      ggplot2::scale_shape_manual(values = sample_shapes) #+
-      #ggplot2::scale_fill_manual(values = batch_fills)
-      #ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
-       #               shape = ggplot2::guide_legend(order = 2))
-
-
-    ####residual diagnostic
-    if(diagnostic %in% TRUE){
-
-      plotRes <- ggplot2::ggplot(data_Signals |> dplyr::filter(InRange %in% TRUE), ggplot2::aes( y = ResidualsInRange, x = `X_transformed(log)`, fill = Batch)) +
-        ggplot2::geom_point(shape = 22) +
-        ggplot2::geom_hline(yintercept = 0)
-
-      plotQQplot <- ggplot2::ggplot(data_Signals |> dplyr::filter(InRange %in% TRUE), ggplot2::aes( sample =  ResidualsInRange,  fill = Batch)) +
-        ggplot2::stat_qq(shape = 22) +
-        ggplot2::stat_qq_line()
-
-      plotRes <-  plotRes +
-        # ggforce::facet_grid_paginate(ID ~ . , scales = "free",
-        #                              ncol = nCol,
-        #                              nrow = nrRow,
-        #                              page = 1 ) +
-        ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,
-                                    breaks = data_Signals[[indipendent]],  labels = data_Signals$DilutionPoint) +#scales::trans_format(get(inverse_x), format = number_format())) +
-        ggplot2::ggtitle(title_residual) +
-        ggplot2::theme_bw() +
-        ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
-        ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
-        ggplot2::theme(panel.background=ggplot2::element_blank()) +
-        ggplot2::theme(axis.line=ggplot2::element_line()) +
-        ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
-        ggplot2::theme(legend.position="top") +
-        #ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
-        #                shape = ggplot2::guide_legend(order = 2)) +
-        x_theme +
-        ggplot2::theme(legend.position="none") +
-        #ggplot2::scale_color_manual(values = class_colors) +
-        #ggplot2::scale_shape_manual(values = sample_shapes) +
-        ggplot2::scale_fill_manual(values = batch_fills)
-        #legend_theme +
-        #ggplot2::guides(color = ggplot2::guide_legend(title = NULL), shape = ggplot2::guide_legend(title = NULL))
-
-
-
-
-
-
-      plotQQplot <-  plotQQplot +
-        # ggforce::facet_grid_paginate(ID ~ . , scales = "free",
-        #                              ncol = nCol,
-        #                              nrow = nrRow,
-        #                              page = 1 ) +
-        #ggplot2::scale_x_continuous(name = "Dilution", limits = c(min(data_Signals$x), NA) ,
-      #                              breaks = x,  labels = data_Signals$DilutionPoint) +
-        ggplot2::ggtitle(title_qq) +
-        ggplot2::theme_bw() +
-        ggplot2::theme(panel.grid.minor=ggplot2::element_blank()) +
-        ggplot2::theme(panel.grid.major=ggplot2::element_blank()) +
-        ggplot2::theme(panel.background=ggplot2::element_blank()) +
-        ggplot2::theme(axis.line=ggplot2::element_line()) +
-        ggplot2::theme(axis.text.x = ggplot2::element_text(angle=90)) +
-
-        x_theme +
-        #legend_theme +
-        #ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
-        #                shape = ggplot2::guide_legend(order = 2)) +
-        #ggplot2::guides(color = ggplot2::guide_legend(title = NULL), shape = ggplot2::guide_legend(title = NULL)) +
-        ggplot2::theme(legend.position="none") +
-        #ggplot2::scale_color_manual(values = class_colors) +
-        #ggplot2::scale_shape_manual(values = sample_shapes) +
-        ggplot2::scale_fill_manual(values = batch_fills)
-
-
-
-        (plotlinearData | plotRes | plotQQplot) +
-        patchwork::plot_layout( widths = c(3,1,1))
-
-
-
-    }
-    }
-
-    legend_plot <- ggplot2::ggplot() +
-
-      ggplot2::geom_point(
-        data = data.frame(Class = class_levels),
-        ggplot2::aes(x = 1, y = 1, color = Class),
-        size = 3
-      ) +
-
-      ggplot2::geom_boxplot(
-        data = data.frame(Sample.Type = unique(inputData_BioSamples$Sample.Type)),
-        ggplot2::aes(x = 2, y = 1, shape = Sample.Type),
-        #size = 3,
-        width = 0.2
-      ) +
-
-
-      ggplot2::geom_point(
-        data = data.frame(Sample.Type = unique(inputData_QC$Sample.Type)),
-        ggplot2::aes(x = 3, y = 1, shape = Sample.Type),
-        size = 3,
-        color = "black"
-      ) +
-
-      ggplot2::geom_point(
-        data = data.frame(Batch = batch_levels),
-        ggplot2::aes(x = 4, y = 1, fill = Batch),
-        shape = 22,
-        size = 3
-      ) +
-
-      scale_color_manual(name = "Class:", values = class_colors) +
-      scale_shape_manual(name = "Sample Type:", values = sample_shapes) +
-      scale_fill_manual(name = "Batch:", values = batch_fills) +
-
-      guides(
-        shape = guide_legend(order = 1),
-        color = guide_legend(order = 2),
-        fill  = guide_legend(order = 3)
-      ) +
-
-      theme_void() +
-      theme(
-        legend.position = "top",
-        legend.box = "horizontal",
-        legend.direction = "horizontal",
-        legend.spacing.x = unit(1, "cm"),
-        legend.title = element_text(face = "bold"),
-        plot.margin = margin(0,0,0,0)
-      ) +
-      ggplot2::coord_cartesian(xlim = c(0, 0.5), ylim = c(0, 0.5), clip = "off")
-
-    # legend_plot <- ggplot2::ggplot(data_Signal,
-    #                                ggplot2::aes(
-    #                                  x = 1, y = 1,
-    #                                  color = get(ClassCol),
-    #                                  shape = Sample.Type
-    #                                )
-    # ) +
-    #   ggplot2::geom_point(alpha = 0) +
-    #
-    #   # Batch-Legende (separat)
-    #   ggplot2::geom_point(
-    #     ggplot2::aes(x = 1, y = 1, fill = factor(Batch)),
-    #     shape = 22,
-    #     alpha = 0,
-    #     inherit.aes = FALSE
-    #   ) +
-    #   ggplot2::scale_shape_discrete(name = "Sample Type") +
-    #   ggplot2::scale_color_discrete(name = "Class") +
-    #   ggplot2::scale_fill_discrete(name = "Batch") +
-    #
-    #   ggplot2::guides(
-    #     shape = ggplot2::guide_legend(
-    #       order = 1,
-    #       override.aes = list(alpha = 1, size = 3)
-    #     ),
-    #     color = ggplot2::guide_legend(
-    #       order = 2,
-    #       override.aes = list(alpha = 1, size = 3)
-    #     ),
-    #     fill = ggplot2::guide_legend(
-    #       order = 3,
-    #       override.aes = list(alpha = 1, size = 3)
-    #     )
-    #   ) +
-    #
-    #   ggplot2::theme_void() +
-    #   ggplot2::theme(
-    #     legend.position = "top",
-    #     legend.box = "horizontal",
-    #     legend.direction = "vertical"
-    #   )
-    #
-    metabolite_list <- split(data_Signal, data_Signal$ID)
-    #plot_list <- lapply(metabolite_list, metabolite_row)
-
-
-
-
-    suppressWarnings( if(printPDF %in% TRUE){
-
-
-      plots_per_page <- nrRow
-      pages <- split(
-        metabolite_list,
-        ceiling(seq_along(metabolite_list)/plots_per_page)
-      )
-
-      pdf(file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
-      y = 1
-      for(page in pages){
-
-        n <- length(page)
-        plots <- lapply(seq_along(page), function(i){
-          show_x <- i == n  # nur letzter Plot der Seite bekommt X-Achse
-          #show_legend <- i == 1
-          show_title <- i == 1
-          metabolite_row(page[[i]], show_x = show_x, show_legend = FALSE, show_title = show_title)
-        })
-
-        print(legend_plot /
-                patchwork::wrap_plots(plots, ncol = 1) +
-                patchwork::plot_layout(heights = c(1, 10)))
-        print(paste0(y, " of ", length(pages)))
-        y = y + 1
-      }
-
-      dev.off()
-
-    })
-
-      # plots_per_page <- 5
-      #
-      # pages <- split(
-      #   metabolite_list,
-      #   ceiling(seq_along(metabolite_list) / plots_per_page)
-      # )
-      #
-      # # -------------------------------------------------
-      # # PDF erzeugen
-      # # -------------------------------------------------
-      #
-      # pdf(file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
-      #
-      # for(page in pages){
-      #
-      #   n <- length(page)
-      #   plots <- lapply(seq_along(page), function(i){
-      #     show_x <- i == n  # nur letzter Plot der Seite bekommt X-Achse
-      #     metabolite_row(page[[i]], show_x = show_x)
-      #   })
-      #
-      #   print(wrap_plots(plots, ncol = 1))
-      #   print(paste0(names(page), " of ", length(pages)))
-      # }
-      # # for(p in pages){
-      # #   print(wrap_plots(p, ncol = 1))
-      # #   print(paste0(p, " of ", length(pages)))
-      # # }
-      #
-      # dev.off()
-
-      #plotObj <- vector("list", npage)
-      # if(data.table::uniqueN(data_Signal$Batch) <= 2){
-      #   pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 9, height = 15)
-      #   nrRow = 10
-      # }else {
-      #   pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
-      #   nrRow = 5
-      # }
-      #
-      # n <- ggforce::n_pages(plotlinearData)
-      #
-      # for(i in 1:n) {
-      #
-      #   if(data.table::uniqueN(data_Signal$Batch) > 1){
-      #     suppressWarnings(print(plotlinearData + ggforce::facet_grid_paginate(ID ~ Batch ,
-      #                                                                          scales = "free", ncol = nCol,nrow = nrRow, page = i )))
-      #   } else {
-      #     suppressWarnings( print(plotlinearData + ggforce::facet_grid_paginate(ID ~.,
-      #                                                                           scales = "free", ncol = nCol,nrow = nrRow, page = i )))
-      #
-      #   }
-      #   print(paste0(i, " of ", n))
-      #
-      #
-      #
-      # }
-
-      #dev.off()
-
-    #}
-
-    #return(suppressWarnings(print(plotlinearData)))
   }
 
+  # ----------------------------
+  # combine Data
+  # ----------------------------
+  data_Signal <- combineData(inputData_Series,
+                             inputData_BioSamples,
+                             inputData_QC)
 
+  # IDs setzen
+  data_Signal$ID <- data_Signal[[ID]]
+  data_Signal$Batch <- data_Signal[[Col_Batch]]
+  data_Signal$Sample.Type <- data_Signal[[Sample.Type]]
 
-#' Title
+  # ----------------------------
+  # QC positioning on X-Axis
+  # ----------------------------
+  if(!is.null(inputData_QC)) {
+
+    QCs <- data.frame(
+      Sample.Type = unique(inputData_QC[[Sample.Type]]),
+      x = -seq_along(unique(inputData_QC[[Sample.Type]]))
+    )
+
+    data_Signal <- dplyr::full_join(QCs, data_Signal, by = "Sample.Type")
+  } else {
+    data_Signal$x <- 0
+  }
+
+  # ----------------------------
+  # sort
+  # ----------------------------
+  data.table::setorderv(data_Signal, c(ID, Col_Batch))
+
+  # ----------------------------
+  # Feature / Group Filter
+  # ----------------------------
+  if(any(GroupIndices != "all" & GroupIndices != "")){
+    data_Signal <- data_Signal[groupIndices %in% GroupIndices]
+  }
+
+  if(any(Feature != "all" & Feature != "")){
+    data_Signal <- data_Signal[get(ID) %in% Feature]
+  }
+
+  # ----------------------------
+  # Feature Sampling
+  # ----------------------------
+  if(any(Feature %in% "all") &
+     any(GroupIndices %in% "all") &
+     data.table::uniqueN(data_Signal[[ID]]) > nrFeature){
+
+    # ausgewogenes Sampling zwischen TRUE/FALSE LR Status
+    ...
+  }
+
+  # ----------------------------
+  # Plot Layout Parameter
+  # ----------------------------
+  nrRow <- ifelse(uniqueN(data_Signal$groupIndices) >= 4, 4,
+                  uniqueN(data_Signal$groupIndices))
+
+  nCol <- uniqueN(data_Signal[[Col_Batch]])
+
+  # ----------------------------
+  # color definitions
+  # ----------------------------
+  class_levels <- unique(na.omit(data_Signal[[ClassCol]]))
+  sample_levels <- unique(inputData_BioSamples[[Sample.Type]])
+  batch_levels <- unique(data_Signal$Batch)
+
+  class_colors <- setNames(scales::hue_pal()(length(class_levels)), class_levels)
+  sample_shapes <- setNames(c(16,17,15,18,19)[seq_along(sample_levels)], sample_levels)
+  batch_fills <- setNames(RColorBrewer::brewer.pal(max(length(batch_levels),3),"Set1"),
+                          batch_levels)
+
+  # ----------------------------
+  # main plot-Function pro Feature
+  # ----------------------------
+  metabolite_row <- function(df, show_x = FALSE, show_legend = FALSE, show_title = FALSE){
+
+    # Einzel-Feature Plot (Dilution curve)
+    plotlinearData <- ggplot2::ggplot(df,
+                                      ggplot2::aes(x = get(independent), y = get(dependent))) +
+      ggplot2::geom_point()
+
+    # Outlier Markierungen
+    if("OutlierFOD" %in% names(df)) {
+      plotlinearData <- plotlinearData +
+        ggplot2::geom_point(df[df$OutlierFOD == TRUE,], color="red")
+    }
+
+    # InRange + Fit Linie
+    if("InRange" %in% names(df)){
+      plotlinearData <- plotlinearData +
+        ggplot2::geom_line(df[df$InRange == TRUE,], aes(y = predicted))
+    }
+
+    return(plotlinearData)
+  }
+
+  # ----------------------------
+  # PDF Export
+  # ----------------------------
+  if(printPDF){
+
+    pdf(file.path(output_dir,
+                  paste0(Sys.Date(),"_",outputfileName,".pdf")),
+        width = 15, height = 9)
+
+    metabolite_list <- split(data_Signal, data_Signal$ID)
+
+    for(page in split(metabolite_list,
+                      ceiling(seq_along(metabolite_list)/nrRow))){
+
+      plots <- lapply(page, metabolite_row)
+
+      print(patchwork::wrap_plots(plots))
+
+    }
+
+    dev.off()
+  }
+}
+
+#' Summary bar plot of feature-level quality and filtering status across dilution series
 #'
-#' @param printPDF
-#' @param inputData_Series
-#' @param GroupIndices
-#' @param Feature
-#' @param COLNAMES
-#' @param X
-#' @param Y
-#' @param ...
-#' @param outputfileName
+#' This function generates a stacked bar plot summarizing different feature filtering
+#' categories (e.g. missing values, blanks, outliers, linear range classification)
+#' across dilution points and batches. Optionally, the plot can be exported as a PDF.
 #'
-#' @return
+#' @param inputData_Series Data frame containing series-level intensity and annotation data.
+#' @param printPDF Logical; if TRUE, the plot is saved as a PDF file.
+#' @param GroupIndices Character or vector; optional filtering of group indices ("all" for no filtering).
+#' @param Feature Character or vector; optional selection of features ("all" for no filtering).
+#' @param outputfileName Character; name of the output PDF file (without extension).
+#' @param COLNAMES Named list defining column mappings (e.g. Feature_ID, Batch).
+#' @param X Column name used as x-axis variable (e.g. dilution index).
+#' @param Y Column name used as y-axis variable (e.g. signal intensity).
+#' @param output_dir Directory where the PDF file will be saved.
+#'
+#' @return A ggplot object representing the summary bar plot.
 #' @export
 #'
-#' @examples
-
-
 #' @importFrom grDevices dev.off pdf
 #' @importFrom plyr .
 #' @importFrom stats na.omit
@@ -774,6 +327,7 @@ plot_Barplot_Summary <- function(inputData_Series,
   y <- Y
 
   data.table::setDT(inputData_Series)
+
 
   data_Signals_summary <- inputData_Series |>
     dplyr::group_by(DilutionPoint, Batch = get(Col_Batch)) |>
@@ -829,23 +383,29 @@ plot_Barplot_Summary <- function(inputData_Series,
 
 }
 
-
-#' Title
+#' Summary bar plot of signal quality per sample
 #'
-#' @param inputData_Samples
-#' @param printPDF
-#' @param GroupIndices
-#' @param Feature
-#' @param outputfileName
-#' @param ...
-#' @param COLNAMES
-#' @param X
-#' @param Y
+#' This function generates a stacked bar plot showing the proportion and counts
+#' of different signal quality categories (e.g. linear range status, missing values,
+#' out-of-linear-range signals) per sample. The results can be grouped by sample type
+#' and optionally a second grouping variable, and exported as a multi-page PDF.
 #'
-#' @return
+#' @param inputData_Samples Data frame containing sample-level annotation and signal data.
+#' @param printPDF Logical; if TRUE, the plot is saved as a PDF file.
+#' @param GroupIndices Character or vector; optional filtering of group indices ("all" for no filtering).
+#' @param Feature Character or vector; optional selection of features ("all" for no filtering).
+#' @param outputfileName Character; name of the output PDF file (without extension).
+#' @param COLNAMES Named list defining column mappings (e.g. Feature_ID, Batch, Sample_type, Sample_ID, Class).
+#' @param X Column name used as x-axis variable.
+#' @param Y Column name used as y-axis variable.
+#' @param output_dir Directory where the PDF file will be saved.
+#' @param group Primary grouping variable used for faceting (default: "Sample.Type").
+#' @param group2 Optional secondary grouping variable; if NULL, defaults to `group`.
+#' @param ordered Column name used to define plotting order of samples.
+#'
+#' @return A ggplot object of the sample summary bar plot.
 #' @export
 #'
-#' @examples
 #' @importFrom grDevices dev.off pdf
 #' @importFrom plyr .
 #' @importFrom stats na.omit

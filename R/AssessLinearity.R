@@ -1,15 +1,68 @@
-#' Cleaning up a mass spectrometry data set according to the linear response of serial diluted/concentrated signals.
+#' Assess dilution-response behaviour and determine feature-specific linear ranges
 #'
-#' @description `AssessLinearity()` cleans up a data set of serial concentrated or diluted Compounds to only signals which
-#' show a linear response. The function use two outlier detection steps and a partially
-#' linear regression to identify the exact linear response range for each Compound.
+#' @description
+#' `MS_AssessLinearity()` identifies feature-specific linear response ranges
+#' from serial dilution or concentration series generated during targeted or
+#' untargeted mass spectrometry experiments.
 #'
-#' @param inputData_feature Long format data frame or data table combining the information
+#' The workflow combines signal-to-blank filtering, iterative outlier
+#' detection, trimming of non-linear regions and linear range optimisation
+#' to identify reliable analytical signals. Biological and QC samples can
+#' subsequently be classified according to whether their signal intensity
+#' falls within the identified linear range.
+#'
+#' @details
+#' In metabolomics experiments, many detected features do not exhibit a
+#' proportional response to concentration changes across the entire dynamic
+#' range of the analytical platform. Such behaviour may result from detector
+#' saturation, ion suppression, background noise, or peak integration
+#' artefacts.
+#'
+#' `MS_AssessLinearity()` identifies the largest feature-specific interval
+#' showing acceptable dilution-response behaviour and can therefore be used
+#' as a quality-control and feature-selection strategy before downstream
+#' statistical analysis.
+#'
+#' The workflow consists of:
+#'
+#' \enumerate{
+#'   \item Signal-to-blank filtering (optional)
+#'   \item First model-based outlier detection
+#'   \item Trimming of non-linear curve boundaries
+#'   \item Second model-based outlier detection
+#'   \item Determination of the optimal linear response range
+#'   \item Batch reproducibility assessment
+#'   \item Classification of biological and QC samples
+#' }
+#'
+#' For untargeted metabolomics, features failing the defined linearity
+#' criteria can be excluded prior to statistical testing, thereby reducing
+#' the influence of analytical artefacts and improving analytical robustness.
+#'
+#' @section Typical workflow:
+#'
+#' Most users only need to specify:
+#'
+#' \itemize{
+#'   \item `inputData_feature`
+#'   \item `inputData_sample`
+#'   \item `analysisType`
+#'   \item sample type definitions
+#'   \item `output_dir`
+#' }
+#'
+#' All remaining parameters can usually be left at their default values.
+
+#'
+#' @param inputData_feature A long-format data frame or data.table containing
+#' feature intensities and associated metadata of biological samples,
+#' serial diluted/concentrated samples and optional repeated measured QC samples for all batches.
+#' Each row represents a single feature measurement.
+
+#'  @param inputData_sample A long-format data frame or data.table containing sample metadata
 #' of biological samples, serial diluted/concentrated samples and optional repeated measured
-#' QC samples for all batches.
-#'  @param inputData_sample Long format data frame or data table combining the information
-#' of biological samples, serial diluted/concentrated samples and optional repeated measured
-#' QC samples for all batches.
+#' QC samples for all batches. Sample identifiers must match those provided in
+#' `inputData_feature`.
 #' @param column_sampleType String; Column name which distinguish between
 #' samples, QC and serial samples.
 #' @param sampleType_QC String; Identification of QC in `column_sampleType`.
@@ -50,13 +103,14 @@
 #' Integer; Maximum value for standardized residuals of a statistically model.
 #' If a standardized residual is above this value.
 #' this point will be considered as outlier and removed for further procedere. Default to 2.
-#' @param R2_min
-#' Numeric, ranges from 0 to 1; Minimum coefficient of determination,
-#' which needs to be reached to consider the signal as linear. Default to 0.9
+#' @param R2_min Numeric between 0 and 1.
+#' Minimum coefficient of determination required for a feature-specific
+#' linear range to be accepted. Default is `0.9`.
 #' @param trimming Boolean; Should the data be trimmed? Default to `TRUE`.
-#' @param min_feature Integer, ranging between 3 and maximum number of dilutions/concentrations.
-#' Minimum number of points present in one serial diluted/concentrated series
-#' marked as linear to consider this signal as linear. Default to 6, according to EMA guidelines2022.
+#' @param min_feature Integer.
+#' Minimum number of dilution/concentration points required within the
+#' identified linear range. The default is `6`, corresponding to current
+#' EMA bioanalytical guideline 2022 recommendations.
 #' @param LR_sd_res_factor Integer; points of serial diluted/concentrated series,
 #' which are less than `LR_sd_res_factor` times residual standard deviation are considered as linear.
 #' Default to 3.
@@ -75,10 +129,11 @@
 #' custom path, where the output files should be stored.
 #' @param nCORE Integer; Number of cores used for parallelization. Default to 1.
 #' @param analysisType String; was the analysis "targeted" or "untargeted"?
-#' @param Batch_harmonization Boolean; If `TRUE` (default),
-#' only serial diluted curves will be considered if they have a linear Range in
-#' all Batches, otherwise they will be excluded. If set to `FALSE` all curves with
-#' a linear range will be taken but flagged that in one or more batches linearity is missing
+#' @param Batch_harmonization Logical.
+#' If `TRUE` (default), a feature is only retained if a valid linear range
+#' is identified in every batch. If `FALSE`, features are retained when a
+#' linear range is found in at least one batch, but corresponding batch
+#' inconsistencies are flagged.
 #'
 #'
 #' @import dplyr
@@ -97,12 +152,68 @@
 #' @importFrom tidyr drop_na
 #'
 #' @return
+#' A named list containing:
 #'
+#' \describe{
+#'   \item{All_DilutionCurves_Signals}{
+#'   Signal-level information for all dilution/concentration series,
+#'   including quality-control flags and linear range assignments.
+#'   }
 #'
+#'   \item{All_DilutionCurves_Features}{
+#'   Feature-level summary statistics describing the identified
+#'   linear response range and quality assessment results.
+#'   }
+#'
+#'   \item{result}{
+#'   Biological samples annotated according to whether their signal
+#'   intensity falls within the identified linear response range.
+#'   }
+#' }
+#' In addition, there is a graphical output to show
+#'the dilution curves and linear proportion for all samples and QCs and diagnostic
+#'plots for residual behavior and Q-Q plot.
+#'
+#'#' @references
+#' Wiebach J., et al.
+#' MSlineaR: an R package assessing linear behavior to improve quality assurance
+#' and statistical robustness in untargeted metabolomics
+#' *Analytical and Bioanalytical Chemistry* (year).
 #'
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' library(MSlineaR)
+
+#' #load example data
+#'data_tbl_feature <- MSlineaR::Feature_tbl_long
+#'data_tbl_sample  <- MSlineaR::Sample_tbl
+
+
+#'targetedMSCal <- MS_AssessLinearity(
+#'  output_name = "Test_targeted",
+#'  output_dir = "Test",
+#'  analysisType ="targeted",
+#'  inputData_feature = data_tbl_feature,
+#'  inputData_sample = data_tbl_sample,
+#'  column_sampleType = "Sample.Type",
+#'  sampleType_QC = c("Pooled QC","Reference QC"),
+#'  sampleType_sample = "Sample",
+#'  sampleType_serial = "Calibration Standard",
+#'  sampleType_blank = "Blank",
+#'  column_sampleID = "Sample.Identification",
+#'  column_featureID = "Compound",
+#'  column_injectionOrder = "Sequence.Position",
+#'  column_batch = "Batch",
+#'  column_X = "Dilution",
+#'  column_Y = "Area",
+#'  column_sampleClass = "Group",
+#'  signal_blank_ratio = 5,
+#'  min_feature = 5,
+#'  nCORE = 4
+#')
+#'}
 
 MS_AssessLinearity <- function(
     analysisType = c("targeted", "untargeted", NULL)[1],
@@ -373,10 +484,7 @@ Yorigin <- "Y"
 
   #### normalizing, centralizing, log transforming ####
   logr::sep("preparing serial diluted QC data")
- # rlang::inform("
- #               --------------------------------------------------------
- #                \tpreparing serial diluted QC data
- #               --------------------------------------------------------\n")
+
 # function in prep.R
   dataPrep <- prepareData(processingFeature, TRANSFORM, TRANSFORM_X, TRANSFORM_Y, COLNAMES, TYPE)
 

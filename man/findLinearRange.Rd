@@ -2,7 +2,7 @@
 % Please edit documentation in R/findLinearRange.R
 \name{findLinearRange}
 \alias{findLinearRange}
-\title{determine metrics for linearity and linear range of dilution/ calibration curve}
+\title{Determine the linear dynamic range of a dilution or calibration series}
 \usage{
 findLinearRange(
   dats,
@@ -11,43 +11,107 @@ findLinearRange(
   max_res = 3,
   min_feature = 5,
   real_x,
-  slope_tol = 0.15,
-  delta_tol = 0.182,
+  slope_tol = 0.2,
+  delta_tol = 20,
   rho_tol = 0
 )
 }
 \arguments{
-\item{dats}{Long format data frame or data table for one metabolite including information about dependent and independent variable.
-Further necessary columns are: groupIndices, DilutionPoint (1:x), IDintern, color.}
+\item{dats}{Long-format data table containing a single dilution or
+concentration series.}
 
-\item{x}{String; Column name of the log transformed independent variable}
+\item{x}{Character string specifying the transformed independent variable
+used for regression.}
 
-\item{y}{String; Column name of the log transformed dependent variable}
+\item{y}{Character string specifying the transformed dependent variable.}
 
-\item{max_res}{Integer; points of serial diluted/concentrated series,
-which are less than \code{max_res} are considered for checking of linearity.
-Default to 3.}
+\item{max_res}{Numeric threshold for studentized residuals. Observations with
+larger residuals are iteratively removed during range selection.}
 
-\item{min_feature}{Integer, ranging between 3 and maximum number of dilutions/concentrations.
-Minimum number of points present in one serial diluted/concentrated series
-marked as linear to consider this signal as linear. Default to 6, according to EMA guidelines2022.}
+\item{min_feature}{Minimum number of consecutive dilution points required for
+a valid linear range.}
 
-\item{real_x}{String; Column name of the untransformed independent variable}
+\item{real_x}{Character string specifying the original (untransformed)
+concentration or dilution column.}
 
-\item{slope_tol}{Integer, allowed tolerance for slope deviation. Default to 0.15}
+\item{slope_tol}{Numeric tolerance around an ideal slope of 1.
+Used for downstream linearity assessment.}
 
-\item{delta_tol}{Integer, allowed tolerance for maximum deviation of observed
-values to predicted value from linear regression model. Default set to 0.182 (~ 20\%).}
+\item{delta_tol}{Maximum acceptable deviation (\%) between observed and
+predicted values within the selected range.}
+
+\item{rho_tol}{Allowed deviation from a perfect Spearman correlation
+coefficient of 1.}
 }
 \value{
-list of two data frames. One with results per dilution point, one with result of features.
+A list containing:
+
+\describe{
+\item{SignalData}{Signal-level table containing the selected linear range and
+point-wise metrics.}
+\item{FeatureData}{Feature-level summary containing linearity metrics and range
+characteristics.}
+}
+
+The signal-level output includes:
+
+\describe{
+\item{InRange}{Logical indicator showing whether a dilution point belongs
+to the selected linear range.}
+\item{Y_Range}{Response values restricted to the selected range.}
+\item{ResidualsInRange}{Residuals from the fitted linear model.}
+\item{delta}{Difference between observed and predicted values.}
+\item{delta_percent}{Relative deviation from the fitted model.}
+}
+
+The feature-level output includes:
+
+\describe{
+\item{RangeStart}{First dilution point within the selected range.}
+\item{RangeEnd}{Last dilution point within the selected range.}
+\item{RangeLength}{Number of dilution points in the selected range.}
+\item{slope}{Slope of the fitted regression model.}
+\item{R2}{Adjusted R² of the fitted model.}
+\item{spearman_rho_inRange}{Monotonicity within the selected range.}
+\item{deltaMax_relative}{Maximum relative deviation from the fitted model.}
+}
 }
 \description{
-\code{findLinearRange()} first determines a suitable range by forcing
-a linear regression model through halfmax intensity, calculating the residuals and
-removing all dilution points where the residuals are bigger than predefined value \code{max_res}.
-Using this range the method calculates metrics for monotonicity using spearman rho,
-linearity by using deviation of observed to predicted values from linear regression model,
-proportionality across range by calculating the slope of linear regression model
-and the goodness-of-fit by calculating the adjusted R^2.
+\code{findLinearRange()} identifies the largest contiguous concentration or
+dilution range that exhibits approximately linear behavior.
+
+The procedure first fits a linear regression model and iteratively removes
+influential observations based on studentized residuals and Cook's distance.
+Consecutive signals passing this filtering step are considered candidate
+linear ranges.
+
+The final linear range must:
+\itemize{
+\item contain at least \code{min_feature} dilution points,
+\item include the midpoint of the response curve,
+\item show a positive monotonic response,
+\item form a continuous concentration/dilution interval.
+}
+
+Once a suitable range has been identified, several performance metrics are
+calculated, including:
+\itemize{
+\item slope (proportionality),
+\item adjusted R² (goodness-of-fit),
+\item Spearman correlation (monotonicity),
+\item maximum deviation from the fitted regression line (linearity).
+}
+
+These metrics can subsequently be used to classify features as suitable or
+unsuitable for quantitative analysis.
+}
+\details{
+Unlike traditional calibration approaches that assess only the complete
+concentration series, \code{findLinearRange()} identifies the portion of the
+curve that behaves linearly. This allows robust evaluation of untargeted
+metabolomics features whose dynamic range may be limited by detector
+saturation, noise, or ion suppression.
+}
+\seealso{
+\code{\link{create_output_findLinearRange}}
 }

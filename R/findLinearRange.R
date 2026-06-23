@@ -1,29 +1,92 @@
-#' determine metrics for linearity and linear range of dilution/ calibration curve
+#' Determine the linear dynamic range of a dilution or calibration series
 #'
-#' @description `findLinearRange()` first determines a suitable range by forcing
-#' a linear regression model through halfmax intensity, calculating the residuals and
-#' removing all dilution points where the residuals are bigger than predefined value `max_res`.
-#' Using this range the method calculates metrics for monotonicity using spearman rho,
-#' linearity by using deviation of observed to predicted values from linear regression model,
-#' proportionality across range by calculating the slope of linear regression model
-#' and the goodness-of-fit by calculating the adjusted R^2.
-#' @param x String; Column name of the log transformed independent variable
-#' @param dats Long format data frame or data table for one metabolite including information about dependent and independent variable.
-#' Further necessary columns are: groupIndices, DilutionPoint (1:x), IDintern, color.
-#' @param max_res Integer; points of serial diluted/concentrated series,
-#' which are less than `max_res` are considered for checking of linearity.
-#' Default to 3.
-#' @param min_feature Integer, ranging between 3 and maximum number of dilutions/concentrations.
-#' Minimum number of points present in one serial diluted/concentrated series
-#' marked as linear to consider this signal as linear. Default to 6, according to EMA guidelines2022.
-#' @param real_x String; Column name of the untransformed independent variable
-#' @param slope_tol Integer, allowed tolerance for slope deviation. Default to 0.15
-#' @param delta_tol Integer, allowed tolerance for maximum deviation of observed
-#' values to predicted value from linear regression model. Default set to 0.182 (~ 20%).
-#' @param y String; Column name of the log transformed dependent variable
+#' @description
+#' `findLinearRange()` identifies the largest contiguous concentration or
+#' dilution range that exhibits approximately linear behavior.
 #'
-#' @return list of two data frames. One with results per dilution point, one with result of features.
+#' The procedure first fits a linear regression model and iteratively removes
+#' influential observations based on studentized residuals and Cook's distance.
+#' Consecutive signals passing this filtering step are considered candidate
+#' linear ranges.
 #'
+#' The final linear range must:
+#'
+#' * contain at least `min_feature` dilution points,
+#' * include the midpoint of the response curve,
+#' * show a positive monotonic response,
+#' * form a continuous concentration/dilution interval.
+#'
+#' Once a suitable range has been identified, several performance metrics are
+#' calculated, including:
+#'
+#' * slope (proportionality),
+#' * adjusted R² (goodness-of-fit),
+#' * Spearman correlation (monotonicity),
+#' * maximum deviation from the fitted regression line (linearity).
+#'
+#' These metrics can subsequently be used to classify features as suitable or
+#' unsuitable for quantitative analysis.
+#'
+#' @param dats Long-format data table containing a single dilution or
+#'   concentration series.
+#' @param x Character string specifying the transformed independent variable
+#'   used for regression.
+#' @param y Character string specifying the transformed dependent variable.
+#' @param max_res Numeric threshold for studentized residuals. Observations with
+#'   larger residuals are iteratively removed during range selection.
+#' @param min_feature Minimum number of consecutive dilution points required for
+#'   a valid linear range.
+#' @param real_x Character string specifying the original (untransformed)
+#'   concentration or dilution column.
+#' @param slope_tol Numeric tolerance around an ideal slope of 1.
+#'   Used for downstream linearity assessment.
+#' @param delta_tol Maximum acceptable deviation (%) between observed and
+#'   predicted values within the selected range.
+#' @param rho_tol Allowed deviation from a perfect Spearman correlation
+#'   coefficient of 1.
+#'
+#' @return
+#' A list containing:
+#'
+#' \describe{
+#'   \item{SignalData}{Signal-level table containing the selected linear range and
+#'   point-wise metrics.}
+#'   \item{FeatureData}{Feature-level summary containing linearity metrics and range
+#'   characteristics.}
+#' }
+#'
+#' The signal-level output includes:
+#'
+#' \describe{
+#'   \item{InRange}{Logical indicator showing whether a dilution point belongs
+#'   to the selected linear range.}
+#'   \item{Y_Range}{Response values restricted to the selected range.}
+#'   \item{ResidualsInRange}{Residuals from the fitted linear model.}
+#'   \item{delta}{Difference between observed and predicted values.}
+#'   \item{delta_percent}{Relative deviation from the fitted model.}
+#' }
+#'
+#' The feature-level output includes:
+#'
+#' \describe{
+#'   \item{RangeStart}{First dilution point within the selected range.}
+#'   \item{RangeEnd}{Last dilution point within the selected range.}
+#'   \item{RangeLength}{Number of dilution points in the selected range.}
+#'   \item{slope}{Slope of the fitted regression model.}
+#'   \item{R2}{Adjusted R² of the fitted model.}
+#'   \item{spearman_rho_inRange}{Monotonicity within the selected range.}
+#'   \item{deltaMax_relative}{Maximum relative deviation from the fitted model.}
+#' }
+#'
+#' @details
+#' Unlike traditional calibration approaches that assess only the complete
+#' concentration series, `findLinearRange()` identifies the portion of the
+#' curve that behaves linearly. This allows robust evaluation of untargeted
+#' metabolomics features whose dynamic range may be limited by detector
+#' saturation, noise, or ion suppression.
+#'
+#' @seealso
+#' \code{\link{create_output_findLinearRange}}
 #'
 #' @export
 #'
@@ -37,125 +100,7 @@
 
 findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_res = 3, min_feature = 5, real_x, slope_tol = 0.2, delta_tol = 20, rho_tol = 0 ){
 
-  create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x, min_feature = min_feature){
 
-
-
-    if(inRange %in% TRUE){
-
-      model <- lm(get(y) ~ get(x), data = data[data$InRange %in% TRUE, ])
-      fit <- fitted(model)
-      summary_model <- summary(model)
-
-      spearman_rho <- cor(data[[x]][data$InRange %in% TRUE], data[[y]][data$InRange %in% TRUE], method = "spearman")
-      spearman_rho_all <- cor(data[[x]], data[[y]], method = "spearman")
-
-      y_obs <- exp(model$model[[1]])
-      y_pred <- exp(predict(model))
-
-      rel_error <- abs((y_obs - y_pred) / y_obs)
-
-      Deviation <- data[[y]][data$InRange %in% TRUE] - fit
-      Deviation_perc <- abs(1 - exp(-Deviation))*100
-
-
-
-
-      tmpGroup <- tibble::tibble(
-
-        groupIndices = unique(data$groupIndices),
-        RangeStart = data$DilutionPoint[data$InRange %in%TRUE][1],
-        RangeStartY = data$Y[data$DilutionPoint %in% RangeStart],
-        RangeStartX = data[[real_x]][data$DilutionPoint %in% RangeStart],
-        RangeEnd = dplyr::last(data$DilutionPoint[data$InRange %in%TRUE]),
-        RangeEndY = data$Y[data$DilutionPoint %in% RangeEnd],
-        RangeEndX = data[[real_x]][data$DilutionPoint %in% RangeEnd],
-        RangeLength = sum(data$InRange %in%TRUE),
-        enoughPointsWithinRange = RangeLength >= min_feature,
-        RangeFlag = NA,
-        slope = coef(model)[2],
-        Intercept = coef(model)[1],
-        sigma = summary_model$sigma,
-        R2 = summary_model$adj.r.squared,
-        spearman_rho_inRange = spearman_rho,
-        spearman_rho_complete = spearman_rho_all,
-        positiveSlope_inRange = all(diff(data[[y]][data$InRange %in% TRUE]) > 0,na.rm = TRUE),
-        positiveSlope_complete = all(diff(data[[y]]) > 0,na.rm = TRUE),
-        deltaMax = max(abs(Deviation), na.rm = TRUE),
-        deltaMax_relative = max(abs(Deviation_perc),na.rm = TRUE)
-
-
-      )
-
-      data <- data[, ':=' (
-        positiveSlope = c(get(y)[1] < get(y)[2], diff(data[[y]]) > 0),
-        R2 = ifelse(data$InRange %in% TRUE, tmpGroup$R2,NA),
-        spearman_rho_linearRange = ifelse(data$InRange %in% TRUE, tmpGroup$spearman_rho_inRange,NA),
-        spearman_rho = tmpGroup$spearman_rho_complete,
-        deltaMax_relative = tmpGroup$deltaMax_relative
-
-
-
-
-      )]
-
-      data$predicted[data$InRange %in% TRUE] <- fit
-      data$ResidualsInRange[data$InRange %in% TRUE] <- resid(model)
-      data$delta[data$InRange %in% TRUE] <- Deviation
-      data$delta_percent[data$InRange %in% TRUE] <- Deviation_perc
-
-
-    } else{
-
-      spearman_rho_all <- cor(data[[x]], data[[y]], method = "spearman")
-
-      tmpGroup <- tibble::tibble(
-
-        groupIndices = unique(data$groupIndices),
-        RangeStart = NA,
-        RangeStartY = NA,
-        RangeStartX = NA,
-        RangeEnd = NA,
-        RangeEndY = NA,
-        RangeEndX = NA,
-        RangeLength = NA,
-        enoughPointsWithinRange = NA,
-        RangeFlag = NA,
-        slope = NA,
-        Intercept = NA,
-        sigma = NA,
-        R2 = NA,
-        spearman_rho_inRange = NA,
-        spearman_rho_complete = spearman_rho_all,
-        positiveSlope_inRange = NA,
-        positiveSlope_complete = all(diff(data[[y]]) > 0,na.rm = TRUE),
-        #monoton = NA,
-        deltaMax = NA,
-        deltaMax_relative = NA
-
-
-      )
-
-      data <- data[, ':=' (
-        positiveSlope = NA,
-        R2 = NA,
-        spearman_rho_linearRange = NA,
-        spearman_rho = tmpGroup$spearman_rho_complete,
-        predicted = NA,
-        ResidualsInRange = NA,
-        delta = NA,
-        delta_percent = NA,
-        deltaMax_relative = NA
-
-      )]
-
-
-
-    }
-
-    return(list(tmpGroup, data))
-
-  }
 
 
   dats$ResLR <- FALSE
@@ -317,117 +262,186 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
 
 
 
-#' calculate linear regression from choosen range and generate output table for function `findLinearRange()`
+#' Calculate linearity metrics for a selected linear range
 #'
-#' @param inRange Boolean; Does the feature has a choosen range?
-#' @param data Long format data frame or data table for one metabolite generated by function `findLinearRange()`
-#' @param y String; Column name of the log transformed dependent variable
-#' @param x String; Column name of the log transformed independent variable
+#' @description
+#' Internal helper function used by `findLinearRange()`.
 #'
-#' @return list including two tables with metrics for each signal in the first one and information about the whole feature in the second one
-
+#' The function fits a linear regression model to the selected linear range and
+#' calculates performance metrics describing monotonicity, proportionality,
+#' goodness-of-fit, and deviation from linear behavior.
 #'
+#' @param inRange Logical value indicating whether a valid linear range was
+#'   identified.
+#' @param data Long-format data table containing a single dilution or
+#'   concentration series.
+#' @param y Character string specifying the transformed response variable.
+#' @param x Character string specifying the transformed dilution or
+#'   concentration variable.
+#' @param real_x Character string specifying the original concentration or
+#'   dilution column.
+#' @param min_feature Minimum number of points required for a valid range.
+#'
+#' @return
+#' A list containing:
+#'
+#' \describe{
+#'   \item{FeatureData}{Feature-level summary statistics.}
+#'   \item{SignalData}{Signal-level table with fitted values, residuals, and
+#'   deviation metrics.}
+#' }
+#'
+#' Feature-level metrics include:
+#'
+#' \describe{
+#'   \item{slope}{Slope of the fitted linear regression model.}
+#'   \item{Intercept}{Regression intercept.}
+#'   \item{R2}{Adjusted R².}
+#'   \item{sigma}{Residual standard error.}
+#'   \item{spearman_rho_inRange}{Spearman correlation within the selected
+#'   range.}
+#'   \item{spearman_rho_complete}{Spearman correlation across the complete
+#'   series.}
+#'   \item{deltaMax}{Maximum absolute deviation from the fitted regression
+#'   line.}
+#'   \item{deltaMax_relative}{Maximum relative deviation (%).}
+#' }
+#'
+#' Signal-level metrics include:
+#'
+#' \describe{
+#'   \item{predicted}{Predicted response values from the fitted model.}
+#'   \item{ResidualsInRange}{Model residuals.}
+#'   \item{delta}{Observed minus predicted values.}
+#'   \item{delta_percent}{Relative deviation from predicted values.}
+#'   \item{positiveSlope}{Indicator whether local response remains monotonic.}
+#' }
+#'
+#' @details
+#' This function is primarily intended for internal package use and is called
+#' automatically by `findLinearRange()`.
+#'
+#' @keywords internal
 
-# create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x, min_feature = min_feature){
-#
-#
-#
-#   if(inRange %in% TRUE){
-#
-#     model <- lm(get(y) ~ get(x), data = data[data$InRange %in% TRUE, ])
-#     fit <- fitted(model)
-#     summary_model <- summary(model)
-#
-#     spearman_rho <- cor(data[[x]][data$InRange %in% TRUE], data[[y]][data$InRange %in% TRUE], method = "spearman")
-#
-#     Deviation <- data[[y]][data$InRange %in% TRUE] - fit
-#     Deviation_perc <- (exp(Deviation) -1)*100
-#
-#
-#
-#
-#     tmpGroup <- tibble::tibble(
-#
-#       groupIndices = unique(data$groupIndices),
-#       RangeStart = data$DilutionPoint[data$InRange %in%TRUE][1],
-#       RangeStartY = data$Y[data$DilutionPoint %in% RangeStart],
-#       RangeStartX = data[[real_x]][data$DilutionPoint %in% RangeStart],
-#       RangeEnd = last(data$DilutionPoint[data$InRange %in%TRUE]),
-#       RangeEndY = data$Y[data$DilutionPoint %in% RangeEnd],
-#       RangeEndX = data[[real_x]][data$DilutionPoint %in% RangeEnd],
-#       RangeLength = sum(data$InRange %in%TRUE),
-#       enoughPointsWithinRange = RangeLength >= min_feature,
-#       RangeFlag = NA,
-#       slope = coef(model)[2],
-#       Intercept = coef(model)[1],
-#       R2 = summary_model$adj.r.squared,
-#       spearman_rho = spearman_rho,
-#       positiveSlope = all(diff(data[[y]][data$InRange %in% TRUE]) > 0,na.rm = TRUE),
-#       deltaMax = max(abs(Deviation), na.rm = TRUE),
-#       deltaMax_relative = max(abs(Deviation_perc),na.rm = TRUE)
-#
-#
-#     )
-#
-#     data <- data[, ':=' (
-#       positiveSlope = c(get(y)[1] < get(y)[2], diff(data[[y]]) > 0),
-#       R2 = ifelse(data$InRange %in% TRUE, tmpGroup$R2,NA)
-#
-#
-#
-#
-#     )]
-#
-#     data$predicted[data$InRange %in% TRUE] <- fit
-#     data$ResidualsInRange[data$InRange %in% TRUE] <- resid(model)
-#     data$delta[data$InRange %in% TRUE] <- Deviation
-#     data$delta_percent[data$InRange %in% TRUE] <- Deviation_perc
-#
-#
-#   } else{
-#
-#     tmpGroup <- tibble::tibble(
-#
-#       groupIndices = unique(data$groupIndices),
-#       RangeStart = NA,
-#       RangeStartY = NA,
-#       RangeStartX = NA,
-#       RangeEnd = NA,
-#       RangeEndY = NA,
-#       RangeEndX = NA,
-#       RangeLength = NA,
-#       enoughPointsWithinRange = NA,
-#       RangeFlag = NA,
-#       slope = NA,
-#       Intercept = NA,
-#       R2 = NA,
-#       spearman_rho = NA,
-#       monoton = NA,
-#       deltaMax = NA,
-#       deltaMax_relative = NA
-#
-#
-#     )
-#
-#     data <- data[, ':=' (
-#       positiveSlope = NA,
-#       R2 = NA,
-#       predicted = NA,
-#       ResidualsInRange = NA,
-#       deta = NA,
-#       delta_percent = NA
-#
-#     )]
-#
-#
-#
-#   }
-#
-#   return(list(tmpGroup, data))
-#
-# }
+create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = real_x, min_feature = min_feature){
 
 
+
+  if(inRange %in% TRUE){
+
+    model <- lm(get(y) ~ get(x), data = data[data$InRange %in% TRUE, ])
+    fit <- fitted(model)
+    summary_model <- summary(model)
+
+    spearman_rho <- cor(data[[x]][data$InRange %in% TRUE], data[[y]][data$InRange %in% TRUE], method = "spearman")
+    spearman_rho_all <- cor(data[[x]], data[[y]], method = "spearman")
+
+    y_obs <- exp(model$model[[1]])
+    y_pred <- exp(predict(model))
+
+    rel_error <- abs((y_obs - y_pred) / y_obs)
+
+    Deviation <- data[[y]][data$InRange %in% TRUE] - fit
+    Deviation_perc <- abs(1 - exp(-Deviation))*100
+
+
+
+
+    tmpGroup <- tibble::tibble(
+
+      groupIndices = unique(data$groupIndices),
+      RangeStart = data$DilutionPoint[data$InRange %in%TRUE][1],
+      RangeStartY = data$Y[data$DilutionPoint %in% RangeStart],
+      RangeStartX = data[[real_x]][data$DilutionPoint %in% RangeStart],
+      RangeEnd = dplyr::last(data$DilutionPoint[data$InRange %in%TRUE]),
+      RangeEndY = data$Y[data$DilutionPoint %in% RangeEnd],
+      RangeEndX = data[[real_x]][data$DilutionPoint %in% RangeEnd],
+      RangeLength = sum(data$InRange %in%TRUE),
+      enoughPointsWithinRange = RangeLength >= min_feature,
+      RangeFlag = NA,
+      slope = coef(model)[2],
+      Intercept = coef(model)[1],
+      sigma = summary_model$sigma,
+      R2 = summary_model$adj.r.squared,
+      spearman_rho_inRange = spearman_rho,
+      spearman_rho_complete = spearman_rho_all,
+      positiveSlope_inRange = all(diff(data[[y]][data$InRange %in% TRUE]) > 0,na.rm = TRUE),
+      positiveSlope_complete = all(diff(data[[y]]) > 0,na.rm = TRUE),
+      deltaMax = max(abs(Deviation), na.rm = TRUE),
+      deltaMax_relative = max(abs(Deviation_perc),na.rm = TRUE)
+
+
+    )
+
+    data <- data[, ':=' (
+      positiveSlope = c(get(y)[1] < get(y)[2], diff(data[[y]]) > 0),
+      R2 = ifelse(data$InRange %in% TRUE, tmpGroup$R2,NA),
+      spearman_rho_linearRange = ifelse(data$InRange %in% TRUE, tmpGroup$spearman_rho_inRange,NA),
+      spearman_rho = tmpGroup$spearman_rho_complete,
+      deltaMax_relative = tmpGroup$deltaMax_relative
+
+
+
+
+    )]
+
+    data$predicted[data$InRange %in% TRUE] <- fit
+    data$ResidualsInRange[data$InRange %in% TRUE] <- resid(model)
+    data$delta[data$InRange %in% TRUE] <- Deviation
+    data$delta_percent[data$InRange %in% TRUE] <- Deviation_perc
+
+
+  } else{
+
+    spearman_rho_all <- cor(data[[x]], data[[y]], method = "spearman")
+
+    tmpGroup <- tibble::tibble(
+
+      groupIndices = unique(data$groupIndices),
+      RangeStart = NA,
+      RangeStartY = NA,
+      RangeStartX = NA,
+      RangeEnd = NA,
+      RangeEndY = NA,
+      RangeEndX = NA,
+      RangeLength = NA,
+      enoughPointsWithinRange = NA,
+      RangeFlag = NA,
+      slope = NA,
+      Intercept = NA,
+      sigma = NA,
+      R2 = NA,
+      spearman_rho_inRange = NA,
+      spearman_rho_complete = spearman_rho_all,
+      positiveSlope_inRange = NA,
+      positiveSlope_complete = all(diff(data[[y]]) > 0,na.rm = TRUE),
+      #monoton = NA,
+      deltaMax = NA,
+      deltaMax_relative = NA
+
+
+    )
+
+    data <- data[, ':=' (
+      positiveSlope = NA,
+      R2 = NA,
+      spearman_rho_linearRange = NA,
+      spearman_rho = tmpGroup$spearman_rho_complete,
+      predicted = NA,
+      ResidualsInRange = NA,
+      delta = NA,
+      delta_percent = NA,
+      deltaMax_relative = NA
+
+    )]
+
+
+
+  }
+
+  return(list(tmpGroup, data))
+
+}
 
 
 
