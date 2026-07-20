@@ -247,20 +247,20 @@ plot_FDS <- function(inputData_Series,
   metabolite_row <- function(df, show_x = FALSE, show_legend = FALSE, show_title = FALSE){
 
     # Einzel-Feature Plot (Dilution curve)
-    plotlinearData <- ggplot2::ggplot(df,
-                                      ggplot2::aes(x = get(independent), y = get(dependent))) +
-      ggplot2::geom_point()
+    plotlinearData <- ggplot2::ggplot(data = df,
+                                      mapping = ggplot2::aes(x = get(independent), y = get(dependent))) +
+      ggplot2::geom_point(na.rm = TRUE)
 
     # Outlier Markierungen
     if("OutlierFOD" %in% names(df)) {
       plotlinearData <- plotlinearData +
-        ggplot2::geom_point(data = df[df$OutlierFOD == TRUE,], color="red")
+        ggplot2::geom_point(data = df[!is.na(df$OutlierFOD) & df$OutlierFOD == TRUE,], color="red", na.rm = TRUE)
     }
 
     # InRange + Fit Linie
     if("InRange" %in% names(df)){
       plotlinearData <- plotlinearData +
-        ggplot2::geom_line(data = df[df$InRange == TRUE,], ggplot2::aes(y = predicted))
+        ggplot2::geom_line(data = df[df$InRange == TRUE,], mapping = ggplot2::aes(y = predicted))
     }
 
     return(plotlinearData)
