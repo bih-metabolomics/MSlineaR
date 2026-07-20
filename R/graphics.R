@@ -572,14 +572,14 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         size = 3
       ) +
 
-      scale_color_manual(name = "Class:", values = class_colors) +
-      scale_shape_manual(name = "Sample Type:", values = sample_shapes) +
-      scale_fill_manual(name = "Batch:", values = batch_fills) +
+      ggplot2::scale_color_manual(name = "Class:", values = class_colors) +
+      ggplot2::scale_shape_manual(name = "Sample Type:", values = sample_shapes) +
+      ggplot2::scale_fill_manual(name = "Batch:", values = batch_fills) +
 
       guides(
-        shape = guide_legend(order = 1),
-        color = guide_legend(order = 2),
-        fill  = guide_legend(order = 3)
+        shape = ggplot2::guide_legend(order = 1),
+        color = ggplot2::guide_legend(order = 2),
+        fill  = ggplot2::guide_legend(order = 3)
       ) +
 
       theme_void() +
