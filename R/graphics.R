@@ -242,7 +242,7 @@ plot_FDS <- function(inputData_Series,
     # Outlier Markierungen
     if("OutlierFOD" %in% names(df)) {
       plotlinearData <- plotlinearData +
-        ggplot2::geom_point(data = df[data = df$OutlierFOD == TRUE,], color="red", na.rm = TRUE)
+        ggplot2::geom_point(data = df[df$OutlierFOD == TRUE,], color="red", na.rm = TRUE)
     }
 
     # InRange + Fit Linie
