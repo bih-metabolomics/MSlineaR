@@ -70,7 +70,7 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 #' @param Series Optional label for the QC dilution series.
 #' @param output_dir Directory where output PDF files are saved.
 #' @param diagnostic Logical; if TRUE, residual and QQ diagnostic plots are generated.
-#'@param ...
+#' @param ...
 #' @return A patchwork ggplot object containing the dilution series visualization and optional diagnostics.
 #' @export
 #'
@@ -203,21 +203,9 @@ plot_FDS <- function(inputData_Series,
   if(any(Feature %in% "all") &
      any(GroupIndices %in% "all") &
      data.table::uniqueN(data_Signal[[ID]]) > nrFeature){
-...
+
     # ausgewogenes Sampling zwischen TRUE/FALSE LR Status
-  #  if(data.table::uniqueN(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]) > nrFeature/2) {
-  #    randomIDsTRUE <- sample(unique(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]), nrFeature/2, replace = F)
-  #   randomIDs2 <- sample(setdiff(unique(data_Signal[[ID]]), randomIDsTRUE), nrFeature/2, replace = F)
-  #  randomIDs <- c(randomIDsTRUE, randomIDs2)
-  #  data_Signal <- data_Signal[ID %in% randomIDs]
-  #  } else if(data.table::uniqueN(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]) < nrFeature/2){
-  #    randomIDsTRUE <- unique(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE])
-  #    randomIDs2 <- sample(setdiff(unique(data_Signal[[ID]]), randomIDsTRUE), nrFeature -length(randomIDsTRUE), replace = F)
-  #    randomIDs <- c(randomIDsTRUE, randomIDs2)
-  #    data_Signal <- data_Signal[ID %in% randomIDs]
-  #  }
-  #}else if(any(Feature %in% "all") & any(GroupIndices %in% "all") & data.table::uniqueN(data_Signal[[ID]]) <= nrFeature){
-  #  nrFeature = data.table::uniqueN(data_Signal[[ID]])
+    ...
 
   }
 
@@ -254,13 +242,13 @@ plot_FDS <- function(inputData_Series,
     # Outlier Markierungen
     if("OutlierFOD" %in% names(df)) {
       plotlinearData <- plotlinearData +
-        ggplot2::geom_point(data = df[!is.na(df$OutlierFOD) & df$OutlierFOD == TRUE,], color="red", na.rm = TRUE)
+        ggplot2::geom_point(data = df[data = df$OutlierFOD == TRUE,], color="red", na.rm = TRUE)
     }
 
     # InRange + Fit Linie
     if("InRange" %in% names(df)){
       plotlinearData <- plotlinearData +
-        ggplot2::geom_line(data = df[df$InRange == TRUE,], mapping = ggplot2::aes(y = predicted))
+        ggplot2::geom_line(data = df[df$InRange == TRUE,], mapping = ggplot2::aes(y = predicted), na.rm = TRUE)
     }
 
     return(plotlinearData)
