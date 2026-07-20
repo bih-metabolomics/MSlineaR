@@ -59,7 +59,7 @@
 #' serial diluted/concentrated samples and optional repeated measured QC samples for all batches.
 #' Each row represents a single feature measurement.
 
-#'  @param inputData_sample A long-format data frame or data.table containing sample metadata
+#' @param inputData_sample A long-format data frame or data.table containing sample metadata
 #' of biological samples, serial diluted/concentrated samples and optional repeated measured
 #' QC samples for all batches. Sample identifiers must match those provided in
 #' `inputData_feature`.
@@ -70,6 +70,7 @@
 #' @param sampleType_serial String;Identification of serial data in `column_sampleType`.
 #' @param sampleType_blank String;Identification of blank data in `column_sampleType`.
 #' @param column_sampleID String; Column name, which uniquely identifies the measured Signals.
+#' @param column_featureID String; column containing the feature or compound identifier.
 #' @param column_batch String; Column name to identify the different batches.
 #' Only necessary if there are more than 1 Batch.
 #' @param column_X String; Column name of the independent variable,
@@ -77,12 +78,17 @@
 #'  For untargeted data use a vector with consecutive numbers, e.g. c(1, 2, 3 , ...) with 1 beeing the highest dilution
 #' @param column_Y String; Column name of the dependent variable,
 #'  e.g. Intensity, Area,..
+#' @param column_injectionOrder String; column containing the analytical injection order.
 #' @param column_sampleClass String, Column name used for statistical classes
 #' @param transform Boolean; Should the data be transformed? Default is `TRUE`.
 #' @param transform_x,transform_y If `transform` is `TRUE`.
 #' String; Which transformation should be used for the independent variable (concentration/dilution) or/and
 #' the dependent variable of the serial diluted/concentrated samples?
 #' Default for both is "log". If no transformation should be performed for one variable use NULL.
+#' @param inverse_x,inverse_y Character strings specifying the inverse
+#' transformations applied to the independent and dependent variables,
+#' respectively. These functions must reverse the transformations specified
+#' by `transform_x` and `transform_y`. Defaults are `"exp"`.
 #' @param signal_blank_ratio Numeric,
 #' @param first_outlier_detection,second_outlier_detection Boolean;
 #' Should an outlier detection be performed before/after the exclusion of
@@ -114,8 +120,6 @@
 #' @param LR_sd_res_factor Integer; points of serial diluted/concentrated series,
 #' which are less than `LR_sd_res_factor` times residual standard deviation are considered as linear.
 #' Default to 3.
-#' @param calculate_concentration Boolean; For targeted analysis. Should the
-#' concentration of samples in regard to the linear regression equation be calculated? Default is `TRUE`.
 #' @param get_linearity_status_samples Boolean; If `TRUE` (default) the samples
 #' will be differentiated into linear and non linear according to their serial diluted/concentrated signal.
 #' @param get_output Boolean; If `TRUE` (default), output files will be generated
@@ -134,9 +138,20 @@
 #' is identified in every batch. If `FALSE`, features are retained when a
 #' linear range is found in at least one batch, but corresponding batch
 #' inconsistencies are flagged.
+#' @param rho_tolerance Numeric between 0 and 1; tolerated deviation of the
+#' Spearman correlation coefficient from 1. A value of `0` requires a
+#' Spearman correlation coefficient of 1.
 #'
-#' @importFrom data.table :=
+#' @param delta_tolerance Numeric; maximum tolerated percentage deviation
+#' between observed and model-predicted values.
+#'
+#' @param slope_tolerance Numeric; tolerated absolute deviation of the
+#' log-log regression slope from 1. For example, `0.2` accepts slopes between
+#' 0.8 and 1.2.
+#'
+#' @importFrom data.table := .GRP .I .N
 #' @importFrom plyr .
+#' @importFrom foreach %dopar%
 #'
 #' @return
 #' A named list containing:
@@ -1019,9 +1034,9 @@ Yorigin <- "Y"
 
       rsd_before <- SampleFeature |>
         dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
-        dplyr::summarize(.groups = "keep", rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
+        dplyr::summarize(.groups = "keep", rsd = stats::sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
-        dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
+        dplyr::summarize(.groups = "keep",median_rsd_before = stats::median(rsd, na.rm = T))
 
 
       SampleFeature  <- getLRstatus(dats = SampleFeature, datCal = processingGroup,y =  column_Y)
@@ -1033,9 +1048,9 @@ Yorigin <- "Y"
       rsd_after <- SampleFeature |>
         dplyr::filter(Status_LR %in% TRUE) |>
         dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
-        dplyr::summarize(.groups = "keep",rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
+        dplyr::summarize(.groups = "keep",rsd = stats::sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
-        dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
+        dplyr::summarize(.groups = "keep",median_rsd_after = stats::median(rsd, na.rm = TRUE))
 
       logr::put(paste("Sample", ":"))
       logr::put(dplyr::full_join(rsd_before, rsd_after, by = c("Batch","Sample.Type")))
@@ -1079,18 +1094,18 @@ Yorigin <- "Y"
 
       rsd_before <- SampleQC |>
         dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
-        dplyr::summarize(.groups = "keep", rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
+        dplyr::summarize(.groups = "keep", rsd = stats::sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
-        dplyr::summarize(.groups = "keep",median_rsd_before = median(rsd, na.rm = T))
+        dplyr::summarize(.groups = "keep",median_rsd_before = stats::median(rsd, na.rm = T))
 
       SampleQC  <- getLRstatus(dats = SampleQC, datCal = processingGroup,y =  column_Y)
 
       rsd_after <- SampleQC |>
         dplyr::filter(Status_LR %in% TRUE) |>
         dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
-        dplyr::summarize(.groups = "keep",rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
+        dplyr::summarize(.groups = "keep",rsd = stats::sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
-        dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
+        dplyr::summarize(.groups = "keep",median_rsd_after = stats::median(rsd, na.rm = TRUE))
 
       SampleFeature <- dplyr::full_join(SampleFeature, SampleQC, by = colnames(SampleQC))
       logr::put(paste("QC", ":"))
@@ -1245,15 +1260,15 @@ Yorigin <- "Y"
   if(GET_OUTPUT %in% TRUE){
 
     if(any(c("DilutionCurves", "all") %in% which_output)){
-      fwrite(output1, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_signalBased.csv")))
-      fwrite(output2, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_featureBased.csv")))
+      data.table::fwrite(output1, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_signalBased.csv")))
+      data.table::fwrite(output2, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_featureBased.csv")))
       # writexl::write_xlsx(x = list(Signals = output1, Features = output2),
       #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,".xlsx")))
     }
 
     if(!is.na(SAMPLE) & any(c("BiologicalSamples", "all") %in% which_output)){
      # write.csv(output3, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples_signalBased.csv")))
-      fwrite(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "result.csv")))
+      data.table::fwrite(output4, file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "result.csv")))
 
       # writexl::write_xlsx(x = list(Signals = output3, summary = output4),
       #                     path = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", "BiologicalSamples.xlsx")))

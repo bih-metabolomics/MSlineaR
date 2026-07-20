@@ -56,8 +56,9 @@ MS_AssessLinearity(
 \item{inputData_feature}{A long-format data frame or data.table containing
 feature intensities and associated metadata of biological samples,
 serial diluted/concentrated samples and optional repeated measured QC samples for all batches.
-Each row represents a single feature measurement.
-@param inputData_sample A long-format data frame or data.table containing sample metadata
+Each row represents a single feature measurement.}
+
+\item{inputData_sample}{A long-format data frame or data.table containing sample metadata
 of biological samples, serial diluted/concentrated samples and optional repeated measured
 QC samples for all batches. Sample identifiers must match those provided in
 \code{inputData_feature}.}
@@ -77,6 +78,10 @@ samples, QC and serial samples.}
 
 \item{column_sampleID}{String; Column name, which uniquely identifies the measured Signals.}
 
+\item{column_featureID}{String; column containing the feature or compound identifier.}
+
+\item{column_injectionOrder}{String; column containing the analytical injection order.}
+
 \item{column_batch}{String; Column name to identify the different batches.
 Only necessary if there are more than 1 Batch.}
 
@@ -95,6 +100,11 @@ e.g. Intensity, Area,..}
 String; Which transformation should be used for the independent variable (concentration/dilution) or/and
 the dependent variable of the serial diluted/concentrated samples?
 Default for both is "log". If no transformation should be performed for one variable use NULL.}
+
+\item{inverse_x, inverse_y}{Character strings specifying the inverse
+transformations applied to the independent and dependent variables,
+respectively. These functions must reverse the transformations specified
+by \code{transform_x} and \code{transform_y}. Defaults are \code{"exp"}.}
 
 \item{first_outlier_detection, second_outlier_detection}{Boolean;
 Should an outlier detection be performed before/after the exclusion of
@@ -134,6 +144,17 @@ Default to 3.}
 Minimum coefficient of determination required for a feature-specific
 linear range to be accepted. Default is \code{0.9}.}
 
+\item{rho_tolerance}{Numeric between 0 and 1; tolerated deviation of the
+Spearman correlation coefficient from 1. A value of \code{0} requires a
+Spearman correlation coefficient of 1.}
+
+\item{delta_tolerance}{Numeric; maximum tolerated percentage deviation
+between observed and model-predicted values.}
+
+\item{slope_tolerance}{Numeric; tolerated absolute deviation of the
+log-log regression slope from 1. For example, \code{0.2} accepts slopes between
+0.8 and 1.2.}
+
 \item{Batch_harmonization}{Logical.
 If \code{TRUE} (default), a feature is only retained if a valid linear range
 is identified in every batch. If \code{FALSE}, features are retained when a
@@ -157,9 +178,6 @@ which should be generated.Default all files will be generated and stored:
 
 \item{output_dir}{Only necessary if \code{get_output} is \code{TRUE}.
 custom path, where the output files should be stored.}
-
-\item{calculate_concentration}{Boolean; For targeted analysis. Should the
-concentration of samples in regard to the linear regression equation be calculated? Default is \code{TRUE}.}
 }
 \value{
 A named list containing:

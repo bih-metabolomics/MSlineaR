@@ -97,10 +97,6 @@ Feature_ID, X, Y, Batch, Injection_order, Sample_type, Class).}
 \item{GET_OUTPUT}{Logical. If TRUE, additional diagnostic outputs are returned.}
 
 \item{IMG_OUTPUT_DIR}{Character. Directory for saving diagnostic plots.}
-
-\item{QC_REF}{Character vector defining reference QC samples (if applicable).}
-
-\item{SAMPLE_ID}{Character. Column name containing sample identifiers.}
 }
 \value{
 A validated and standardised data.table with harmonised column structure,

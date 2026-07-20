@@ -12,8 +12,6 @@ combineData(inputData_Series, inputData_BioSamples, inputData_QC)
 \item{inputData_BioSamples}{Optional data frame containing biological sample data.}
 
 \item{inputData_QC}{Optional data frame containing quality control (QC) sample data.}
-
-\item{...}{Additional arguments (currently unused).}
 }
 \value{
 A merged data frame containing all input datasets combined by shared columns.

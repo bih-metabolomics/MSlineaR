@@ -37,13 +37,9 @@
 #'
 #' @param QC Character vector defining QC sample types.
 #'
-#' @param QC_REF Character vector defining reference QC samples (if applicable).
-#'
 #' @param BLANK Character vector defining blank sample types.
 #'
 #' @param SAMPLE Character vector defining biological sample types.
-#'
-#' @param SAMPLE_ID Character. Column name containing sample identifiers.
 #'
 #' @param CALIBRANTS Character vector defining calibration or dilution series samples.
 #'
@@ -220,13 +216,13 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
 
   if(!is.logical(TRANSFORM) | is.na(TRANSFORM)) rlang::abort("Argument 'transform' needs to be from type logical")
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_X)) if(!is.character(TRANSFORM_X)) rlang::abort("Argument 'transform_X' and 'transform_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
-  if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_X)) if(!class(get(TRANSFORM_X)) == "function") rlang::abort("Argument 'transform_X' and 'transform_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
+  if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_X)) if(!is.function(get(TRANSFORM_X))) rlang::abort("Argument 'transform_X' and 'transform_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)) if(!is.character(TRANSFORM_Y)) rlang::abort("Argument 'transform_X' and 'transform_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
-  if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)) if(!class(get(TRANSFORM_Y)) == "function") rlang::abort("Argument 'transform_X' and 'transform_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
+  if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)) if(!is.function(get(TRANSFORM_Y))) rlang::abort("Argument 'transform_X' and 'transform_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
   if(TRANSFORM %in% TRUE & !is.null(INVERSE_X))   if(!is.character(INVERSE_X)) rlang::abort("Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
-  if(TRANSFORM %in% TRUE & !is.null(INVERSE_X))   if(!class(get(INVERSE_X)) == "function") rlang::abort("Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
+  if(TRANSFORM %in% TRUE & !is.null(INVERSE_X))   if(!is.function(get(INVERSE_X))) rlang::abort("Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
   if(TRANSFORM %in% TRUE & !is.null(INVERSE_Y))   if(!is.character(INVERSE_Y)) rlang::abort("Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
-  if(TRANSFORM %in% TRUE & !is.null(INVERSE_Y))   if(!class(get(INVERSE_Y)) == "function") rlang::abort("Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
+  if(TRANSFORM %in% TRUE & !is.null(INVERSE_Y))   if(!is.function(get(INVERSE_Y))) rlang::abort("Argument 'inverse_X' and 'inverse_Y' needs to be a String indicating a function, e.g. 'log10', disable with NULL")
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_X)) if(is.null(INVERSE_X)) rlang::abort("Argument 'inverse_X' must be provided if Argument 'transform_X' is provided")
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_Y)) if(is.null(INVERSE_Y)) rlang::abort("Argument 'inverse_Y' must be provided if Argument 'transform_Y' is provided")
   if(TRANSFORM %in% TRUE & !is.null(TRANSFORM_X)) if(!as.integer(get(INVERSE_X)(get(TRANSFORM_X)(10))) == 10) rlang::abort( "Argument 'inverse_X' must be the reverse function of Argument 'transform_X'")
@@ -417,8 +413,8 @@ my_fcn <- function(nCORE, xs, func, inputData, ...) {
   on.exit(parallel::stopCluster(cl))
   #on.exit(closeAllConnections())
   #on.exit(parallel::stopCluster(cl))
-  pb <- txtProgressBar(min=1, max=max(xs), style=3)
-  progress <- function(n) setTxtProgressBar(pb, n)
+  pb <- utils::txtProgressBar(min=1, max=max(xs), style=3)
+  progress <- function(n) utils::setTxtProgressBar(pb, n)
    #pb <- progressr::progressor(along = xs)
    #progress <- function(i)  pb(sprintf("x=%g", i))
   opts <- list(progress=progress)

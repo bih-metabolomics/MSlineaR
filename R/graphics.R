@@ -8,7 +8,6 @@
 #' @param inputData_Series Data frame containing primary series-level measurements.
 #' @param inputData_BioSamples Optional data frame containing biological sample data.
 #' @param inputData_QC Optional data frame containing quality control (QC) sample data.
-#' @param ... Additional arguments (currently unused).
 #'
 #' @return A merged data frame containing all input datasets combined by shared columns.
 #' @export
@@ -206,7 +205,20 @@ plot_FDS <- function(inputData_Series,
      data.table::uniqueN(data_Signal[[ID]]) > nrFeature){
 
     # ausgewogenes Sampling zwischen TRUE/FALSE LR Status
-    ...
+    if(data.table::uniqueN(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]) > nrFeature/2) {
+      randomIDsTRUE <- sample(unique(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]), nrFeature/2, replace = F)
+      randomIDs2 <- sample(setdiff(unique(data_Signal[[ID]]), randomIDsTRUE), nrFeature/2, replace = F)
+      randomIDs <- c(randomIDsTRUE, randomIDs2)
+      data_Signal <- data_Signal[ID %in% randomIDs]
+    } else if(data.table::uniqueN(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE]) < nrFeature/2){
+      randomIDsTRUE <- unique(data_Signal[[ID]][data_Signal$Status_LR %in% TRUE])
+      randomIDs2 <- sample(setdiff(unique(data_Signal[[ID]]), randomIDsTRUE), nrFeature -length(randomIDsTRUE), replace = F)
+      randomIDs <- c(randomIDsTRUE, randomIDs2)
+      data_Signal <- data_Signal[ID %in% randomIDs]
+    }
+  }else if(any(Feature %in% "all") & any(GroupIndices %in% "all") & data.table::uniqueN(data_Signal[[ID]]) <= nrFeature){
+    nrFeature = data.table::uniqueN(data_Signal[[ID]])
+
   }
 
   # ----------------------------
@@ -220,13 +232,13 @@ plot_FDS <- function(inputData_Series,
   # ----------------------------
   # color definitions
   # ----------------------------
-  class_levels <- unique(na.omit(data_Signal[[ClassCol]]))
+  class_levels <- unique(stats::na.omit(data_Signal[[ClassCol]]))
   sample_levels <- unique(inputData_BioSamples[[Sample.Type]])
   batch_levels <- unique(data_Signal$Batch)
 
-  class_colors <- setNames(scales::hue_pal()(length(class_levels)), class_levels)
-  sample_shapes <- setNames(c(16,17,15,18,19)[seq_along(sample_levels)], sample_levels)
-  batch_fills <- setNames(RColorBrewer::brewer.pal(max(length(batch_levels),3),"Set1"),
+  class_colors <- stats::setNames(scales::hue_pal()(length(class_levels)), class_levels)
+  sample_shapes <- stats::setNames(c(16,17,15,18,19)[seq_along(sample_levels)], sample_levels)
+  batch_fills <- stats::setNames(RColorBrewer::brewer.pal(max(length(batch_levels),3),"Set1"),
                           batch_levels)
 
   # ----------------------------
@@ -248,7 +260,7 @@ plot_FDS <- function(inputData_Series,
     # InRange + Fit Linie
     if("InRange" %in% names(df)){
       plotlinearData <- plotlinearData +
-        ggplot2::geom_line(df[df$InRange == TRUE,], aes(y = predicted))
+        ggplot2::geom_line(df[df$InRange == TRUE,], ggplot2::aes(y = predicted))
     }
 
     return(plotlinearData)
@@ -259,7 +271,7 @@ plot_FDS <- function(inputData_Series,
   # ----------------------------
   if(printPDF){
 
-    pdf(file.path(output_dir,
+    grDevices::pdf(file.path(output_dir,
                   paste0(Sys.Date(),"_",outputfileName,".pdf")),
         width = 15, height = 9)
 
@@ -274,7 +286,7 @@ plot_FDS <- function(inputData_Series,
 
     }
 
-    dev.off()
+    grDevices::dev.off()
   }
 }
 
@@ -355,12 +367,12 @@ plot_Barplot_Summary <- function(inputData_Series,
 
   if(printPDF %in% TRUE){
 
-    pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)}
+    grDevices::pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)}
 
 
   print( plot_Summary)
 
-  if(printPDF %in% TRUE){ dev.off()}
+  if(printPDF %in% TRUE){ grDevices::dev.off()}
 
   return( plot_Summary)
 
@@ -483,7 +495,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
   if(printPDF %in% TRUE){
 
-    pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
+    grDevices::pdf(file = file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
 
 
     n <- ggforce::n_pages(plot_Summary_samples)
@@ -504,16 +516,13 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
     }
 
-    dev.off()
+    grDevices::dev.off()
 
   }
 
 
 
-  return(  suppressWarnings(plot( plot_Summary_samples)))
+  return(suppressWarnings(plot( plot_Summary_samples)))
 
 
 }
-
-
-

@@ -76,7 +76,7 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans, noise){
   dat$Y_sb <- dat[[y_trans]]
 
 
-  medblank <- median(blank[[y]], na.rm = T)
+  medblank <- stats::median(blank[[y]], na.rm = T)
 
   if(!is.na(medblank)){
 
@@ -395,7 +395,7 @@ findPlateaus <- function(dats, y, x , slope_ratio){
 
   #create linear regression line going through int50
 
-  middleSlope <- suppressWarnings(summary(lm(dat[[y]][(int50 - 1) : (int50 + 1)] ~ dat[[x]][(int50 - 1) : (int50 + 1)]))$coefficient[2])
+  middleSlope <- suppressWarnings(summary(stats::lm(dat[[y]][(int50 - 1) : (int50 + 1)] ~ dat[[x]][(int50 - 1) : (int50 + 1)]))$coefficient[2])
   allSlopes <- diff(dat[[y]])/diff(dat[[x]])
 
   allSlopes_a <- c(allSlopes, dplyr::last(allSlopes))

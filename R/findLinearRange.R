@@ -114,28 +114,28 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
   #we[(int50 - 1) : (int50 + 1)] <- 1000
 
 
-  FIN = FALSE
+  FIN <- FALSE
 
   while(FIN == FALSE) {
 
     we = rep(1, length(dat[[x]]))
 
-    linearModel <- lm(dat[[y]] ~ dat[[x]] , weights = we)
+    linearModel <- stats::lm(dat[[y]] ~ dat[[x]], weights = we)
     #quadratic <- lm(dat[[y]] ~ poly(dat[[x]], 2, raw = TRUE))
 
-    fit <- fitted(linearModel)
+    fit <- stats::fitted(linearModel)
 
     ###use residuals
 
     n <- length(linearModel$fitted.values)
-    p <- length(coef(linearModel))
+    p <- length(stats::coef(linearModel))
 
 
     threshold_cook <- 4 / (n - p - 1)
 
 
-    fit_residuals <- round(rstudent(linearModel),1)
-    cook <- round(cooks.distance(linearModel),2)
+    fit_residuals <- round(stats::rstudent(linearModel), 1)
+    cook <- round(stats::cooks.distance(linearModel), 2)
 
     lr <- !((abs(fit_residuals) > max_res & cook > threshold_cook))
 
@@ -144,11 +144,11 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
     #lr <- abs(fit_residuals) < max_res
 
     if(all(lr %in% TRUE)) {
-      FIN = TRUE
+      FIN <- TRUE
       dat$ResLR <- TRUE
 
     } else if (all(lr %in% FALSE)) {
-      FIN = TRUE
+      FIN <- TRUE
     } else {
       dat <- dat[lr,]
     }
@@ -172,7 +172,7 @@ findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_r
     maxTrueRange <- (consNDX$position[consNDX$values %in% TRUE][TRUEpos] - consNDX$length[consNDX$values %in% TRUE][TRUEpos] +1) : consNDX$position[consNDX$values %in% TRUE][TRUEpos]
     maxTrueRange <- maxTrueRange[maxTrueRange!=0]
 
-    dat$InRange <- dat$DilutionPoint >= dat$DilutionPoint[maxTrueRange[1]] & dat$DilutionPoint <= dat$DilutionPoint[tail(maxTrueRange,1)]
+    dat$InRange <- dat$DilutionPoint >= dat$DilutionPoint[maxTrueRange[1]] & dat$DilutionPoint <= dat$DilutionPoint[utils::tail(maxTrueRange,1)]
 
     out <- create_output_findLinearRange(inRange = TRUE, data = dat, y = y, x = x, real_x = real_x, min_feature = min_feature)
     tmpGroup <- out[[1]]
@@ -322,15 +322,15 @@ create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = 
 
   if(inRange %in% TRUE){
 
-    model <- lm(get(y) ~ get(x), data = data[data$InRange %in% TRUE, ])
-    fit <- fitted(model)
+    model <- stats::lm(get(y) ~ get(x), data = data[data$InRange %in% TRUE, ])
+    fit <- stats::fitted(model)
     summary_model <- summary(model)
 
-    spearman_rho <- cor(data[[x]][data$InRange %in% TRUE], data[[y]][data$InRange %in% TRUE], method = "spearman")
-    spearman_rho_all <- cor(data[[x]], data[[y]], method = "spearman")
+    spearman_rho <- stats::cor(data[[x]][data$InRange %in% TRUE], data[[y]][data$InRange %in% TRUE], method = "spearman")
+    spearman_rho_all <- stats::cor(data[[x]], data[[y]], method = "spearman")
 
     y_obs <- exp(model$model[[1]])
-    y_pred <- exp(predict(model))
+    y_pred <- exp(stats::predict(model))
 
     rel_error <- abs((y_obs - y_pred) / y_obs)
 
@@ -352,8 +352,8 @@ create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = 
       RangeLength = sum(data$InRange %in%TRUE),
       enoughPointsWithinRange = RangeLength >= min_feature,
       RangeFlag = NA,
-      slope = coef(model)[2],
-      Intercept = coef(model)[1],
+      slope = stats::coef(model)[2],
+      Intercept = stats::coef(model)[1],
       sigma = summary_model$sigma,
       R2 = summary_model$adj.r.squared,
       spearman_rho_inRange = spearman_rho,
@@ -379,14 +379,14 @@ create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = 
     )]
 
     data$predicted[data$InRange %in% TRUE] <- fit
-    data$ResidualsInRange[data$InRange %in% TRUE] <- resid(model)
+    data$ResidualsInRange[data$InRange %in% TRUE] <- stats::resid(model)
     data$delta[data$InRange %in% TRUE] <- Deviation
     data$delta_percent[data$InRange %in% TRUE] <- Deviation_perc
 
 
-  } else{
+  } else {
 
-    spearman_rho_all <- cor(data[[x]], data[[y]], method = "spearman")
+    spearman_rho_all <- stats::cor(data[[x]], data[[y]], method = "spearman")
 
     tmpGroup <- tibble::tibble(
 
@@ -435,16 +435,3 @@ create_output_findLinearRange <- function(inRange, data, y = y, x = x, real_x = 
   return(list(tmpGroup, data))
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

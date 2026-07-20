@@ -121,39 +121,39 @@ chooseModel <- function(dats,
 
   if ("logistic" %in% model) {
     logistic <- drc::drm(get(outlierY) ~ get(x), fct = drc::L.3(), data = dat)
-    logisticRMSE <- Metrics::rmse(dat[[outlierY]], predict(logistic))
+    logisticRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(logistic))
 
-    if(any(abs(residuals(logistic, typeRes = "standard")) > STDRES) ){ #& abs(sd(residuals(logistic))) > SDRES_MIN
-      if(abs(sd(residuals(logistic))) > SDRES_MIN){
+    if(any(abs(stats::residuals(logistic, typeRes = "standard")) > STDRES) ){ #& abs(sd(residuals(logistic))) > SDRES_MIN
+      if(abs(stats::sd(stats::residuals(logistic))) > SDRES_MIN){
       datOutLog <- dat
-      datOutLog[[outlierY]][which(abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- NA
-      datOutLog[[outlierName]][which(abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- TRUE
+      datOutLog[[outlierY]][which(abs(stats::residuals(logistic, typeRes = "standard")) > STDRES)] <- NA
+      datOutLog[[outlierName]][which(abs(stats::residuals(logistic, typeRes = "standard")) > STDRES)] <- TRUE
 
       logisticOut <- drc::drm(get(outlierY) ~ get(x), fct = drc::L.3(), data = datOutLog)
       #RMSE
-      logisticRMSE <- Metrics::rmse(dat[[outlierY]], predict(logistic))
-      logisticOutRMSE <- Metrics::rmse(na.exclude(datOutLog[[outlierY]]), predict(logisticOut))
+      logisticRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(logistic))
+      logisticOutRMSE <- Metrics::rmse(stats::na.exclude(datOutLog[[outlierY]]), stats::predict(logisticOut))
       logistic1 <- get(c("logistic", "logisticOut")[which(c(logisticRMSE, logisticOutRMSE) %in% min(logisticRMSE, logisticOutRMSE))])
       logistic1.dat <- datOutLog
       } else{
-        refslopemin <- coef(logistic)[2]*100/3
-        refslopemax <- coef(logistic)[2]*100*3
-        slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(outlierY) ~ get(x)))[2]*100)
+        refslopemin <- stats::coef(logistic)[2]*100/3
+        refslopemax <- stats::coef(logistic)[2]*100*3
+        slopes <- sapply(1:(nrow(dat)-1), function(i) stats::coef(stats::lm(dat = dat[i:(i+1)], get(outlierY) ~ get(x)))[2]*100)
         if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- c(slopes[1],refslopemin*2, slopes[-1])}
 
-        pos_slope <- c(which(abs(residuals(logistic, typeRes = "standard")) > STDRES), which(abs(residuals(logistic, typeRes = "standard")) > STDRES) + 1)
+        pos_slope <- c(which(abs(stats::residuals(logistic, typeRes = "standard")) > STDRES), which(abs(stats::residuals(logistic, typeRes = "standard")) > STDRES) + 1)
         pos_slope <- pos_slope[pos_slope <= nrow(dat)]
 
         if(any(slopes[pos_slope] < 0)){
 
           datOutLog <- dat
-          datOutLog[[outlierY]][which(abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- NA
-          datOutLog[[outlierName]][which(abs(residuals(logistic, typeRes = "standard")) > STDRES)] <- TRUE
+          datOutLog[[outlierY]][which(abs(stats::residuals(logistic, typeRes = "standard")) > STDRES)] <- NA
+          datOutLog[[outlierName]][which(abs(stats::residuals(logistic, typeRes = "standard")) > STDRES)] <- TRUE
 
           logisticOut <- drc::drm(get(outlierY) ~ get(x), fct = drc::L.3(), data = datOutLog)
           #RMSE
-          logisticRMSE <- Metrics::rmse(dat[[outlierY]], predict(logistic))
-          logisticOutRMSE <- Metrics::rmse(na.exclude(datOutLog[[outlierY]]), predict(logisticOut))
+          logisticRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(logistic))
+          logisticOutRMSE <- Metrics::rmse(stats::na.exclude(datOutLog[[outlierY]]), stats::predict(logisticOut))
           logistic1 <- get(c("logistic", "logisticOut")[which(c(logisticRMSE, logisticOutRMSE) %in% min(logisticRMSE, logisticOutRMSE))])
           logistic1.dat <- datOutLog
 
@@ -179,26 +179,26 @@ chooseModel <- function(dats,
   }
 
   if ("linear" %in% model) {
-    linear <- lm(get(outlierY) ~ get(x), data = dat)
-    linearRMSE <- Metrics::rmse(dat[[outlierY]], predict(linear))
-    abs_std_residuals <- abs(rstandard(linear))
+    linear <- stats::lm(get(outlierY) ~ get(x), data = dat)
+    linearRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(linear))
+    abs_std_residuals <- abs(stats::rstandard(linear))
 
     if(any(abs_std_residuals > STDRES) ){ #& abs(sd(residuals(linear))) > SDRES_MIN
-      if(abs(sd(residuals(linear))) > SDRES_MIN){
+      if(abs(stats::sd(stats::residuals(linear))) > SDRES_MIN){
         datOutLin <- dat
         datOutLin[[outlierY]][which(abs_std_residuals > STDRES)] <- NA
         datOutLin[[outlierName]][which(abs_std_residuals > STDRES)] <- TRUE
 
-        linearOut <- lm(get(outlierY) ~ get(x), data = datOutLin)
+        linearOut <- stats::lm(get(outlierY) ~ get(x), data = datOutLin)
         #RMSE
-        linearRMSE <- Metrics::rmse(dat[[outlierY]], predict(linear))
-        linearOutRMSE <- Metrics::rmse(na.exclude(datOutLin[[outlierY]]), predict(linearOut))
+        linearRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(linear))
+        linearOutRMSE <- Metrics::rmse(stats::na.exclude(datOutLin[[outlierY]]), stats::predict(linearOut))
         linear1 <- get(c("linear", "linearOut")[which(c(linearRMSE, linearOutRMSE) %in% min(linearRMSE, linearOutRMSE))])
         linear1.dat <- datOutLin
       } else{
-        refslopemin <- coef(linear)[2]*100/3
-        refslopemax <- coef(linear)[2]*100*3
-        slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(outlierY) ~ get(x)))[2]*100)
+        refslopemin <- stats::coef(linear)[2]*100/3
+        refslopemax <- stats::coef(linear)[2]*100*3
+        slopes <- sapply(1:(nrow(dat)-1), function(i) stats::coef(stats::lm(dat = dat[i:(i+1)], get(outlierY) ~ get(x)))[2]*100)
         if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- c(slopes[1],refslopemin*2, slopes[-1])}
 
         pos_slope <- c(which(abs_std_residuals > STDRES), which(abs_std_residuals > STDRES) + 1)
@@ -210,10 +210,10 @@ chooseModel <- function(dats,
           datOutLin[[outlierY]][which(abs_std_residuals > STDRES)] <- NA
           datOutLin[[outlierName]][which(abs_std_residuals > STDRES)] <- TRUE
 
-          linearOut <- lm(get(outlierY) ~ get(x), data = datOutLin)
+          linearOut <- stats::lm(get(outlierY) ~ get(x), data = datOutLin)
           #RMSE
-          linearRMSE <- Metrics::rmse(dat[[outlierY]], predict(linear))
-          linearOutRMSE <- Metrics::rmse(na.exclude(datOutLin[[outlierY]]), predict(linearOut))
+          linearRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(linear))
+          linearOutRMSE <- Metrics::rmse(stats::na.exclude(datOutLin[[outlierY]]), stats::predict(linearOut))
           linear1 <- get(c("linear", "linearOut")[which(c(linearRMSE, linearOutRMSE) %in% min(linearRMSE, linearOutRMSE))])
           linear1.dat <- datOutLin
 
@@ -242,42 +242,42 @@ chooseModel <- function(dats,
 
 
   if ("quadratic" %in% model) {
-    quadratic <- lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = dat)
-    quadraticRMSE <- Metrics::rmse(dat[[outlierY]], predict(quadratic))
+    quadratic <- stats::lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = dat)
+    quadraticRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(quadratic))
 
-    if(any(abs(rstandard(quadratic)) > STDRES) ){ #& abs(sd(residuals(quadratic))) > SDRES_MIN
-      if(abs(sd(residuals(quadratic))) > SDRES_MIN){
+    if(any(abs(stats::rstandard(quadratic)) > STDRES) ){ #& abs(sd(residuals(quadratic))) > SDRES_MIN
+      if(abs(stats::sd(stats::residuals(quadratic))) > SDRES_MIN){
         datOutQuad <- dat
-        datOutQuad[[outlierY]][which(abs(rstandard(quadratic)) > STDRES)] <- NA
-        datOutQuad[[outlierName]][which(abs(rstandard(quadratic)) > STDRES)] <- TRUE
+        datOutQuad[[outlierY]][which(abs(stats::rstandard(quadratic)) > STDRES)] <- NA
+        datOutQuad[[outlierName]][which(abs(stats::rstandard(quadratic)) > STDRES)] <- TRUE
 
-        quadraticOut <- lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = datOutQuad)
+        quadraticOut <- stats::lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = datOutQuad)
         #RMSE
-        quadraticRMSE <- Metrics::rmse(dat[[outlierY]], predict(quadratic))
-        quadraticOutRMSE <- Metrics::rmse(na.exclude(datOutQuad[[outlierY]]), predict(quadraticOut))
+        quadraticRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(quadratic))
+        quadraticOutRMSE <- Metrics::rmse(stats::na.exclude(datOutQuad[[outlierY]]), stats::predict(quadraticOut))
         quadratic1 <- get(c("quadratic", "quadraticOut")[which(c(quadraticRMSE, quadraticOutRMSE) %in% min(quadraticRMSE, quadraticOutRMSE))])
         quadratic1.dat <-  datOutQuad
 
       } else{
-        refslopemin <- coef(quadratic)[2]*100/3
-        refslopemax <- coef(quadratic)[2]*100*3
-        slopes <- sapply(1:(nrow(dat)-1), function(i) coef(lm(dat = dat[i:(i+1)], get(outlierY) ~ get(x)))[2]*100)
+        refslopemin <- stats::coef(quadratic)[2]*100/3
+        refslopemax <- stats::coef(quadratic)[2]*100*3
+        slopes <- sapply(1:(nrow(dat)-1), function(i) stats::coef(stats::lm(dat = dat[i:(i+1)], get(outlierY) ~ get(x)))[2]*100)
         if(slopes[1] > refslopemin){ slopes <- c(refslopemin*2, slopes)} else{slopes <- c(slopes[1],refslopemin*2, slopes[-1])}
 
-        pos_slope <- c(which(abs(rstandard(quadratic)) > STDRES), which(abs(rstandard(quadratic)) > STDRES) + 1)
+        pos_slope <- c(which(abs(stats::rstandard(quadratic)) > STDRES), which(abs(stats::rstandard(quadratic)) > STDRES) + 1)
         pos_slope <- pos_slope[pos_slope <= nrow(dat)]
 
 
         if(any(slopes[pos_slope] < 0)){
 
           datOutQuad <- dat
-          datOutQuad[[outlierY]][which(abs(rstandard(quadratic)) > STDRES)] <- NA
-          datOutQuad[[outlierName]][which(abs(rstandard(quadratic)) > STDRES)] <- TRUE
+          datOutQuad[[outlierY]][which(abs(stats::rstandard(quadratic)) > STDRES)] <- NA
+          datOutQuad[[outlierName]][which(abs(stats::rstandard(quadratic)) > STDRES)] <- TRUE
 
-          quadraticOut <- lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = datOutQuad)
+          quadraticOut <- stats::lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = datOutQuad)
           #RMSE
-          quadraticRMSE <- Metrics::rmse(dat[[outlierY]], predict(quadratic))
-          quadraticOutRMSE <- Metrics::rmse(na.exclude(datOutQuad[[outlierY]]), predict(quadraticOut))
+          quadraticRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(quadratic))
+          quadraticOutRMSE <- Metrics::rmse(stats::na.exclude(datOutQuad[[outlierY]]), stats::predict(quadraticOut))
           quadratic1 <- get(c("quadratic", "quadraticOut")[which(c(quadraticRMSE, quadraticOutRMSE) %in% min(quadraticRMSE, quadraticOutRMSE))])
           quadratic1.dat <-  datOutQuad
 
@@ -307,7 +307,7 @@ chooseModel <- function(dats,
  # logistic1RMSE <- Metrics::rmse(logistic1$data$`get(tidyselect::all_of(y))`, predict(logistic1))
  # linear1RMSE <- Metrics::rmse(linear1$model$`get(tidyselect::all_of(y))`, predict(linear1))
  # quadratic1RMSE <- Metrics::rmse(quadratic1$model$`get(tidyselect::all_of(y))`, predict(quadratic1))
-BIC_models <- BIC(logistic, linear, quadratic)
+BIC_models <- stats::BIC(logistic, linear, quadratic)
 
 ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(BIC_models$BIC,2) %in% min(round(BIC_models$BIC,2),na.rm = TRUE))]
 #  ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2) %in% min(round(c(logistic1RMSE, linear1RMSE, quadratic1RMSE),2),na.rm = TRUE))]
@@ -330,8 +330,8 @@ ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(BIC_models$BIC,
 
 
   modelNew <- if(ModelName %in% "logistic1"){drc::drm(get(outlierY) ~ get(x), fct = drc::L.3(), data = dat[color %in% "black",])
-  } else if(ModelName %in% "linear1"){lm(get(outlierY) ~ get(x), data = dat[color %in% "black",])
-      } else if(ModelName %in% "quadratic1"){lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = dat[color %in% "black",])}
+  } else if(ModelName %in% "linear1"){stats::lm(get(outlierY) ~ get(x), data = dat[color %in% "black",])
+      } else if(ModelName %in% "quadratic1"){stats::lm(get(outlierY) ~ poly(get(x), 2, raw = TRUE), data = dat[color %in% "black",])}
 
   ## calculate correlation
   # cor.poly <- c(
@@ -346,7 +346,7 @@ ModelName <- c("logistic1", "linear1", "quadratic1")[which(round(BIC_models$BIC,
 
   Model <- ModelName
 
-  Model = list("fit" = fitted(get(Model)), "coefficients" = coef(get(Model)), "std.residuals" = residuals(get(Model))/sd(residuals(get(Model))), "BIC" = BIC_models)
+  Model = list("fit" = stats::fitted(get(Model)), "coefficients" = stats::coef(get(Model)), "std.residuals" = stats::residuals(get(Model))/stats::sd(stats::residuals(get(Model))), "BIC" = BIC_models)
 
 
 
