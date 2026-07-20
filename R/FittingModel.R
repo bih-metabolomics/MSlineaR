@@ -102,12 +102,7 @@
 #'   abbr = "FOD"
 #' )
 #' }
-#' @import data.table
-#' @importFrom drc drm L.3
-#' @importFrom Metrics rmse
 
-#'
-#' @importFrom stats coef fitted lm na.exclude poly predict residuals rstandard sd
 chooseModel <- function(dats,
                         y = parent.frame()$Y,
                         x = parent.frame()$X,

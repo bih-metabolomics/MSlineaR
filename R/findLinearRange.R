@@ -89,14 +89,7 @@
 #' \code{\link{create_output_findLinearRange}}
 #'
 #' @export
-#'
 
-#' @import dplyr
-#' @import data.table
-#' @importFrom tibble tibble
-#' @importFrom Matrix tail
-#' @importFrom DescTools Closest
-#' @importFrom stats fitted lm residuals
 
 findLinearRange <- function(dats, x="DilutionPoint", y = "IntensityNorm",  max_res = 3, min_feature = 5, real_x, slope_tol = 0.2, delta_tol = 20, rho_tol = 0 ){
 

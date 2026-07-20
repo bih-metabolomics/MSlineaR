@@ -63,9 +63,7 @@
 #'
 #' @keywords internal
 
-#' @import data.table
-#' @import dplyr
-#' @importFrom stats median
+
 trimm_signalBlank <- function(dats, blanks, y, y_trans, noise){
 
   data.table::setDT(dats)
@@ -208,9 +206,7 @@ trimm_signalBlank <- function(dats, blanks, y, y_trans, noise){
 #'
 #' @keywords internal
 #'
-#' @import data.table
-#' @import dplyr
-#' @importFrom tidyr unite
+
 trimEnds <- function(dats, y = parent.frame()$Y, x = parent.frame()$X, SLOPE_RATIO = 0.5){ # thresh=0
 
   dats$trim <- FALSE

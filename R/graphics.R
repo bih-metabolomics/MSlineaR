@@ -13,7 +13,6 @@
 #' @return A merged data frame containing all input datasets combined by shared columns.
 #' @export
 #'
-#' @importFrom dplyr full_join
 
 
 combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #inputData_Blank#, inputData_QC_ref, inputData_Blank
@@ -76,15 +75,7 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 #' @return A patchwork ggplot object containing the dilution series visualization and optional diagnostics.
 #' @export
 #'
-#' @importFrom grDevices dev.off pdf
-#' @importFrom plyr .
-#' @importFrom stats na.omit
-#' @importFrom assertthat not_empty
-#' @import data.table
-#' @import dplyr
-#' @import ggplot2
-#' @importFrom ggforce facet_grid_paginate
-#' @import patchwork
+
 plot_FDS <- function(inputData_Series,
                      inputData_BioSamples,
                      inputData_QC,
@@ -221,10 +212,10 @@ plot_FDS <- function(inputData_Series,
   # ----------------------------
   # Plot Layout Parameter
   # ----------------------------
-  nrRow <- ifelse(uniqueN(data_Signal$groupIndices) >= 4, 4,
-                  uniqueN(data_Signal$groupIndices))
+  nrRow <- ifelse(data.table::uniqueN(data_Signal$groupIndices) >= 4, 4,
+                  data.table::uniqueN(data_Signal$groupIndices))
 
-  nCol <- uniqueN(data_Signal[[Col_Batch]])
+  nCol <- data.table::uniqueN(data_Signal[[Col_Batch]])
 
   # ----------------------------
   # color definitions
@@ -305,15 +296,7 @@ plot_FDS <- function(inputData_Series,
 #'
 #' @return A ggplot object representing the summary bar plot.
 #' @export
-#'
-#' @importFrom grDevices dev.off pdf
-#' @importFrom plyr .
-#' @importFrom stats na.omit
-#' @importFrom assertthat not_empty
-#' @importFrom tidyr pivot_longer
-#' @import data.table
-#' @import dplyr
-#' @import ggplot2
+
 plot_Barplot_Summary <- function(inputData_Series,
                                 printPDF = TRUE, GroupIndices = "all",  Feature = "all",
                                 outputfileName = c("Summary_Barplot"),
@@ -405,16 +388,8 @@ plot_Barplot_Summary <- function(inputData_Series,
 #'
 #' @return A ggplot object of the sample summary bar plot.
 #' @export
-#'
-#' @importFrom grDevices dev.off pdf
-#' @importFrom plyr .
-#' @importFrom stats na.omit
-#' @importFrom assertthat not_empty
-#' @importFrom tidyr pivot_longer
-#' @import data.table
-#' @import dplyr
-#' @import ggplot2
-#' @importFrom ggforce facet_grid_paginate
+
+
 
 plot_Barplot_Summary_Sample <- function(inputData_Samples,
                                         printPDF = TRUE, GroupIndices = "all",  Feature = "all",
@@ -474,7 +449,7 @@ plot_Barplot_Summary_Sample <- function(inputData_Samples,
 
   data_Signals_sample_summary$Type <- factor(data_Signals_sample_summary$Type, levels = rev(c("LR_TRUE_perc","LR_ULOL_perc","LR_BLOL_perc","LR_TRUE", "LR_FALSE","LR_ULOL" , "LR_BLOL", "Missing")))
   #data_Signals_sample_summary <- data_Signals_sample_summary |> dplyr::filter(count > 0)
-  setorderv(data_Signals_sample_summary, "PlotOrder")
+  data.table::setorderv(data_Signals_sample_summary, "PlotOrder")
   data_Signals_sample_summary$Sample_ID <- factor(data_Signals_sample_summary$Sample_ID, levels = unique(data_Signals_sample_summary$Sample_ID))
 
 

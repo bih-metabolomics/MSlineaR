@@ -135,21 +135,8 @@
 #' linear range is found in at least one batch, but corresponding batch
 #' inconsistencies are flagged.
 #'
-#'
-#' @import dplyr
-#' @import data.table
-#' @importFrom stats median sd
-#' @importFrom logr sep log_open put log_close
-#' @importFrom rlang inform abort
-#' @importFrom testthat expect_setequal
-#' @importFrom pbapply pboptions
-#' @importFrom progressr handlers handler_progress
-#' @importFrom R.utils getAbsolutePath
-#' @importFrom plyr ldply .
-#' @importFrom purrr map
-#' @importFrom tibble tibble
-#' @importFrom assertthat are_equal
-#' @importFrom tidyr drop_na
+#' @importFrom data.table :=
+#' @importFrom plyr .
 #'
 #' @return
 #' A named list containing:
@@ -171,8 +158,8 @@
 #'   }
 #' }
 #' In addition, there is a graphical output to show
-#'the dilution curves and linear proportion for all samples and QCs and diagnostic
-#'plots for residual behavior and Q-Q plot.
+#' the dilution curves and linear proportion for all samples and QCs and diagnostic
+#' plots for residual behavior and Q-Q plot.
 #'
 #'#' @references
 #' Wiebach J., et al.
@@ -573,7 +560,7 @@ Yorigin <- "Y"
     processingFeature <- data.table::data.table(dplyr::full_join(dataSB, processingFeature[!IDintern %in% dataSB$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'SignalBlank' :=any(signalBlankRatio %in% TRUE), groupIndices][,.(groupIndices, SignalBlank)]), by = c("groupIndices"))
 
-    logr::put(paste(data.table::uniqueN(processingFeature |> dplyr::filter(signalBlankRatio %in% TRUE) %>% dplyr::select(IDintern)), " Signals were removed according to the Signal to blank ratio of ",NOISE,"."))
+    logr::put(paste(data.table::uniqueN(processingFeature |> dplyr::filter(signalBlankRatio %in% TRUE) |> dplyr::select(IDintern)), " Signals were removed according to the Signal to blank ratio of ",NOISE,"."))
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
@@ -625,7 +612,7 @@ Yorigin <- "Y"
 
     dataFODModel <- tibble::tibble(
       groupIndices = as.integer(names(purrr::map(dataFOD, 1))),
-      ModelName = purrr::map(dataFOD, 1) %>% unlist(use.names = F),
+      ModelName = purrr::map(dataFOD, 1) |> unlist(use.names = F),
       Model = purrr::map(dataFOD, 2),
     )
 
@@ -634,7 +621,7 @@ Yorigin <- "Y"
     processingFeature <- data.table::data.table(dplyr::full_join(dataFOD, processingFeature[!IDintern %in% dataFOD$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierFOD' :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]), by = c("groupIndices"))
 
-    logr::put(paste0("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,"."))
+    logr::put(paste0("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) |> dplyr::select(groupIndices)), " ",Series,"."))
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
@@ -690,7 +677,7 @@ Yorigin <- "Y"
                                         unique(data.table::copy(processingFeature)[,'trim' :=any(trim %in% TRUE),groupIndices][,.(groupIndices, trim)]),
                                         by = "groupIndices")
 
-    TrimGroups <- data.table::uniqueN(dataTrim |> dplyr::filter(trim %in% TRUE) %>% dplyr::select(groupIndices))
+    TrimGroups <- data.table::uniqueN(dataTrim |> dplyr::filter(trim %in% TRUE) |> dplyr::select(groupIndices))
     TrimFeatures <- data.table::uniqueN(dataTrim |> dplyr::filter(trim %in% TRUE) |> dplyr::select(IDintern))
 
 
@@ -757,10 +744,10 @@ Yorigin <- "Y"
 
     dataSODModel <- tibble::tibble(
       groupIndices = as.integer(names(purrr::map(dataSOD, 1))),
-      ModelName = purrr::map(dataSOD, 1) %>% unlist(use.names = F),
+      ModelName = purrr::map(dataSOD, 1) |> unlist(use.names = F),
       Model = purrr::map(dataSOD, 2),
-      #RMSE = purrr::map(dataFOD,3) %>% unlist(use.names = T),
-      #R2 = purrr::map(dataSOD, 3) %>% unlist(use.names = F)
+      #RMSE = purrr::map(dataFOD,3) |> unlist(use.names = T),
+      #R2 = purrr::map(dataSOD, 3) |> unlist(use.names = F)
     )
 
     #data.table::setDT(dataSODModel)
@@ -769,7 +756,7 @@ Yorigin <- "Y"
     processingFeature <- data.table::data.table(dplyr::full_join(dataSOD, processingFeature[!IDintern %in% dataSOD$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierSOD' :=any(OutlierSOD %in% TRUE), groupIndices][,.(groupIndices, OutlierSOD)]), by = c("groupIndices"))
 
-    logr::put(paste0("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierSOD %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,"."))
+    logr::put(paste0("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierSOD %in% TRUE) |> dplyr::select(groupIndices)), " ",Series,"."))
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
     processingFeature <- countList[[1]]
@@ -827,7 +814,7 @@ Yorigin <- "Y"
 #                                         unique(data.table::copy(processingFeature)[,'trimPos' :=any(trimPos %in% TRUE),groupIndices][,.(groupIndices, trimPos)]),
 #                                         by = "groupIndices")
 #
-#     TrimPosGroups <- data.table::uniqueN(dataTrimPos |> dplyr::filter(trimPos %in% TRUE) %>% dplyr::select(groupIndices))
+#     TrimPosGroups <- data.table::uniqueN(dataTrimPos |> dplyr::filter(trimPos %in% TRUE) |> dplyr::select(groupIndices))
 #     TrimPosFeatures <- data.table::uniqueN(dataTrimPos |> dplyr::filter(trimPos %in% TRUE) |> dplyr::select(IDintern))
 #
 #
@@ -915,7 +902,7 @@ Yorigin <- "Y"
   processingFeature <- data.table::data.table(dplyr::full_join(dataLRFeature, processingFeature[!IDintern %in% dataLRFeature$IDintern], by = colnames(processingFeature)))
   processingGroup <-  dplyr::full_join(processingGroup, dataLRGroup, by = "groupIndices")
 
-  logr::put(paste0("For ", data.table::uniqueN(processingGroup |> dplyr::filter(aboveR2 %in% TRUE) %>% dplyr::select(groupIndices)), " ",Series,
+  logr::put(paste0("For ", data.table::uniqueN(processingGroup |> dplyr::filter(aboveR2 %in% TRUE) |> dplyr::select(groupIndices)), " ",Series,
           " a linear Range with a minimum of ", MIN_FEATURE, " Points and an R^2 higher or equal ", R2_MIN," were found."))
 
   countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
@@ -1046,7 +1033,7 @@ Yorigin <- "Y"
       rsd_after <- SampleFeature |>
         dplyr::filter(Status_LR %in% TRUE) |>
         dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
-        dplyr::summarise(.groups = "keep",rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
+        dplyr::summarize(.groups = "keep",rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
 
@@ -1101,7 +1088,7 @@ Yorigin <- "Y"
       rsd_after <- SampleQC |>
         dplyr::filter(Status_LR %in% TRUE) |>
         dplyr::group_by(Batch = get(COLNAMES[["Batch"]]), Compound = get(COLNAMES[["Feature_ID"]]), Sample.Type = get(COLNAMES[["Sample_type"]])) |>
-        dplyr::summarise(.groups = "keep",rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
+        dplyr::summarize(.groups = "keep",rsd = sd(get(column_Y), na.rm = T)/mean(get(column_Y), na.rm = T) * 100) |>
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_after = median(rsd, na.rm = TRUE))
 
@@ -1195,7 +1182,7 @@ Yorigin <- "Y"
     # dplyr::select(tidyr::contains(unique(SampleFeature$Sample.Type)) )
 
 
-  # htmloutput6 <-  DT::datatable(output6) %>%
+  # htmloutput6 <-  DT::datatable(output6) |>
   #   DT::formatStyle(dplyr::select(output6,tidyr::contains("%"))|> colnames(),
   #               backgroundColor = DT::styleInterval(c(20,80), c('red','yellow', 'green'))
   #   )
@@ -1218,7 +1205,7 @@ Yorigin <- "Y"
   #                               pageLength = nrow(output6.1),
   #                               dom = 'Bfrtip',
   #                               buttons = c('copy', 'csv', 'excel', 'print')
-  #                             )) %>%
+  #                             )) |>
   #   DT::formatStyle("LR_TRUE[%]_Sample",
   #               backgroundColor = DT::styleInterval(c(20,80), c('red','yellow', 'green'))
   #   )

@@ -124,8 +124,6 @@
 #' }
 #' @keywords internal
 #'
-#' @import data.table
-#' @importFrom rlang abort
 checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = parent.frame()$TYPE, QC = parent.frame()$QC,
                       BLANK = parent.frame()$BLANK,
                       SAMPLE = parent.frame()$SAMPLE,#Y_SAMPLE = parent.frame()$Y_SAMPLE,
@@ -309,8 +307,7 @@ is.wholenumber <-
 #'
 #' @keywords internal
 #'
-#' @import data.table
-#' @importFrom rlang abort
+
 prepareData <- function(dat,
                         TRANSFORM = parent.frame()$TRANSFORM,
                         TRANSFORM_X = parent.frame()$TRANSFORM_X,
@@ -410,11 +407,7 @@ prepareData <- function(dat,
 #' )
 #' }
 #'
-#' @import data.table
-#' @importFrom utils setTxtProgressBar txtProgressBar
-#' @importFrom parallel makePSOCKcluster stopCluster
-#' @importFrom doSNOW registerDoSNOW
-#' @importFrom foreach foreach
+
 #' @keywords internal
 
 my_fcn <- function(nCORE, xs, func, inputData, ...) {

@@ -43,9 +43,6 @@
 #'                  PATH = tempdir())
 #' }
 #'
-#' @import data.table
-#' @import dplyr
-#' @importFrom tidyr drop_na
 MS_filterSamples <- function(
     inputData,
     Compound_ID = "groupIndices",
@@ -116,7 +113,7 @@ MS_filterSamples <- function(
                        'LR_Status_n' = vctrs::vec_count(Status_LR)$count,
                        'LR_Status_n[%]' = round(vctrs::vec_count(Status_LR)$count/length(Status_LR)*100,2))
 
-    ClassSummaryUL <- ClassSummary |> drop_na(LR_Status) |>
+    ClassSummaryUL <- ClassSummary |> tidyr::drop_na(LR_Status) |>
       dplyr::group_by(Compound_ID, col_Class) |>
       dplyr::filter(any(LR_Status %in% "ULOL") & any(LR_Status %in% "TRUE")) |>
       dplyr::reframe(
@@ -129,7 +126,7 @@ MS_filterSamples <- function(
 
       ) |> unique()
 
-    ClassSummaryLL <- ClassSummary |> drop_na(LR_Status) |>
+    ClassSummaryLL <- ClassSummary |> tidyr::drop_na(LR_Status) |>
       dplyr::group_by(Compound_ID, col_Class) |>
       dplyr::filter(any(LR_Status %in% "BLOL") & any(LR_Status %in% "TRUE")) |>
       dplyr::reframe(
@@ -142,7 +139,7 @@ MS_filterSamples <- function(
 
       )|> unique()
 
-    ClassSummary <- rbindlist(list(ClassSummary, ClassSummaryLL, ClassSummaryUL))
+    ClassSummary <- data.table::rbindlist(list(ClassSummary, ClassSummaryLL, ClassSummaryUL))
 
 
     summaryData <- ClassSummary
@@ -260,7 +257,7 @@ MS_filterSamples <- function(
   } else if(outputformat %in% "wide"){
 
     filteredData <- dat |> dplyr::filter(get(Compound_ID) %in% unlist(Compounds)) |>
-      dplyr::select(ID = all_of(Compound_ID), Sample = all_of(Sample_ID), y = all_of(Y)) |>
+      dplyr::select(ID = dplyr::all_of(Compound_ID), Sample = dplyr::all_of(Sample_ID), y = dplyr::all_of(Y)) |>
       tidyr::pivot_wider(names_from = Sample, values_from = y)
 
     writexl::write_xlsx(x = list(input = dat, filtered.wide = filteredData),
@@ -270,7 +267,7 @@ MS_filterSamples <- function(
 
     filteredData <- list(
       wide = dat |> dplyr::filter(get(Compound_ID) %in% unlist(Compounds)) |>
-        dplyr::select(ID = all_of(Compound_ID), Sample = all_of(Sample_ID), y = all_of(Y)) |>
+        dplyr::select(ID = dplyr::all_of(Compound_ID), Sample = dplyr::all_of(Sample_ID), y = dplyr::all_of(Y)) |>
         tidyr::pivot_wider(names_from = Sample, values_from = y),
       long = dat |> dplyr::filter(get(Compound_ID) %in% unlist(Compounds)))
 

@@ -52,7 +52,6 @@
 #' }
 #' If calibration quality (`aboveR2`) is insufficient, the status is set to FALSE.
 #'
-#' @import data.table
 #' @export
 getLRstatus <- function(dats, datCal, y){
 
@@ -140,12 +139,11 @@ getLRstatus <- function(dats, datCal, y){
 #' Final concentration is scaled using the minimum expected standard concentration:
 #' \deqn{C_{scaled} = C \cdot \frac{1}{3} \cdot C_{min, standard}}
 #'
-#' @importFrom data.table setDT
 #' @export
 getConc <- function(dats, datCal, y, INVERSE_Y, NAME_Standard, COL_expConc){
 
-  setDT(dats)
-  setDT(datCal)
+  data.table::setDT(dats)
+  data.table::setDT(datCal)
 
   dat <- data.table::copy(dats)
 

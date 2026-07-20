@@ -28,7 +28,6 @@ Imports:
     ggforce,
     ggplot2,
     logr,
-    Matrix,
     Metrics,
     patchwork,
     pbapply,
