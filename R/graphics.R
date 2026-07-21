@@ -534,8 +534,13 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
 
 
-        (plotlinearData | plotRes | plotQQplot) +
-        patchwork::plot_layout( widths = c(3,1,1))
+        patchwork::wrap_plots(
+        plotlinearData,
+        plotRes,
+        plotQQplot,
+        nrow = 1,
+        widths = c(3, 1, 1)
+      )
 
 
 
@@ -662,9 +667,17 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
           metabolite_row(page[[i]], show_x = show_x, show_legend = FALSE, show_title = show_title)
         })
 
-        print(legend_plot /
-                patchwork::wrap_plots(plots, ncol = 1) +
-                patchwork::plot_layout(heights = c(1, 10)))
+        page_plot <- patchwork::wrap_plots(
+  legend_plot,
+  patchwork::wrap_plots(
+    plots,
+    ncol = 1
+  ),
+  ncol = 1,
+  heights = c(1, 10)
+)
+
+print(page_plot)
         print(paste0(y, " of ", length(pages)))
         y = y + 1
       }
