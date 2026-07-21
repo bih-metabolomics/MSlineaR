@@ -179,22 +179,22 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
     #npage = ceiling(as.numeric(data.table::uniqueN(data_Signal[[ID]])/nrRow))
 
     # ---- Levels holen ----
-    class_levels <- unique(na.omit(data_Signal[[ClassCol]]))
+    class_levels <- unique(stats::na.omit(data_Signal[[ClassCol]]))
     sample_levels <- c(unique(inputData_BioSamples[[Sample.Type]]),unique(inputData_QC[[Sample.Type]]))
     batch_levels  <- unique(data_Signal$Batch)
 
     # ---- Farben / Shapes definieren ----
-    class_colors <- setNames(
+    class_colors <- stats::setNames(
       scales::hue_pal()(length(class_levels)),
       class_levels
     )
 
-    sample_shapes <- setNames(
+    sample_shapes <- stats::setNames(
       c(16,17,15,18,19)[seq_along(sample_levels)],
       sample_levels
     )
 
-    batch_fills <- setNames(
+    batch_fills <- stats::setNames(
       RColorBrewer::brewer.pal(max(length(batch_levels), 3), "Set1")[1:length(batch_levels)],
       batch_levels
     )
@@ -385,7 +385,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         unlist(use.names = F)
       blankmedian <- data_Signals |>
         dplyr::group_by(groupIndices) |>
-        dplyr::reframe(.groups = "drop",ytext = na.omit(medBlank*signal_blank_ratio)) |>
+        dplyr::reframe(.groups = "drop",ytext = stats::na.omit(medBlank*signal_blank_ratio)) |>
         unique() |>
         dplyr::ungroup() |>
         dplyr::right_join(blankmedian, by = "groupIndices")
@@ -576,20 +576,20 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       ggplot2::scale_shape_manual(name = "Sample Type:", values = sample_shapes) +
       ggplot2::scale_fill_manual(name = "Batch:", values = batch_fills) +
 
-      guides(
+      ggplot2::guides(
         shape = ggplot2::guide_legend(order = 1),
         color = ggplot2::guide_legend(order = 2),
         fill  = ggplot2::guide_legend(order = 3)
       ) +
 
-      theme_void() +
-      theme(
+      ggplot2::theme_void() +
+      ggplot2::theme(
         legend.position = "top",
         legend.box = "horizontal",
         legend.direction = "horizontal",
-        legend.spacing.x = unit(1, "cm"),
-        legend.title = element_text(face = "bold"),
-        plot.margin = margin(0,0,0,0)
+        legend.spacing.x = ggplot2::unit(1, "cm"),
+        legend.title = ggplot2::element_text(face = "bold"),
+        plot.margin = ggplot2::margin(0,0,0,0)
       ) +
       ggplot2::coord_cartesian(xlim = c(0, 0.5), ylim = c(0, 0.5), clip = "off")
 
@@ -650,7 +650,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         ceiling(seq_along(metabolite_list)/plots_per_page)
       )
 
-      pdf(file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
+      grDevices::pdf(file.path(output_dir,paste0(Sys.Date(),"_", outputfileName,".pdf")), width = 15, height = 9)
       y = 1
       for(page in pages){
 
@@ -669,7 +669,7 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         y = y + 1
       }
 
-      dev.off()
+      grDevices::dev.off()
 
     })
 
