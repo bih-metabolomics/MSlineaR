@@ -61,5 +61,19 @@ utils::globalVariables(c(
   "signalBlankRatio",
   "slope",
   "trim",
-  "y"
+  "y",
+  "trimPos",
+  "x",
+  "medBlank",
+  "xblank",
+  "xtext",
+  "ytext",
+  "label",
+  "R2",
+  "spearman_rho_linearRange",
+  "spearman_rho",
+  "deltaMax_relative",
+  "max_y",
+  "ResidualsInRange",
+  "X_transformed(log)"
 ))

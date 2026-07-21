@@ -70,7 +70,6 @@ combineData <- function(inputData_Series, inputData_BioSamples, inputData_QC #in
 #' @param Series Optional label for the QC dilution series.
 #' @param output_dir Directory where output PDF files are saved.
 #' @param diagnostic Logical; if TRUE, residual and QQ diagnostic plots are generated.
-#' @param ...
 #' @return A patchwork ggplot object containing the dilution series visualization and optional diagnostics.
 #' @export
 #'
