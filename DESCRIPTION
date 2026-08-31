@@ -45,6 +45,7 @@ Imports:
     writexl
 Suggests: 
     tidyselect,
+    tidylog,
     lattice,
     survival,
     MASS
