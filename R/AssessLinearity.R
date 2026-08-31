@@ -1003,8 +1003,8 @@ Yorigin <- "Y"
   # }
 
 
-
-
+  SampleFeature <- NULL
+  SampleQC <- NULL
 
   #### biological samples ####
 
@@ -1107,7 +1107,7 @@ Yorigin <- "Y"
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_after = stats::median(rsd, na.rm = TRUE))
 
-      SampleFeature <- dplyr::full_join(SampleFeature, SampleQC, by = colnames(SampleQC))
+      SampleFeature <- dplyr::bind_rows(SampleFeature, SampleQC)
       logr::put(paste("QC", ":"))
       logr::put(dplyr::full_join(rsd_before, rsd_after, by = c("Batch","Sample.Type")))
 
@@ -1121,6 +1121,10 @@ Yorigin <- "Y"
   #               --------------------------------------------------------
   #               \tprepare output files
   #               --------------------------------------------------------\n")
+
+
+  output3 <- NULL
+  output4 <- NULL
 
   cutoff <- dplyr::full_join(cutoff,
                              processingFeature,
@@ -1162,6 +1166,8 @@ Yorigin <- "Y"
 
   if(!is.na(column_sampleClass)) dataOrigin[[column_sampleClass]] <- as.character(dataOrigin[[column_sampleClass]])
   dataOrigin[[column_batch]] <- as.character(dataOrigin[[column_batch]])
+
+
 
   if(!is.na(SAMPLE)){
   table_Feature_all <- dplyr::full_join(data.table::copy(SampleFeature),data.table::copy(processingFeature), by = colnames(SampleFeature))
@@ -1239,9 +1245,9 @@ Yorigin <- "Y"
   if(any(colnames(processingFeature) %in% "Y_trans")){
     colnames(output1)[which(colnames(output1) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
     colnames(output2)[which(colnames(output2) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
-    colnames(output3)[which(colnames(output3) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+    if (!is.null(output3)) {colnames(output3)[which(colnames(output3) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")}
     #colnames(output4)[which(colnames(output4) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
-    colnames(SampleQC)[which(colnames(SampleQC) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")
+    if (!is.null(SampleQC)) {colnames(SampleQC)[which(colnames(SampleQC) %in% "Y_trans")] <- paste0("Y_transformed(",TRANSFORM_Y, ")")}
 
 
 
@@ -1250,9 +1256,9 @@ Yorigin <- "Y"
   if(any(colnames(processingFeature) %in% "X_trans")){
     colnames(output1)[which(colnames(output1) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
     colnames(output2)[which(colnames(output2) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
-    colnames(output3)[which(colnames(output3) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+    if (!is.null(output3)) {colnames(output3)[which(colnames(output3) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")}
     #colnames(output4)[which(colnames(output4) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
-    colnames(SampleQC)[which(colnames(SampleQC) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")
+    if (!is.null(SampleQC)) {colnames(SampleQC)[which(colnames(SampleQC) %in% "X_trans")] <- paste0("X_transformed(",TRANSFORM_X, ")")}
 
   }
 
@@ -1306,8 +1312,8 @@ Yorigin <- "Y"
   #8) scatter plot
   FDS_scatterplot <- plot_FDS(printPDF = printPlot,
                               inputData_Series = output1,
-                              inputData_BioSamples = if (!is.na(SAMPLE)) output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE) else NULL,
-                              inputData_QC = if(!all(is.na(QC))) SampleQC else NULL,
+                              inputData_BioSamples = if (!is.null(output3)) output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE) else NULL,
+                              inputData_QC = if(!is.null(SampleQC)) SampleQC else NULL,
                               COLNAMES = COLNAMES, Xcol = Xraw, Ycol = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
                               Series = Series, output_dir = IMG_OUTPUT_DIR, outputfileName = paste0(PREFIX,"_CalibrationPlot"),signal_blank_ratio = NOISE,diagnostic = TRUE
   )
@@ -1315,7 +1321,7 @@ Yorigin <- "Y"
   logr::put("Scatterplot was created")
   #9) bar plot summary for all samples
 
-
+if(!is.null(output3)){
   summary_barplot_all <- plot_Barplot_Summary_Sample(printPDF = printPlot,
                                                      inputData_Samples = output3,
                                                      COLNAMES = COLNAMES,
@@ -1341,8 +1347,8 @@ Yorigin <- "Y"
                                                         outputfileName = paste0(PREFIX,"_Summary_Barplot_Samples"))
 
   logr::put("summary_barplot_sample was created")
-
-
+}
+  if(!is.null(SampleQC)){
   #11) barplot summary for QC samples
 
   summary_barplot_QC <- plot_Barplot_Summary_Sample(printPDF = printPlot,
@@ -1357,7 +1363,7 @@ Yorigin <- "Y"
 
   logr::put("summary_barplotQC was created")
 
-
+}
 
 
 

@@ -179,19 +179,48 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
 
     # ---- Levels holen ----
     class_levels <- unique(stats::na.omit(data_Signal[[ClassCol]]))
-    sample_levels <- c(unique(inputData_BioSamples[[Sample.Type]]),unique(inputData_QC[[Sample.Type]]))
-    batch_levels  <- unique(data_Signal$Batch)
+
+    bio_sample_levels <- if (!is.null(inputData_BioSamples) &&
+                             nrow(inputData_BioSamples) > 0) {
+      unique(inputData_BioSamples[[Sample.Type]])
+    } else {
+      character(0)
+    }
+
+    qc_sample_levels <- if (!is.null(inputData_QC) &&
+                            nrow(inputData_QC) > 0) {
+      unique(inputData_QC[[Sample.Type]])
+    } else {
+      character(0)
+    }
+
+    sample_levels <- unique(c(
+      bio_sample_levels,
+      qc_sample_levels
+    ))
+
+    batch_levels <- unique(data_Signal$Batch)
 
     # ---- Farben / Shapes definieren ----
-    class_colors <- stats::setNames(
-      scales::hue_pal()(length(class_levels)),
-      class_levels
-    )
+    class_colors <- if (length(class_levels) > 0) {
+      stats::setNames(
+        scales::hue_pal()(length(class_levels)),
+        class_levels
+      )
+    } else {
+      character(0)
+    }
 
-    sample_shapes <- stats::setNames(
-      c(16,17,15,18,19)[seq_along(sample_levels)],
-      sample_levels
-    )
+    shape_values <- c(16, 17, 15, 18, 19)
+
+    sample_shapes <- if (length(sample_levels) > 0) {
+      stats::setNames(
+        rep(shape_values, length.out = length(sample_levels)),
+        sample_levels
+      )
+    } else {
+      numeric(0)
+    }
 
     batch_fills <- stats::setNames(
       RColorBrewer::brewer.pal(max(length(batch_levels), 3), "Set1")[1:length(batch_levels)],
