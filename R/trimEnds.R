@@ -378,6 +378,7 @@ if(any(dat.reduced.min$trim %in% FALSE)){
 #' @return A logical vector with one value per observation indicating whether
 #' the observation belongs to a plateau region.
 #'
+#' @export
 #' @section Interpretation:
 #' A value of `TRUE` indicates that the local slope surrounding the
 #' observation is substantially reduced relative to the central slope of the

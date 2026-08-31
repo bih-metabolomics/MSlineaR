@@ -406,23 +406,80 @@ prepareData <- function(dat,
 
 #' @keywords internal
 
+# my_fcn <- function(nCORE, xs, func, inputData, ...) {
+#   #parallel::clusterExport(cl, exportObjects)
+#   cl <- parallel::makePSOCKcluster(nCORE)
+#    doSNOW::registerDoSNOW(cl)
+#   on.exit(parallel::stopCluster(cl))
+#   #on.exit(closeAllConnections())
+#   #on.exit(parallel::stopCluster(cl))
+#   pb <- utils::txtProgressBar(min=1, max=max(xs), style=3)
+#   progress <- function(n) utils::setTxtProgressBar(pb, n)
+#    #pb <- progressr::progressor(along = xs)
+#    #progress <- function(i)  pb(sprintf("x=%g", i))
+#   opts <- list(progress=progress)
+#   y <- foreach::foreach(i = xs,   .options.snow=opts) %dopar%
+#     {func(data.table::setDT(inputData)[inputData$groupIndices %in% unique(inputData$groupIndices)[i]], ...)}
+#   close(pb)
+#   #parallel::stopCluster(cl)
+#   #parallel::stopCluster(cl)
+#   return(y)
+#   }
+#
 my_fcn <- function(nCORE, xs, func, inputData, ...) {
-  #parallel::clusterExport(cl, exportObjects)
-  cl <- parallel::makePSOCKcluster(nCORE)
-   doSNOW::registerDoSNOW(cl)
-  on.exit(parallel::stopCluster(cl))
-  #on.exit(closeAllConnections())
-  #on.exit(parallel::stopCluster(cl))
-  pb <- utils::txtProgressBar(min=1, max=max(xs), style=3)
-  progress <- function(n) utils::setTxtProgressBar(pb, n)
-   #pb <- progressr::progressor(along = xs)
-   #progress <- function(i)  pb(sprintf("x=%g", i))
-  opts <- list(progress=progress)
-  y <- foreach::foreach(i = xs,   .options.snow=opts) %dopar%
-    {func(data.table::setDT(inputData)[inputData$groupIndices %in% unique(inputData$groupIndices)[i]], ...)}
-  close(pb)
-  #parallel::stopCluster(cl)
-  #parallel::stopCluster(cl)
-  return(y)
+
+  pb <- utils::txtProgressBar(
+    min = 0,
+    max = length(xs),
+    style = 3
+  )
+  on.exit(close(pb), add = TRUE)
+
+  if (nCORE == 1) {
+
+    y <- lapply(seq_along(xs), function(i) {
+
+      result <- func(
+        data.table::setDT(inputData)[
+          inputData$groupIndices %in%
+            unique(inputData$groupIndices)[xs[i]]
+        ],
+        ...
+      )
+
+      utils::setTxtProgressBar(pb, i)
+
+      result
+    })
+
+  } else {
+
+    cl <- parallel::makePSOCKcluster(nCORE)
+    doSNOW::registerDoSNOW(cl)
+
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+
+    progress <- function(n) {
+      utils::setTxtProgressBar(pb, n)
+    }
+
+    opts <- list(progress = progress)
+
+    y <- foreach::foreach(
+      i = xs,
+      .options.snow = opts,
+      .packages = "MSlineaR"
+    ) %dopar% {
+
+      func(
+        data.table::setDT(inputData)[
+          inputData$groupIndices %in%
+            unique(inputData$groupIndices)[i]
+        ],
+        ...
+      )
+    }
   }
 
+  return(y)
+}
