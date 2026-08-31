@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-.renv/
-.renv.lock
+renv/
+renv.lock
+.Rprofile
 
