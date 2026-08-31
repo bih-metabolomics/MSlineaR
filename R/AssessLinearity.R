@@ -1107,7 +1107,7 @@ Yorigin <- "Y"
         dplyr::group_by(Batch, Sample.Type) |>
         dplyr::summarize(.groups = "keep",median_rsd_after = stats::median(rsd, na.rm = TRUE))
 
-      SampleFeature <- dplyr::full_join(SampleFeature, SampleQC, by = colnames(SampleQC))
+      SampleFeature <- dplyr::bind_rows(SampleFeature, SampleQC)
       logr::put(paste("QC", ":"))
       logr::put(dplyr::full_join(rsd_before, rsd_after, by = c("Batch","Sample.Type")))
 
@@ -1312,8 +1312,8 @@ Yorigin <- "Y"
   #8) scatter plot
   FDS_scatterplot <- plot_FDS(printPDF = printPlot,
                               inputData_Series = output1,
-                              inputData_BioSamples = if (!is.na(SAMPLE)) output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE) else NULL,
-                              inputData_QC = if(!all(is.na(QC))) SampleQC else NULL,
+                              inputData_BioSamples = if (!is.null(output3)) output3 |> dplyr::filter(get(COLNAMES[["Sample_type"]]) %in% SAMPLE) else NULL,
+                              inputData_QC = if(!is.null(SampleQC)) SampleQC else NULL,
                               COLNAMES = COLNAMES, Xcol = Xraw, Ycol = Yraw, TRANSFORM_Y = TRANSFORM_Y, inverse_y = INVERSE_Y,
                               Series = Series, output_dir = IMG_OUTPUT_DIR, outputfileName = paste0(PREFIX,"_CalibrationPlot"),signal_blank_ratio = NOISE,diagnostic = TRUE
   )
