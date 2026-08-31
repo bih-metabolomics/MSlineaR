@@ -38,6 +38,11 @@ jobs:
           covr::to_cobertura(cov)
         shell: Rscript {0}
 
+      - name: Show test failures
+        if: failure()
+        run: |
+          find /home/runner/work -name "testthat.Rout.fail" -print -exec cat {} \;
+
       - uses: codecov/codecov-action@v4
         with:
           # Fail if error if not on PR, or if on PR and token is given
