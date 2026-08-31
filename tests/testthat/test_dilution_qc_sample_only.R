@@ -54,8 +54,8 @@ test_that("MS_AssessLinearity works with dilution series, Samples and QC only ",
     output_name = "test_dilution_only",
     output_dir = tempdir(),
 
-    get_output = TRUE#,
-    #which_output = "DilutionCurves"
+    get_output = TRUE,
+    which_output = "DilutionCurves"
   )
 
   expect_type(result, "list")

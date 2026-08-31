@@ -43,7 +43,8 @@ Imports:
     tidyr,
     vctrs,
     writexl
-Suggests: 
+Suggests:
+    progress,
     tidyselect,
     tidylog,
     lattice,
