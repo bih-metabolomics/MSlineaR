@@ -347,25 +347,44 @@ MS_AssessLinearity <- function(
 
 
   # Create temp file location
-  tmp <- file.path(OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_MSlineaR.log"))
+  tmp <- file.path(
+    OUTPUT_DIR,
+    paste0(Sys.Date(), "_", PREFIX, "_MSlineaR.log")
+  )
 
   # Open log
-  if (!dir.exists(OUTPUT_DIR)){
-    rlang::inform(paste("Dir", OUTPUT_DIR , "was created."))
+  if (!dir.exists(OUTPUT_DIR)) {
+    rlang::inform(paste("Dir", OUTPUT_DIR, "was created."))
   } else {
-    rlang::inform(paste("Dir", OUTPUT_DIR,"already exists!"))
+    rlang::inform(paste("Dir", OUTPUT_DIR, "already exists!"))
   }
-  lf <- logr::log_open(tmp, autolog = TRUE, show_notes = FALSE)
+
+  old_warning_expression <- getOption("warning.expression")
+
+  on.exit(
+    options(warning.expression = old_warning_expression),
+    add = TRUE
+  )
+
+  lf <- logr::log_open(
+    tmp,
+    autolog = TRUE,
+    show_notes = FALSE
+  )
+
+  on.exit(
+    logr::log_close(),
+    add = TRUE
+  )
+
+  options(
+    warning.expression = quote({
+      logr::log_warning()
+    })
+  )
 
   # Send message to log
-  #log_print(
-
   logr::sep("checking input arguments")
-  # rlang::inform("
-  #               --------------------------------------------------------
-  #               \tchecking input arguments
-  #               --------------------------------------------------------\n")
-
   #)
 
 
@@ -384,8 +403,9 @@ dataOrigin <- dplyr::full_join(dataOrigin_F, dataOrigin_S, by = intersect(colnam
 
 dataReduced <- data.table::copy(dataOrigin)
 
-  dataReduced <- checkData(dat = dataReduced) # function in prep.R
-
+  tmp <- checkData(dat = dataReduced) # function in prep.R
+  dataReduced <- tmp$data
+  COLNAMES <- tmp$names
 
   # progressbar
   pbapply::pboptions(type = "timer", char = "[=-]", style = 5)
@@ -1164,7 +1184,7 @@ Yorigin <- "Y"
 
   #4) full table biological Samples - Signal based
 
-  if(!is.na(column_sampleClass)) dataOrigin[[column_sampleClass]] <- as.character(dataOrigin[[column_sampleClass]])
+  if(!is.null(column_sampleClass) && !is.na(column_sampleClass)) dataOrigin[[column_sampleClass]] <- as.character(dataOrigin[[column_sampleClass]])
   dataOrigin[[column_batch]] <- as.character(dataOrigin[[column_batch]])
 
 
@@ -1394,7 +1414,7 @@ if(!is.null(output3)){
   save(processList, file = file.path( REPORT_OUTPUT_DIR, paste0(Sys.Date(),"_", PREFIX,"_", Series,"_image.RData")))
 
   #sink()
-  logr::log_close()
+  #logr::log_close()
 
   return(processList)
 

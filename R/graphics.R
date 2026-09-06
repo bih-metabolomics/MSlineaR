@@ -194,7 +194,15 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       character(0)
     }
 
+    series_sample_levels <- if (!is.null(inputData_Series) &&
+                                nrow(inputData_Series) > 0) {
+      unique(inputData_Series[[Sample.Type]])
+    } else {
+      character(0)
+    }
+
     sample_levels <- unique(c(
+      series_sample_levels,
       bio_sample_levels,
       qc_sample_levels
     ))
@@ -444,13 +452,17 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
         dplyr::select(-y) |>
         unique()
 
-
+      text_x <- if (!is.null(inputData_QC)) {
+        min(QCs$x, na.rm = TRUE)
+      } else {
+        min(data_Signals[[indipendent]], na.rm = TRUE)
+      }
 
 
       plotlinearData <- plotlinearData +
         ggplot2::geom_text(data = text_label,
                            #ggplot2::geom_text(data = text_label[1:20,],#subset(data_Signals, !is.na(R2)),
-                           ggplot2::aes(x = min(QCs$x), y = max_y + 5, label = paste0("R2 = ", round(R2,2),
+                           ggplot2::aes(x = text_x, y = max_y + 5, label = paste0("R2 = ", round(R2,2),
                                                                             "\nspearman_rho_Range = " , round(spearman_rho_linearRange, 2),
                                                                             "\nmaxDeviation = ", round(deltaMax_relative,2))) ,
                            size = 2,
@@ -486,12 +498,22 @@ plot_FDS <- function(inputData_Series, inputData_BioSamples, inputData_QC,#input
       ggplot2::ggtitle(title_metabolite) +
       x_theme +
       #legend_theme +
-      ggplot2::theme(legend.position="none") +
-      ggplot2::scale_color_manual(values = class_colors) +
-      ggplot2::scale_shape_manual(values = sample_shapes) #+
+      ggplot2::theme(legend.position="none") #+
+      #ggplot2::scale_color_manual(values = class_colors) +
+      #ggplot2::scale_shape_manual(values = sample_shapes) #+
       #ggplot2::scale_fill_manual(values = batch_fills)
       #ggplot2::guides(colour = ggplot2::guide_legend(order = 1),
        #               shape = ggplot2::guide_legend(order = 2))
+
+    if (length(class_colors) > 0) {
+      plotlinearData <- plotlinearData +
+        ggplot2::scale_color_manual(values = class_colors)
+    }
+
+    if (length(sample_shapes) > 0) {
+      plotlinearData <- plotlinearData +
+        ggplot2::scale_shape_manual(values = sample_shapes)
+    }
 
 
     ####residual diagnostic

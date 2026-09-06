@@ -241,7 +241,7 @@ checkData <- function(dat, MIN_FEATURE = parent.frame()$MIN_FEATURE, TYPE = pare
 
 
 
-  return(dat)
+  return(list(data = dat, names = COLNAMES))
 }
 
 is.wholenumber <-
