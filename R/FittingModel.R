@@ -121,7 +121,8 @@ chooseModel <- function(dats,
 
   if ("logistic" %in% model) {
     logistic <- drc::drm(get(outlierY) ~ get(x), fct = drc::L.3(), data = dat)
-    logisticRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(logistic))
+
+    logisticRMSE <- Metrics::rmse(dat[[outlierY]], stats::fitted(logistic))
 
     if(any(abs(stats::residuals(logistic, typeRes = "standard")) > STDRES) ){ #& abs(sd(residuals(logistic))) > SDRES_MIN
       if(abs(stats::sd(stats::residuals(logistic))) > SDRES_MIN){
@@ -131,8 +132,8 @@ chooseModel <- function(dats,
 
       logisticOut <- drc::drm(get(outlierY) ~ get(x), fct = drc::L.3(), data = datOutLog)
       #RMSE
-      logisticRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(logistic))
-      logisticOutRMSE <- Metrics::rmse(stats::na.exclude(datOutLog[[outlierY]]), stats::predict(logisticOut))
+      logisticRMSE <- Metrics::rmse(dat[[outlierY]], stats::fitted(logistic))
+      logisticOutRMSE <- Metrics::rmse(stats::na.exclude(datOutLog[[outlierY]]), stats::fitted(logisticOut))
       logistic1 <- get(c("logistic", "logisticOut")[which(c(logisticRMSE, logisticOutRMSE) %in% min(logisticRMSE, logisticOutRMSE))])
       logistic1.dat <- datOutLog
       } else{
@@ -152,8 +153,8 @@ chooseModel <- function(dats,
 
           logisticOut <- drc::drm(get(outlierY) ~ get(x), fct = drc::L.3(), data = datOutLog)
           #RMSE
-          logisticRMSE <- Metrics::rmse(dat[[outlierY]], stats::predict(logistic))
-          logisticOutRMSE <- Metrics::rmse(stats::na.exclude(datOutLog[[outlierY]]), stats::predict(logisticOut))
+          logisticRMSE <- Metrics::rmse(dat[[outlierY]], stats::fitted(logistic))
+          logisticOutRMSE <- Metrics::rmse(stats::na.exclude(datOutLog[[outlierY]]), stats::fitted(logisticOut))
           logistic1 <- get(c("logistic", "logisticOut")[which(c(logisticRMSE, logisticOutRMSE) %in% min(logisticRMSE, logisticOutRMSE))])
           logistic1.dat <- datOutLog
 
