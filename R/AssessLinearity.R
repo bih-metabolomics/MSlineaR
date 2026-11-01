@@ -800,6 +800,8 @@ Yorigin <- "Y"
     processingFeature <- data.table::data.table(dplyr::full_join(dataSOD, processingFeature[!IDintern %in% dataSOD$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierSOD' :=any(OutlierSOD %in% TRUE), groupIndices][,.(groupIndices, OutlierSOD)]), by = c("groupIndices"))
 
+        data.table::setDT(dataSODModel)
+
     processingGroup <- processingGroup[
       dataSODModel,
       Model_SOD := i.ModelName,
