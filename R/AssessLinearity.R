@@ -656,6 +656,15 @@ Yorigin <- "Y"
     processingFeature <- data.table::data.table(dplyr::full_join(dataFOD, processingFeature[!IDintern %in% dataFOD$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierFOD' :=any(OutlierFOD %in% TRUE), groupIndices][,.(groupIndices, OutlierFOD)]), by = c("groupIndices"))
 
+    data.table::setDT(dataFODModel)
+
+    processingGroup <- processingGroup[
+      dataFODModel,
+      Model_FOD := i.ModelName,
+      on = "groupIndices"
+    ]
+
+
     logr::put(paste0("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierFOD %in% TRUE) |> dplyr::select(groupIndices)), " ",Series,"."))
 
     countList <- countMinimumValue(processingFeature, MIN_FEATURE, step = step, y = Y)
@@ -790,6 +799,14 @@ Yorigin <- "Y"
 
     processingFeature <- data.table::data.table(dplyr::full_join(dataSOD, processingFeature[!IDintern %in% dataSOD$IDintern], by = colnames(processingFeature)))
     processingGroup <- dplyr::full_join(processingGroup, unique(data.table::copy(processingFeature)[,'OutlierSOD' :=any(OutlierSOD %in% TRUE), groupIndices][,.(groupIndices, OutlierSOD)]), by = c("groupIndices"))
+
+    processingGroup <- processingGroup[
+      dataSODModel,
+      Model_SOD := i.ModelName,
+      on = "groupIndices"
+    ]
+
+
 
     logr::put(paste0("An Outlier were found for ", data.table::uniqueN(processingFeature |> dplyr::filter(OutlierSOD %in% TRUE) |> dplyr::select(groupIndices)), " ",Series,"."))
 
